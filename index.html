@@ -1,0 +1,2656 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projeto Interdisciplinar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<style>
+  :root{
+    --bg:#FCFBF8;
+    --card:#FFFFFF;
+    --ink:#0F0F0F;
+    --ink-mid:#444440;
+    --ink-soft:#8A8A85;
+    --line:#E4E3DC;
+    --radius:16px;
+    --shadow:0 1px 3px rgba(0,0,0,.06), 0 6px 20px rgba(0,0,0,.06);
+    --good:#16A34A;
+    --warn:#D97706;
+    --accent-a:#FF5FA0;
+    --accent-b:#FF9152;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  .ph{vertical-align:-2px; line-height:1;}
+  .icon-btn-gap{margin-right:5px;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Plus Jakarta Sans', -apple-system, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+
+  /* ---- HEADER ---- */
+  .site-header{
+    border-bottom:1px solid var(--line);
+    background:var(--bg);
+    padding:20px 32px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+  }
+  .logo-area{cursor:pointer; min-width:0; flex:1;}
+  .logo-row{display:flex; align-items:center; gap:8px; margin-bottom:4px;}
+  .logo-row span.emoji{font-size:22px; line-height:1;}
+  .logo-row h1{font-size:20px; font-weight:800; letter-spacing:-0.02em; color:var(--ink);}
+  .logo-sub{font-size:13px; color:var(--ink-soft); font-weight:400;}
+
+  /* ---- Lovable-referenced brand accent: pink→coral gradient ---- */
+  .lv-gradient-text{
+    background-image: linear-gradient(120deg, var(--accent-a) 0%, var(--accent-b) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .lv-gradient-dot{ background-image: linear-gradient(135deg, var(--accent-a) 0%, var(--accent-b) 100%); }
+  .hero-blob{
+    position:fixed; border-radius:9999px; filter:blur(70px); pointer-events:none; z-index:-1;
+  }
+  @media(prefers-reduced-motion:reduce){.hero-blob{display:none;}}
+  .eyebrow-badge{
+    display:inline-flex; align-items:center; gap:6px; background:#F3F1EC; color:var(--ink-soft);
+    font-size:11px; font-weight:700; padding:5px 12px; border-radius:999px; margin-bottom:10px;
+  }
+  .eyebrow-badge .dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+
+  .header-nav{display:flex; align-items:center; gap:8px; flex-shrink:0;}
+  .nav-btn{
+    font-size:13px;
+    font-weight:700;
+    font-family:inherit;
+    padding:9px 16px;
+    border-radius:999px;
+    border:1.5px solid var(--line);
+    background:var(--card);
+    color:var(--ink-mid);
+    cursor:pointer;
+    transition:.15s;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .nav-btn:hover{border-color:#A8A8A0; color:var(--ink);}
+  .nav-btn.dark{background:var(--ink); border-color:var(--ink); color:#fff;}
+  .nav-btn.dark:hover{background:#333;}
+  .back-link{
+    font-size:13.5px; font-weight:600; color:var(--ink-mid);
+    text-decoration:none; display:inline-flex; align-items:center; gap:6px;
+    cursor:pointer; background:none; border:none; padding:0; font-family:inherit;
+  }
+  .back-link:hover{color:var(--ink);}
+
+  /* ---- MAIN ---- */
+  .main{max-width:1100px; margin:0 auto; padding:32px 32px 64px;}
+  .main.narrow{max-width:640px;}
+
+  /* ---- SEARCH ---- */
+  .search-wrap{position:relative; margin-bottom:20px;}
+  .search-icon{position:absolute; left:18px; top:50%; transform:translateY(-50%); font-size:16px; pointer-events:none;}
+  .search{
+    width:100%; padding:15px 18px 15px 46px; border:1px solid var(--line);
+    border-radius:var(--radius); background:var(--card); font-size:14.5px;
+    font-family:inherit; color:var(--ink); box-shadow:var(--shadow); outline:none; transition:.15s;
+  }
+  .search::placeholder{color:var(--ink-soft);}
+  .search:focus{border-color:var(--accent-a); box-shadow:0 0 0 3px rgba(255,95,160,.14);}
+
+  /* ---- FILTER PILLS / TABS ---- */
+  .filters{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:32px;}
+  .pill{
+    font-size:13.5px; font-weight:600; font-family:inherit; padding:8px 18px;
+    border-radius:999px; border:1.5px solid var(--line); background:var(--card);
+    color:var(--ink-mid); cursor:pointer; transition:.15s;
+  }
+  .pill:hover{border-color:#A8A8A0; color:var(--ink);}
+  .pill.active{background:var(--ink); border-color:var(--ink); color:#FFF;}
+  .pill:focus-visible{outline:2px solid var(--accent-a); outline-offset:2px;}
+
+  .tab-nav{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:24px; border-bottom:1px solid var(--line); padding-bottom:16px;}
+  .tab-btn{
+    font-size:13.5px; font-weight:700; font-family:inherit; padding:9px 16px;
+    border-radius:999px; border:1.5px solid transparent; background:transparent;
+    color:var(--ink-soft); cursor:pointer; transition:.15s;
+  }
+  .tab-btn:hover{color:var(--ink);}
+  .tab-btn.active{background:var(--ink); color:#fff;}
+
+  .admin-layout{display:flex; align-items:flex-start; gap:28px;}
+  .admin-sidebar{display:flex; flex-direction:column; gap:4px; width:190px; flex-shrink:0; position:sticky; top:20px;}
+  .sidebar-tab-btn{
+    display:block; width:100%; text-align:left; font-size:13.5px; font-weight:700; font-family:inherit;
+    padding:11px 16px; border-radius:10px; border:none; background:transparent;
+    color:var(--ink-soft); cursor:pointer; transition:.15s;
+  }
+  .sidebar-tab-btn:hover{color:var(--ink); background:var(--card);}
+  .sidebar-tab-btn.active{background:var(--ink); color:#fff;}
+  .sidebar-tab-btn:disabled{opacity:.4; cursor:not-allowed; background:transparent;}
+  .sidebar-tab-btn:disabled:hover{background:transparent; color:var(--ink-soft);}
+  .admin-content{flex:1; min-width:0;}
+  @media(max-width:760px){
+    .admin-layout{flex-direction:column; gap:16px;}
+    .admin-sidebar{width:100%; flex-direction:row; flex-wrap:wrap; position:static;}
+    .sidebar-tab-btn{width:auto; border-radius:999px;}
+  }
+
+  /* ---- SECTION TITLE ---- */
+  .section-title{
+    font-size:22px; font-weight:800; letter-spacing:-0.02em; color:var(--ink);
+    margin-bottom:20px; display:flex; align-items:baseline; gap:10px;
+  }
+  .section-sub{font-size:13.5px; color:var(--ink-soft); margin-top:4px; margin-bottom:20px;}
+  .section-count{font-size:16px; font-weight:500; color:var(--ink-soft);}
+
+  /* ---- GRID (links) ---- */
+  .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:18px;}
+
+  /* ---- LINK CARD ---- */
+  .link-card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--shadow); transition:.2s;
+  }
+  .link-card:hover{transform:translateY(-2px); box-shadow:0 4px 8px rgba(0,0,0,.07), 0 12px 28px rgba(0,0,0,.09);}
+  .card-top-bar{height:4px; background:var(--cat-color, #E4E3DC); width:100%; flex-shrink:0;}
+  .card-body{padding:18px 20px 16px; display:flex; flex-direction:column; flex:1; gap:10px;}
+  .card-header{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  .card-title-row{display:flex; align-items:center; gap:9px; min-width:0;}
+  .favicon{width:20px; height:20px; border-radius:5px; flex-shrink:0; object-fit:contain;}
+  .card-title{
+    font-size:16px; font-weight:700; color:var(--ink); text-decoration:none;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-0.01em;
+  }
+  .card-title:hover{color:#444;}
+  .card-badge{
+    font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    padding:4px 9px; border-radius:999px; white-space:nowrap; flex-shrink:0;
+    background:var(--badge-bg); color:var(--badge-fg);
+  }
+  .card-desc{font-size:13.5px; color:var(--ink-mid); line-height:1.55; flex:1;}
+  .card-footer{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding-top:8px; border-top:1px solid var(--line); margin-top:4px;
+  }
+  .card-date{font-size:11.5px; color:var(--ink-soft); font-weight:500; line-height:1.3;}
+  .card-date strong{display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; margin-bottom:1px;}
+  .card-actions{display:flex; align-items:center; gap:7px; flex-shrink:0;}
+  .btn-copy{
+    display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; padding:0;
+    border-radius:999px; border:1.5px solid var(--line); background:var(--card); color:var(--ink-mid);
+    cursor:pointer; transition:.15s; flex-shrink:0;
+  }
+  .btn-copy .ph{font-size:15px;}
+  .btn-copy:hover{border-color:#A8A8A0; color:var(--ink);}
+  .btn-access{
+    font-size:12.5px; font-weight:600; font-family:inherit; padding:7px 14px; border-radius:999px;
+    border:none; background:var(--ink); color:#FFF; cursor:pointer; transition:.15s;
+    text-decoration:none; display:inline-flex; align-items:center; gap:4px;
+  }
+  .btn-access:hover{background:#333;}
+  .copied-toast{
+    position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(12px);
+    background:var(--ink); color:#fff; font-size:13px; font-weight:600; padding:10px 20px;
+    border-radius:999px; opacity:0; transition:.2s; pointer-events:none; z-index:99;
+  }
+  .copied-toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  /* ---- EMPTY ---- */
+  .empty{
+    text-align:center; padding:80px 20px; color:var(--ink-soft); background:var(--card);
+    border:1px solid var(--line); border-radius:var(--radius); grid-column:1/-1;
+  }
+  .empty strong{display:block; font-size:18px; color:var(--ink); margin-bottom:6px; font-weight:700;}
+  .empty.small{padding:32px 20px;}
+
+  /* ---- LOGIN / GATE BOXES ---- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(15,15,15,.45); z-index:1000;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-box{
+    background:var(--card); border-radius:var(--radius); padding:28px; max-width:400px; width:100%;
+    box-shadow:0 20px 60px rgba(0,0,0,.28); text-align:left;
+  }
+  .modal-box h3{font-size:17px; font-weight:800; margin-bottom:12px; color:var(--ink);}
+  .modal-box p{font-size:13.5px; color:var(--ink-mid); line-height:1.55;}
+  .modal-field-label{display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin-bottom:5px;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:18px;}
+
+  .popover{
+    position:absolute; z-index:900; background:var(--card); border:1px solid var(--line); border-radius:12px;
+    box-shadow:0 14px 36px rgba(0,0,0,.18); padding:16px; width:280px;
+  }
+  .popover h4{font-size:13px; font-weight:800; color:var(--ink); margin-bottom:10px;}
+  .popover .cat-chips{margin:10px 0 0;}
+
+  .gate-box{
+    max-width:400px; margin:60px auto; background:var(--card); border:1px solid var(--line);
+    border-radius:var(--radius); padding:36px; text-align:center; box-shadow:var(--shadow);
+  }
+  .gate-box h2{font-size:20px; font-weight:800; margin-bottom:6px;}
+  .gate-box p{font-size:13px; color:var(--ink-soft); margin-bottom:20px;}
+  .field{
+    display:block; width:100%; padding:12px 16px; border:1.5px solid var(--line); border-radius:12px;
+    font-family:inherit; font-size:14px; color:var(--ink); margin-bottom:10px; background:var(--bg);
+    outline:none; transition:.15s;
+  }
+  .field:focus{border-color:var(--accent-a); box-shadow:0 0 0 3px rgba(255,95,160,.14);}
+  .btn-primary{
+    display:block; width:100%; padding:12px; background:var(--ink); color:#fff; border:none;
+    border-radius:999px; font-family:inherit; font-size:14.5px; font-weight:700; cursor:pointer;
+    transition:.15s; margin-top:4px;
+  }
+  .btn-primary:hover:not(:disabled){background:#333;}
+  .btn-primary:disabled{opacity:.45; cursor:default;}
+  .btn-primary.auto{width:auto; display:inline-block; padding:10px 20px; border-radius:999px; margin-top:0;}
+  .error-msg{font-size:13px; color:#DC2626; min-height:18px; margin:6px 0;}
+  .success-msg{font-size:13px; color:var(--good); font-weight:600; min-height:18px; margin:6px 0;}
+
+  /* ---- ADMIN BAR / SECTIONS ---- */
+  .admin-bar{
+    display:flex; justify-content:space-between; align-items:center; background:var(--card);
+    border:1px solid var(--line); border-radius:var(--radius); padding:14px 20px; margin-bottom:24px;
+    box-shadow:var(--shadow); gap:16px; flex-wrap:wrap;
+  }
+  .admin-bar-left{font-size:13.5px; color:var(--ink-mid);}
+  .session-label{
+    text-align:right; font-size:11.5px; color:var(--ink-soft); margin-bottom:14px;
+  }
+  .session-label strong{color:var(--ink-mid); font-weight:600;}
+  .admin-bar-left strong{color:var(--ink);}
+  .btn-sm{
+    font-size:13px; font-weight:600; font-family:inherit; padding:8px 16px; border-radius:999px;
+    border:1.5px solid var(--line); background:var(--card); color:var(--ink-mid); cursor:pointer; transition:.15s;
+  }
+  .btn-sm:hover{border-color:#A8A8A0; color:var(--ink);}
+  .btn-sm.danger:hover{border-color:#DC2626; color:#DC2626;}
+  .btn-sm.primary-outline{border-color:var(--ink); color:var(--ink);}
+
+  .admin-section{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:24px; margin-bottom:18px; box-shadow:var(--shadow);
+  }
+  .admin-section h3{font-size:15px; font-weight:700; margin-bottom:4px;}
+  .admin-section .hint{font-size:12.5px; color:var(--ink-soft); margin-bottom:16px;}
+
+  .form-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .form-row input, .form-row textarea, .form-row select{
+    flex:1; min-width:180px; padding:10px 14px; border:1.5px solid var(--line); border-radius:12px;
+    font-family:inherit; font-size:13.5px; color:var(--ink); background:var(--bg); outline:none; transition:.15s;
+  }
+  .form-row input:focus, .form-row textarea:focus, .form-row select:focus{border-color:var(--accent-a); box-shadow:0 0 0 3px rgba(255,95,160,.14);}
+  .form-row textarea{resize:vertical; min-height:40px;}
+  .form-row .btn-primary{width:auto; display:inline-block; border-radius:999px; padding:10px 20px;}
+  .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px;}
+  .form-grid label{display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin-bottom:5px;}
+  .form-grid .full{grid-column:1/-1;}
+  @media(max-width:640px){.form-grid{grid-template-columns:1fr;}}
+
+  .cat-chips{display:flex; gap:8px; flex-wrap:wrap; margin:10px 0;}
+  .cat-chip{
+    display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700;
+    padding:6px 12px; border-radius:999px;
+  }
+  .cat-chip .del{border:none; background:none; cursor:pointer; font-size:14px; line-height:1; padding:0; opacity:.7;}
+  .cat-chip .del:hover{opacity:1;}
+
+  .pick-pill{
+    font-size:12.5px; font-weight:600; font-family:inherit; padding:6px 14px; border-radius:999px;
+    border:1.5px solid var(--line); background:var(--card); color:var(--ink-mid); cursor:pointer; transition:.15s;
+  }
+  .pick-pill.active{background:var(--ink); border-color:var(--ink); color:#fff;}
+  .pick-pill:hover:not(.active){border-color:#A8A8A0;}
+
+  .admin-link-list, .simple-list{display:flex; flex-direction:column; gap:8px;}
+  .admin-link-row, .simple-row{
+    display:flex; justify-content:space-between; align-items:center; gap:12px; border:1px solid var(--line);
+    border-radius:12px; padding:12px 16px; background:var(--bg); flex-wrap:wrap;
+  }
+  .admin-link-row .meta, .simple-row .meta{flex:1; min-width:0;}
+  .admin-link-row .meta strong, .simple-row .meta strong{font-size:13.5px; font-weight:700; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .admin-link-row .meta span, .simple-row .meta span{font-size:12px; color:var(--ink-soft);}
+  .row-acts{display:flex; gap:6px; flex-shrink:0;}
+
+  .status-badge{font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:4px 9px; border-radius:999px; white-space:nowrap;}
+  .status-badge.pending{background:#FEF3C7; color:#92400E;}
+  .status-badge.assigned{background:#DCFCE7; color:#166534;}
+
+  .config-warning{
+    background:#FEF9C3; border:1px solid #FDE047; color:#713F12; border-radius:var(--radius);
+    padding:16px 20px; font-size:13.5px; line-height:1.55; margin-bottom:24px;
+  }
+  .config-warning code{background:rgba(0,0,0,.07); padding:2px 6px; border-radius:5px; font-size:12.5px;}
+  .info-box{
+    background:#EFF6FF; border:1px solid #BFDBFE; color:#1E3A8A; border-radius:var(--radius);
+    padding:16px 20px; font-size:13.5px; line-height:1.55; margin-bottom:18px;
+  }
+  .danger-zone{
+    border:1.5px solid #FCA5A5; background:#FEF2F2; border-radius:var(--radius);
+    padding:20px 24px; margin-top:28px;
+  }
+  .danger-zone h3{color:#991B1B; font-size:15px; font-weight:800; margin-bottom:6px;}
+  .danger-zone p{color:#B91C1C; font-size:13px; line-height:1.55; margin-bottom:14px;}
+
+  /* ---- GROUP CARDS (banca list) ---- */
+  .group-cards-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px;}
+  .group-card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px;
+    box-shadow:var(--shadow); cursor:pointer; transition:.15s; display:flex; flex-direction:column; gap:6px;
+  }
+  .group-card:hover{transform:translateY(-2px); box-shadow:0 4px 8px rgba(0,0,0,.07), 0 12px 28px rgba(0,0,0,.09);}
+  .group-card .code{font-size:11px; font-weight:800; letter-spacing:.05em; color:var(--warn); text-transform:uppercase;}
+  .group-card .proj-title{font-size:15px; font-weight:700; color:var(--ink); line-height:1.3;}
+  .group-card .authors{font-size:12px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  /* ---- EVALUATORS ---- */
+  .evaluator-row{
+    display:flex; justify-content:space-between; align-items:flex-start; gap:12px; border-bottom:1px solid var(--line);
+    padding:12px 4px;
+  }
+  .evaluator-row:last-of-type{border-bottom:none;}
+  .evaluator-row .meta strong{font-size:13.5px; font-weight:700; display:block;}
+  .evaluator-row .meta span{font-size:12px; color:var(--ink-soft);}
+  .evaluator-row .comment{
+    font-size:12.5px; color:var(--ink-mid); border-left:2px solid var(--warn); padding-left:10px; margin-top:6px; line-height:1.5;
+  }
+
+  /* ---- SCORE GRID ---- */
+  .rubric-category{margin-bottom:22px;}
+  .rubric-category .cat-heading{display:flex; align-items:center; gap:10px; font-size:15.5px; font-weight:800; margin-bottom:14px;}
+  .rubric-category .cat-num{
+    width:24px; height:24px; border-radius:50%; background:var(--warn); color:#fff; font-size:12.5px;
+    font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .rubric-question{margin-bottom:14px;}
+  .rubric-question .q-text{font-size:13.5px; font-weight:600; color:var(--ink-mid); margin-bottom:8px;}
+  .score-eval-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:8px;}
+  .score-cell{
+    border:1.5px solid var(--line); border-radius:12px; padding:8px 10px; background:var(--bg); transition:.15s;
+  }
+  .score-cell.answered{border-color:#86EFAC; background:#F0FDF4;}
+
+  /* ---- Resultados (visualização, sem cara de formulário) ---- */
+  .result-eval-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px;}
+  .result-cell{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 12px; border-radius:10px; background:var(--bg); border:1px solid var(--line);
+  }
+  .result-eval-name{font-size:12.5px; font-weight:600; color:var(--ink-mid);}
+  .result-badge{font-size:11px; font-weight:700; padding:4px 11px; border-radius:999px; white-space:nowrap;}
+  .result-badge.rating-excelente{background:#DCFCE7; color:#166534;}
+  .result-badge.rating-muito_bom{background:#DBEAFE; color:#1E40AF;}
+  .result-badge.rating-bom{background:#FEF3C7; color:#92400E;}
+  .result-badge.rating-regular{background:#FFEDD5; color:#9A3412;}
+  .result-badge.rating-muito_fraco{background:#FEE2E2; color:#991B1B;}
+  .result-badge.rating-none{background:#EFEDE6; color:var(--ink-soft);}
+
+  /* ---- Painel de resultados (nota geral / distribuição / médias) ---- */
+  .stats-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:28px;}
+  @media(max-width:720px){.stats-grid{grid-template-columns:1fr;}}
+  .stat-card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow);}
+  .stat-card .stat-label{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:14px;}
+  .stat-big-number{display:flex; align-items:baseline; gap:6px; line-height:1;}
+  .stat-big-number .num{font-size:42px; font-weight:800; color:var(--ink);}
+  .stat-big-number .denom{font-size:16px; font-weight:600; color:var(--ink-soft);}
+  .stat-bar-track{height:8px; border-radius:999px; background:#E4E3DC; overflow:hidden; margin-top:16px;}
+  .stat-bar-fill{height:100%; border-radius:999px; background:#16A34A;}
+  .stat-concept{margin-top:14px; font-size:13.5px; color:var(--ink-mid);}
+  .stat-concept strong{font-weight:700;}
+  .stat-empty{font-size:13px; color:var(--ink-soft);}
+
+  .dist-row{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+  .dist-row:last-child{margin-bottom:0;}
+  .dist-label{width:88px; font-size:13px; color:var(--ink-mid); flex-shrink:0;}
+  .dist-track{flex:1; height:8px; border-radius:999px; background:#E4E3DC; overflow:hidden;}
+  .dist-fill{height:100%; border-radius:999px;}
+  .dist-count{width:64px; text-align:right; font-size:12.5px; color:var(--ink-soft); flex-shrink:0;}
+
+  .criteria-heading{font-size:20px; font-weight:800; color:var(--ink); margin:6px 0 16px;}
+  .criteria-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:14px; margin-bottom:28px;}
+  .criteria-card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px;}
+  .criteria-card .crit-num{font-size:12px; font-weight:800; color:var(--warn); margin-bottom:8px;}
+  .criteria-card .crit-title{font-size:14px; font-weight:700; color:var(--ink); margin-bottom:14px; line-height:1.35; min-height:38px;}
+  .criteria-card .crit-score{display:flex; align-items:baseline; gap:5px; margin-bottom:12px;}
+  .criteria-card .crit-score .num{font-size:26px; font-weight:800; color:var(--ink);}
+  .criteria-card .crit-score .denom{font-size:13px; font-weight:600; color:var(--ink-soft);}
+
+  /* ---- Multiselect de categorias ---- */
+  .ms-wrap{position:relative; width:100%;}
+  .ms-box{
+    display:flex; align-items:center; gap:8px; min-height:46px; padding:7px 10px; border:1.5px solid var(--line);
+    border-radius:12px; background:var(--bg); cursor:pointer; flex-wrap:wrap; transition:.15s;
+  }
+  .ms-box.open{border-color:var(--accent-a); box-shadow:0 0 0 3px rgba(255,95,160,.14);}
+  .ms-chips{display:flex; flex-wrap:wrap; gap:6px; flex:1;}
+  .ms-placeholder{color:var(--ink-soft); font-size:13.5px; padding:2px 0;}
+  .ms-chip{
+    display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600; padding:4px 4px 4px 10px;
+    border-radius:999px; border:1px solid; background:#fff;
+  }
+  .ms-chip-x{border:none; background:none; cursor:pointer; font-size:14px; line-height:1; padding:2px; color:inherit; opacity:.65;}
+  .ms-chip-x:hover{opacity:1;}
+  .ms-toggle{border:none; background:none; cursor:pointer; color:var(--ink-soft); font-size:11px; padding:6px; flex-shrink:0;}
+  .ms-dropdown{
+    position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:80; background:var(--card);
+    border:1px solid var(--line); border-radius:12px; box-shadow:0 14px 32px rgba(0,0,0,.16); max-height:280px;
+    overflow-y:auto; padding:8px;
+  }
+  .ms-add-row{display:flex; gap:6px; padding:2px 2px 10px; border-bottom:1px solid var(--line); margin-bottom:6px;}
+  .ms-add-row input{
+    flex:1; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px; background:var(--bg);
+  }
+  .ms-add-row button{border:none; background:var(--ink); color:#fff; border-radius:8px; width:34px; font-size:16px; cursor:pointer; flex-shrink:0;}
+  .ms-item{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 6px; border-radius:8px;}
+  .ms-item:hover{background:var(--bg);}
+  .ms-item-label{display:flex; align-items:center; gap:10px; font-size:13.5px; color:var(--ink); cursor:pointer; flex:1; min-width:0;}
+  .ms-item-label input[type="checkbox"]{width:16px; height:16px; accent-color:var(--accent-a); flex-shrink:0;}
+  .ms-item-label span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .ms-item-actions{display:flex; gap:2px; flex-shrink:0;}
+  .ms-item-actions button{border:none; background:none; cursor:pointer; font-size:13px; padding:4px 6px; border-radius:6px;}
+  .ms-item-actions button:hover{background:var(--line);}
+  .ms-empty{padding:10px 6px; font-size:13px; color:var(--ink-soft);}
+
+  /* ---- Assistente de notas (estilo Typeform) ---- */
+  .wizard-overlay{
+    position:fixed; inset:0; z-index:2000; background:var(--bg);
+    display:flex; flex-direction:column; padding:24px; overflow-y:auto;
+  }
+  .wizard-close{
+    position:absolute; top:20px; right:24px; width:36px; height:36px; border-radius:50%;
+    border:1px solid var(--line); background:var(--card); font-size:18px; line-height:1; cursor:pointer; color:var(--ink-mid);
+  }
+  .wizard-close:hover{background:var(--line);}
+  .wizard-inner{max-width:600px; margin:0 auto; width:100%; display:flex; flex-direction:column; flex:1; padding-top:36px; min-height:calc(100vh - 48px);}
+  .wizard-steps{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:44px;}
+  .wizard-dot{
+    width:32px; height:32px; border-radius:50%; border:1.5px solid var(--line); background:var(--card);
+    font-size:12.5px; font-weight:700; color:var(--ink-soft); cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .wizard-dot:hover{border-color:var(--accent-a);}
+  .wizard-dot.current{border-color:var(--accent-a); color:var(--accent-a);}
+  .wizard-dot.done{background:var(--ink); border-color:var(--ink); color:#fff;}
+  .wizard-body{flex:1; display:flex; flex-direction:column; justify-content:center;}
+  .wizard-eyebrow{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--warn); margin-bottom:10px; text-align:center;}
+  .wizard-question{font-size:26px; font-weight:800; color:var(--ink); text-align:center; margin-bottom:32px; line-height:1.32;}
+  .wizard-options{display:flex; flex-direction:column; gap:10px; margin-bottom:24px;}
+  .wizard-option{
+    padding:16px 20px; border:1.5px solid var(--line); border-radius:12px; background:var(--card);
+    font-size:15px; font-weight:600; color:var(--ink); cursor:pointer; text-align:left; transition:.15s;
+  }
+  .wizard-option:hover{border-color:var(--accent-a); background:#FFF7FA;}
+  .wizard-option.selected{border-color:var(--accent-a); background:#FFF0F6; color:#C2185B;}
+  .wizard-nav{display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:20px;}
+  .wizard-progress{font-size:12.5px; color:var(--ink-soft);}
+  .wizard-textarea{
+    width:100%; min-height:140px; padding:14px 16px; border:1.5px solid var(--line); border-radius:12px;
+    font-family:inherit; font-size:14.5px; background:var(--card); margin-bottom:16px; resize:vertical;
+  }
+  @media(max-width:640px){
+    .wizard-question{font-size:21px;}
+    .wizard-inner{padding-top:56px;}
+  }
+  .score-cell .eval-name{font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:5px;}
+  .score-cell .eval-name .check{color:var(--good); font-size:13px;}
+  .score-cell select{
+    width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:7px; font-family:inherit;
+    font-size:12.5px; background:#fff; color:var(--ink);
+  }
+
+  footer{text-align:center; padding:32px; font-size:12px; color:var(--ink-soft);}
+
+  @media(max-width:640px){
+    .site-header{padding:16px 20px;}
+    .main{padding:20px 16px 48px;}
+    .section-title{font-size:18px;}
+    .logo-sub{display:none;}
+  }
+  @media(prefers-reduced-motion:reduce){*{transition:none !important;}}
+</style>
+</head>
+<body>
+
+<div class="hero-blob" style="top:-90px; left:-70px; width:340px; height:340px; background:linear-gradient(135deg,var(--accent-a),var(--accent-b)); opacity:.14;"></div>
+<div class="hero-blob" style="top:10px; right:-110px; width:380px; height:380px; background:linear-gradient(135deg,var(--accent-b),#FFC85F); opacity:.11;"></div>
+
+<header class="site-header">
+  <div class="logo-area" id="logoArea">
+    <div class="logo-row">
+      <h1 class="lv-gradient-text">Projeto Interdisciplinar</h1>
+    </div>
+    <div class="logo-sub">MBA em Liderança, Gestão de Equipes e People Analytics, MBA em Ciência de Dados Business Intelligence e Inteligência Artificial</div>
+  </div>
+  <div class="header-nav" id="headerNav"></div>
+</header>
+
+<div id="appRoot"></div>
+
+<div class="copied-toast" id="copiedToast">Link copiado!</div>
+
+<footer>Projeto Interdisciplinar — gerenciado pelo professor.</footer>
+
+<script>
+/* ======================================================================
+   CONFIGURAÇÃO — substitua pelos valores do seu projeto Supabase
+   (Project Settings → API → Project URL + anon public key)
+   ====================================================================== */
+const SUPABASE_URL      = "COLE_AQUI_SUA_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "COLE_AQUI_SUA_SUPABASE_ANON_KEY";
+/* ====================================================================== */
+
+const isMockMode = !SUPABASE_URL.startsWith('http');
+
+/* ======================================================================
+   MODO DE TESTE — quando o Supabase real não está configurado, este
+   objeto imita a mesma API do cliente Supabase (from/select/insert/
+   update/delete/upsert/rpc/storage/auth), guardando os dados no
+   armazenamento do próprio artifact (window.storage). Isso permite
+   testar o fluxo inteiro aqui no chat sem nenhum backend real.
+   Nada aqui é usado quando SUPABASE_URL está preenchida de verdade.
+   ====================================================================== */
+function createMockClient(){
+  const DB_KEY = 'mock-db';
+  const FILES_KEY = 'mock-files';
+  let db = null;
+  let files = null;
+  let mockSession = null;
+
+  function muid(){ return 'm-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 9); }
+
+  function seedDb(){
+    const c1 = muid(), c2 = muid(), c3 = muid(), c4 = muid(), c5 = muid();
+    return {
+      categories: [], links: [], link_categories: [], groups: [], bancas: [], students: [], evaluators: [], scores: [],
+      app_settings: [], banca_readers: [],
+      rubric_categories: [
+        { id: c1, order_index: 1, title: 'Relevância e Inovação do Produto/Serviço' },
+        { id: c2, order_index: 2, title: 'Qualidade da Pesquisa e Fundamentação Teórica' },
+        { id: c3, order_index: 3, title: 'Viabilidade e Implementação' },
+        { id: c4, order_index: 4, title: 'Apresentação e Comunicação' },
+        { id: c5, order_index: 5, title: 'Impacto Potencial' },
+      ],
+      rubric_questions: [
+        { id: muid(), category_id: c1, order_index: 1, question: 'O produto/serviço atende a uma necessidade real da área de pessoas?' },
+        { id: muid(), category_id: c1, order_index: 2, question: 'O produto/serviço apresenta algum diferencial inovador?' },
+        { id: muid(), category_id: c2, order_index: 1, question: 'O projeto é bem embasado teoricamente?' },
+        { id: muid(), category_id: c3, order_index: 1, question: 'O projeto é tecnicamente viável?' },
+        { id: muid(), category_id: c4, order_index: 1, question: 'A apresentação foi clara e objetiva?' },
+        { id: muid(), category_id: c4, order_index: 2, question: 'Os alunos souberam responder adequadamente às perguntas dos avaliadores?' },
+        { id: muid(), category_id: c5, order_index: 1, question: 'O produto/serviço tem potencial de impacto significativo na área de pessoas?' },
+      ],
+    };
+  }
+
+  async function loadDb(){
+    if(db) return db;
+    try {
+      const res = await window.storage.get(DB_KEY, true);
+      db = res?.value ? JSON.parse(res.value) : null;
+    } catch { db = null; }
+    if(!db) db = seedDb();
+    return db;
+  }
+  async function saveDb(){
+    try { await window.storage.set(DB_KEY, JSON.stringify(db), true); } catch { /* ignore in unsupported contexts */ }
+  }
+  async function loadFiles(){
+    if(files) return files;
+    try {
+      const res = await window.storage.get(FILES_KEY, true);
+      files = res?.value ? JSON.parse(res.value) : {};
+    } catch { files = {}; }
+    return files;
+  }
+  async function saveFiles(){
+    try { await window.storage.set(FILES_KEY, JSON.stringify(files), true); } catch { /* ignore */ }
+  }
+
+  class MockQuery {
+    constructor(table){ this.table = table; this._filters = []; this._order = null; this._single = false; this._action = 'select'; this._payload = null; this._onConflict = null; }
+    select(){ return this; }
+    order(col, opts){ this._order = { col, asc: !(opts && opts.ascending === false) }; return this; }
+    eq(col, val){ this._filters.push([col, val]); return this; }
+    single(){ this._single = true; return this; }
+    insert(obj){ this._action = 'insert'; this._payload = obj; return this; }
+    update(obj){ this._action = 'update'; this._payload = obj; return this; }
+    upsert(obj, opts){ this._action = 'upsert'; this._payload = obj; this._onConflict = opts?.onConflict; return this; }
+    delete(){ this._action = 'delete'; return this; }
+    then(resolve, reject){ this._exec().then(resolve, reject); }
+    async _exec(){
+      await loadDb();
+      if(!db[this.table]) db[this.table] = [];
+      const rows = db[this.table];
+      const matches = (row) => this._filters.every(([c, v]) => row[c] === v);
+
+      if(this.table === 'groups' && this._action === 'insert'){
+        const items = Array.isArray(this._payload) ? this._payload : [this._payload];
+        const inserted = items.map(item => ({ id: item.id || muid(), created_at: new Date().toISOString(), ...item }));
+        db.groups = rows.concat(inserted);
+        // imita o trigger do banco real: cria as 3 bancas automaticamente
+        inserted.forEach(g => {
+          [1, 2, 3].forEach(stage => {
+            db.bancas.push({ id: muid(), group_id: g.id, stage, scheduled_date: null, report_file_path: null, report_file_name: null, presentation_link: null });
+          });
+        });
+        await saveDb();
+        return { data: this._single ? inserted[0] : inserted, error: null };
+      }
+      if(this._action === 'insert'){
+        const items = Array.isArray(this._payload) ? this._payload : [this._payload];
+        const inserted = items.map(item => ({ id: item.id || muid(), created_at: new Date().toISOString(), ...item }));
+        db[this.table] = rows.concat(inserted);
+        await saveDb();
+        return { data: this._single ? inserted[0] : inserted, error: null };
+      }
+      if(this._action === 'update'){
+        db[this.table] = rows.map(r => matches(r) ? { ...r, ...this._payload } : r);
+        await saveDb();
+        return { data: null, error: null };
+      }
+      if(this._action === 'upsert'){
+        const keyFields = (this._onConflict || 'id').split(',');
+        const item = this._payload;
+        const idx = rows.findIndex(r => keyFields.every(k => r[k] === item[k]));
+        if(idx >= 0) rows[idx] = { ...rows[idx], ...item };
+        else rows.push({ id: item.id || muid(), ...item });
+        db[this.table] = rows;
+        await saveDb();
+        return { data: null, error: null };
+      }
+      if(this._action === 'delete'){
+        db[this.table] = rows.filter(r => !matches(r));
+        await saveDb();
+        return { data: null, error: null };
+      }
+      // select
+      let result = rows.filter(matches);
+      if(this._order){
+        result = [...result].sort((a, b) => {
+          const av = a[this._order.col], bv = b[this._order.col];
+          if(av == null && bv == null) return 0;
+          if(av == null) return this._order.asc ? -1 : 1;
+          if(bv == null) return this._order.asc ? 1 : -1;
+          if(av < bv) return this._order.asc ? -1 : 1;
+          if(av > bv) return this._order.asc ? 1 : -1;
+          return 0;
+        });
+      }
+      if(this._single) return { data: result[0] || null, error: null };
+      return { data: result, error: null };
+    }
+  }
+
+  function buildGroupsOverview(){
+    const rubric = db.rubric_categories.slice().sort((a, b) => a.order_index - b.order_index).map(c => ({
+      id: c.id, title: c.title, order_index: c.order_index,
+      questions: db.rubric_questions.filter(q => q.category_id === c.id).sort((a, b) => a.order_index - b.order_index),
+    }));
+    const groups = db.groups.map(g => ({
+      id: g.id, slug: g.slug, group_name: g.group_name, project_title: g.project_title,
+      students: db.students.filter(s => s.group_id === g.id).map(s => ({ full_name: s.full_name, email: s.email })),
+      bancas: db.bancas.filter(b => b.group_id === g.id).sort((a, b) => a.stage - b.stage).map(b => ({
+        stage: b.stage, scheduled_date: b.scheduled_date,
+        report_file_path: b.report_file_path, report_file_name: b.report_file_name, presentation_link: b.presentation_link,
+        evaluators: db.evaluators.filter(e => e.banca_id === b.id).map(e => ({ id: e.id, reader_id: e.reader_id || null, name: e.name, role: e.role, comment: e.comment })),
+        scores: db.scores.filter(s => s.banca_id === b.id).map(s => ({ evaluator_id: s.evaluator_id, question_id: s.question_id, rating: s.rating })),
+      })),
+    }));
+    return { rubric, groups };
+  }
+  async function mockRpc(name, params){
+    await loadDb();
+    const settingsGet = (key) => db.app_settings.find(s => s.key === key)?.value;
+    const settingsSet = (key, value) => {
+      const idx = db.app_settings.findIndex(s => s.key === key);
+      if(idx >= 0) db.app_settings[idx].value = value; else db.app_settings.push({ key, value });
+    };
+
+    if(name === 'admin_set_group_password'){
+      const g = db.groups.find(x => x.id === params.p_group_id);
+      if(g) g.password_hash = params.p_password;
+      await saveDb();
+      return { data: null, error: null };
+    }
+    if(name === 'admin_set_professors_password'){
+      settingsSet('professors_password_hash', params.p_password);
+      await saveDb();
+      return { data: null, error: null };
+    }
+    if(name === 'get_group_public_view'){
+      const g = db.groups.find(x => x.slug === params.p_slug);
+      if(!g) return { data: { error: 'grupo não encontrado' }, error: null };
+      if(!g.password_hash || g.password_hash !== params.p_password) return { data: { error: 'senha incorreta' }, error: null };
+      const bancas = db.bancas.filter(b => b.group_id === g.id).sort((a, b) => a.stage - b.stage).map(b => ({
+        stage: b.stage, scheduled_date: b.scheduled_date, report_file_path: b.report_file_path,
+        report_file_name: b.report_file_name, presentation_link: b.presentation_link,
+        evaluators: db.evaluators.filter(e => e.banca_id === b.id).map(e => ({ id: e.id, name: e.name, role: e.role, comment: e.comment })),
+        scores: db.scores.filter(s => s.banca_id === b.id).map(s => ({ evaluator_id: s.evaluator_id, question_id: s.question_id, rating: s.rating })),
+      }));
+      return {
+        data: {
+          id: g.id, slug: g.slug, group_name: g.group_name, project_title: g.project_title,
+          students: db.students.filter(s => s.group_id === g.id).map(s => ({ full_name: s.full_name, email: s.email })),
+          bancas,
+        }, error: null,
+      };
+    }
+    if(name === 'admin_add_banca_reader'){
+      db.banca_readers = db.banca_readers || [];
+      const id = muid();
+      db.banca_readers.push({ id, name: params.p_name, role: params.p_role || '', password_hash: params.p_password, created_at: new Date().toISOString() });
+      await saveDb();
+      return { data: id, error: null };
+    }
+    if(name === 'admin_set_banca_reader_password'){
+      const r = (db.banca_readers || []).find(x => x.id === params.p_reader_id);
+      if(r) r.password_hash = params.p_password;
+      await saveDb();
+      return { data: null, error: null };
+    }
+    if(name === 'banca_reader_login'){
+      const reader = (db.banca_readers || []).find(r => r.password_hash === params.p_password);
+      if(!reader) return { data: { error: 'senha incorreta' }, error: null };
+      return { data: { reader_id: reader.id, reader_name: reader.name, ...buildGroupsOverview() }, error: null };
+    }
+    if(name === 'reader_submit_score'){
+      const ev = db.evaluators.find(e => e.id === params.p_evaluator_id);
+      if(!ev || !ev.reader_id) return { data: false, error: null };
+      const owner = (db.banca_readers || []).find(r => r.id === ev.reader_id);
+      if(!owner || owner.password_hash !== params.p_password) return { data: false, error: null };
+      const idx = db.scores.findIndex(s => s.evaluator_id === params.p_evaluator_id && s.question_id === params.p_question_id);
+      const row = { id: idx >= 0 ? db.scores[idx].id : muid(), banca_id: ev.banca_id, evaluator_id: params.p_evaluator_id, question_id: params.p_question_id, rating: params.p_rating };
+      if(idx >= 0) db.scores[idx] = row; else db.scores.push(row);
+      await saveDb();
+      return { data: true, error: null };
+    }
+    if(name === 'reader_submit_comment'){
+      const ev = db.evaluators.find(e => e.id === params.p_evaluator_id);
+      if(!ev || !ev.reader_id) return { data: false, error: null };
+      const owner = (db.banca_readers || []).find(r => r.id === ev.reader_id);
+      if(!owner || owner.password_hash !== params.p_password) return { data: false, error: null };
+      ev.comment = params.p_comment;
+      await saveDb();
+      return { data: true, error: null };
+    }
+    if(name === 'student_group_login'){
+      const email = (params.p_email || '').toLowerCase();
+      const matches = db.students.filter(s => (s.email || '').toLowerCase() === email)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      if(!matches.length) return { data: { error: 'e-mail não encontrado' }, error: null };
+      const s = matches[0];
+      if(s.status !== 'assigned' || !s.group_id) return { data: { error: 'pending' }, error: null };
+      const g = db.groups.find(x => x.id === s.group_id);
+      if(!g || !g.password_hash || g.password_hash !== params.p_password) return { data: { error: 'senha incorreta' }, error: null };
+      const bancas = db.bancas.filter(b => b.group_id === g.id).sort((a, b) => a.stage - b.stage).map(b => ({
+        stage: b.stage, scheduled_date: b.scheduled_date, report_file_path: b.report_file_path,
+        report_file_name: b.report_file_name, presentation_link: b.presentation_link,
+        evaluators: db.evaluators.filter(e => e.banca_id === b.id).map(e => ({ id: e.id, name: e.name, role: e.role, comment: e.comment })),
+        scores: db.scores.filter(sc => sc.banca_id === b.id).map(sc => ({ evaluator_id: sc.evaluator_id, question_id: sc.question_id, rating: sc.rating })),
+      }));
+      return {
+        data: {
+          id: g.id, slug: g.slug, group_name: g.group_name, project_title: g.project_title,
+          students: db.students.filter(x => x.group_id === g.id).map(x => ({ full_name: x.full_name, email: x.email })),
+          bancas,
+        }, error: null,
+      };
+    }
+    if(name === 'submit_banca_attachments'){
+      const g = db.groups.find(x => x.slug === params.p_group_slug);
+      if(!g || !g.password_hash || g.password_hash !== params.p_group_password) return { data: false, error: null };
+      const banca = db.bancas.find(b => b.group_id === g.id && b.stage === params.p_stage);
+      if(!banca) return { data: false, error: null };
+      if(params.p_report_file_path){ banca.report_file_path = params.p_report_file_path; banca.report_file_name = params.p_report_file_name; }
+      banca.presentation_link = params.p_presentation_link;
+      await saveDb();
+      return { data: true, error: null };
+    }
+    return { data: null, error: { message: `RPC mock não implementada: ${name}` } };
+  }
+
+  // getPublicUrl precisa ser síncrona (mesma assinatura do Supabase real),
+  // então pré-carrega os arquivos assim que o cliente é criado.
+  loadFiles();
+
+  return {
+    from(table){ return new MockQuery(table); },
+    rpc: (name, params) => mockRpc(name, params || {}),
+    storage: {
+      from(bucket){
+        return {
+          async upload(path, file){
+            await loadFiles();
+            const base64 = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+              reader.onerror = () => reject(new Error('Falha ao ler o arquivo.'));
+              reader.readAsDataURL(file);
+            });
+            files[path] = { data: base64, type: file.type || 'application/octet-stream' };
+            await saveFiles();
+            return { data: { path }, error: null };
+          },
+          getPublicUrl(path){
+            const f = files && files[path];
+            if(!f) return { data: { publicUrl: '' } };
+            return { data: { publicUrl: `data:${f.type};base64,${f.data}` } };
+          },
+        };
+      },
+    },
+    auth: {
+      // Modo de teste: qualquer e-mail e senha preenchidos entram como admin.
+      async signInWithPassword({ email, password }){
+        if(!email || !password) return { data: null, error: { message: 'Preencha e-mail e senha.' } };
+        mockSession = { user: { email } };
+        return { data: { session: mockSession }, error: null };
+      },
+      async getSession(){ return { data: { session: mockSession } }; },
+      async signOut(){ mockSession = null; },
+    },
+  };
+}
+
+const sb = isMockMode ? createMockClient() : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const $ = id => document.getElementById(id);
+const root = () => $('appRoot');
+
+const RATING_LABELS = { muito_fraco:'Muito Fraco', regular:'Regular', bom:'Bom', muito_bom:'Muito Bom', excelente:'Excelente' };
+const RATING_ORDER = ['muito_fraco','regular','bom','muito_bom','excelente'];
+const BANCA_LABELS = { 1: '1ª Banca', 2: '2ª Banca', 3: 'Banca Final' };
+
+function esc(s){ const d=document.createElement('div'); d.textContent=(s==null?'':s); return d.innerHTML; }
+function phIcon(name, opts){
+  opts = opts || {};
+  const weight = opts.weight || 'regular';
+  const base = weight === 'regular' ? 'ph' : `ph-${weight}`;
+  const cls = opts.class ? ' ' + opts.class : '';
+  return `<i class="${base} ph-${name}${cls}"></i>`;
+}
+function fmtDate(iso){ if(!iso) return ''; try{ return new Date(iso).toLocaleDateString('pt-BR'); }catch{ return ''; } }
+function fmtDateInput(iso){ if(!iso) return ''; return String(iso).slice(0,10); }
+function generateRandomPassword(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+  let out = '';
+  for(let i = 0; i < 5; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+function slugify(s){
+  return (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toUpperCase().replace(/[^A-Z0-9]+/g,'').slice(0,24) || 'GRUPO';
+}
+function rgba(hex, a){
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function favicons(url){
+  try{
+    const h = new URL(url).hostname;
+    return [`https://www.google.com/s2/favicons?domain=${h}&sz=64`, `https://icons.duckduckgo.com/ip3/${h}.ico`, `https://${h}/favicon.ico`];
+  }catch{ return []; }
+}
+let toastTimer;
+function showToast(msg){
+  const t = $('copiedToast');
+  if(msg) t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+function getPublicFileUrl(path){
+  if(!sb || !path) return null;
+  const { data } = sb.storage.from('group-attachments').getPublicUrl(path);
+  return data?.publicUrl || null;
+}
+
+/* ---- Modais próprios (substituem prompt()/confirm() nativos, que ficam
+   bloqueados dentro do sandbox do preview do artifact) ---- */
+function showModal(contentBuilder){
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    const box = document.createElement('div');
+    box.className = 'modal-box';
+    overlay.appendChild(box);
+    function close(result){ overlay.remove(); resolve(result); }
+    overlay.onclick = (e) => { if(e.target === overlay) close(null); };
+    document.addEventListener('keydown', function onEsc(e){
+      if(e.key === 'Escape'){ document.removeEventListener('keydown', onEsc); close(null); }
+    });
+    contentBuilder(box, close);
+    document.body.appendChild(overlay);
+  });
+}
+function showConfirm(message, title){
+  return showModal((box, close) => {
+    box.innerHTML = `
+      <h3>${esc(title || 'Confirmar ação')}</h3>
+      <p>${esc(message)}</p>
+      <div class="modal-actions">
+        <button class="btn-sm" id="modalCancel">Cancelar</button>
+        <button class="btn-sm" id="modalOk" style="border-color:#DC2626; color:#DC2626;">Confirmar</button>
+      </div>`;
+    box.querySelector('#modalCancel').onclick = () => close(false);
+    box.querySelector('#modalOk').onclick = () => close(true);
+  });
+}
+function showPrompt(title, fields){
+  return showModal((box, close) => {
+    box.innerHTML = `
+      <h3>${esc(title)}</h3>
+      ${fields.map(f => `
+        <div style="margin-bottom:10px;">
+          <span class="modal-field-label">${esc(f.label)}</span>
+          <input class="field" style="margin-bottom:0;" data-key="${esc(f.key)}" placeholder="${esc(f.placeholder||'')}" value="${esc(f.value||'')}">
+        </div>`).join('')}
+      <div class="modal-actions">
+        <button class="btn-sm" id="modalCancel">Cancelar</button>
+        <button class="btn-primary auto" id="modalOk">Salvar</button>
+      </div>`;
+    const inputs = box.querySelectorAll('input[data-key]');
+    if(inputs[0]) inputs[0].focus();
+    function submit(){
+      const result = {};
+      inputs.forEach(inp => { result[inp.dataset.key] = inp.value.trim(); });
+      close(result);
+    }
+    inputs.forEach(inp => inp.addEventListener('keydown', e => { if(e.key === 'Enter') submit(); }));
+    box.querySelector('#modalCancel').onclick = () => close(null);
+    box.querySelector('#modalOk').onclick = submit;
+  });
+}
+function showAlert(message, title){
+  return showModal((box, close) => {
+    box.innerHTML = `
+      <h3>${esc(title || 'Aviso')}</h3>
+      <p>${esc(message)}</p>
+      <div class="modal-actions">
+        <button class="btn-primary auto" id="modalOk">OK</button>
+      </div>`;
+    box.querySelector('#modalOk').onclick = () => close(true);
+  });
+}
+
+let openPopoverEl = null;
+function closePopover(){
+  if(openPopoverEl){ openPopoverEl.remove(); openPopoverEl = null; }
+  document.removeEventListener('mousedown', onPopoverOutsideClick);
+}
+function onPopoverOutsideClick(e){
+  if(openPopoverEl && !openPopoverEl.contains(e.target) && e.target !== openPopoverEl._anchor){
+    closePopover();
+  }
+}
+function showPopover(anchorEl, render){
+  closePopover();
+  const pop = document.createElement('div');
+  pop.className = 'popover';
+  pop._anchor = anchorEl;
+  pop._render = () => render(pop);
+  document.body.appendChild(pop);
+  const rect = anchorEl.getBoundingClientRect();
+  const top = rect.bottom + window.scrollY + 8;
+  let left = rect.left + window.scrollX;
+  const maxLeft = window.scrollX + document.documentElement.clientWidth - 296;
+  if(left > maxLeft) left = Math.max(8, maxLeft);
+  pop.style.top = top + 'px';
+  pop.style.left = left + 'px';
+  openPopoverEl = pop;
+  pop._render();
+  setTimeout(() => document.addEventListener('mousedown', onPopoverOutsideClick), 0);
+  return pop;
+}
+
+/* ======================= STATE ======================= */
+let categories = [], links = [];
+let rubric = []; // [{id,title,order_index,questions:[{id,question,order_index}]}]
+let session = null;
+let activeFilter = null;
+let groupSession = { slug: null, password: null };
+let readerPassword = '';
+let adminTab = 'links';
+let adminGroups = [], adminStudents = [];
+let openGroupId = null;
+let openBancaStage = 1;
+let publicBancaStage = 1;
+
+/* ======================= ROUTING ======================= */
+let currentRoute = parseRouteFromLocation();
+function parseRouteFromLocation(){
+  try {
+    const p = new URLSearchParams(location.search);
+    if(p.get('admin') === '1') return { name: 'admin', slug: null };
+    if(p.get('aluno') === '1') return { name: 'aluno', slug: null };
+    if(p.get('grupo')) return { name: 'grupo', slug: p.get('grupo') };
+  } catch { /* about:srcdoc and similar sandboxed contexts */ }
+  return { name: 'home', slug: null };
+}
+function getRoute(){ return currentRoute.name; }
+
+function goHome(){ navigateTo({ name: 'home', slug: null }, location.pathname); }
+function goAdmin(){ navigateTo({ name: 'admin', slug: null }, '?admin=1'); }
+function goAluno(){ alunoMode = 'register'; navigateTo({ name: 'aluno', slug: null }, '?aluno=1'); }
+function goGrupo(slug){ navigateTo({ name: 'grupo', slug }, '?grupo=' + encodeURIComponent(slug)); }
+function navigateTo(routeObj, search){
+  currentRoute = routeObj;
+  // Best-effort URL sync — some preview contexts (e.g. a sandboxed srcdoc
+  // iframe) reject pushState entirely. The route itself lives in memory
+  // above, so navigation keeps working either way.
+  try { history.pushState(null, '', search); } catch { /* ignore */ }
+  renderRoute();
+}
+window.addEventListener('popstate', () => { currentRoute = parseRouteFromLocation(); renderRoute(); });
+
+function renderHeaderNav(){
+  const nav = $('headerNav');
+  const route = getRoute();
+  nav.innerHTML = '';
+
+  if(route !== 'home'){
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'back-link'; back.innerHTML = phIcon('arrow-left') + 'Início';
+    back.onclick = goHome;
+    nav.appendChild(back);
+  }
+
+  const alunoBtn = document.createElement('button');
+  alunoBtn.className = 'nav-btn'; alunoBtn.textContent = 'Sou aluno'; alunoBtn.onclick = goAluno;
+  nav.appendChild(alunoBtn);
+
+  if(route === 'admin' && session){
+    const logout = document.createElement('button');
+    logout.className = 'nav-btn'; logout.textContent = 'Sair'; logout.onclick = doLogout;
+    nav.appendChild(logout);
+  } else {
+    const profBtn = document.createElement('button');
+    profBtn.className = 'nav-btn dark'; profBtn.textContent = 'Professor'; profBtn.onclick = goAdmin;
+    nav.appendChild(profBtn);
+  }
+}
+
+/* ======================= DATA LOADING (public) ======================= */
+async function loadLinksData(){
+  if(!sb) return;
+  const { data: cats } = await sb.from('categories').select('*').order('created_at');
+  const { data: lnks } = await sb.from('links').select('*').order('created_at', { ascending: false });
+  const { data: linkCats } = await sb.from('link_categories').select('*');
+  categories = cats || [];
+  links = (lnks || []).map(l => ({
+    id: l.id, title: l.title, url: l.url, desc: l.description || '', createdAt: l.created_at,
+    categoryIds: (linkCats || []).filter(lc => lc.link_id === l.id).map(lc => lc.category_id),
+  }));
+}
+async function saveLinkCategories(linkId, categoryIds){
+  await sb.from('link_categories').delete().eq('link_id', linkId);
+  if(categoryIds && categoryIds.length){
+    await sb.from('link_categories').insert(categoryIds.map(cid => ({ link_id: linkId, category_id: cid })));
+  }
+}
+async function loadRubric(){
+  if(!sb) return;
+  const { data: cats } = await sb.from('rubric_categories').select('*').order('order_index');
+  const { data: qs } = await sb.from('rubric_questions').select('*').order('order_index');
+  rubric = (cats||[]).map(c => ({ ...c, questions: (qs||[]).filter(q => q.category_id === c.id) }));
+}
+
+/* ======================= HOME (link repository) ======================= */
+function renderHomePage(){
+  root().innerHTML = `
+    <div class="main">
+      <div class="config-warning" id="configWarning" style="display:${isMockMode ? '' : 'none'}">
+        <strong>Modo de teste:</strong> o Supabase ainda não está configurado, então os dados ficam salvos
+        localmente aqui neste navegador/preview (não é banco de dados real, e não é compartilhado com outras pessoas).
+        Para publicar de verdade: substitua <code>COLE_AQUI_SUA_SUPABASE_URL</code> e
+        <code>COLE_AQUI_SUA_SUPABASE_ANON_KEY</code> no arquivo, rode o <code>schema-supabase.sql</code> e crie o
+        usuário admin em Authentication → Users no painel do Supabase.
+      </div>
+      <div class="search-wrap">
+        <span class="search-icon">${phIcon('magnifying-glass')}</span>
+        <input id="searchInput" class="search" type="text" placeholder="Pesquise por título, descrição ou palavra-chave...">
+      </div>
+      <div class="filters" id="filterPills"></div>
+      <div class="section-title"><span id="sectionLabel">Todos os Links Disponíveis</span><span class="section-count" id="sectionCount"></span></div>
+      <div class="grid" id="publicGrid"></div>
+    </div>`;
+  $('searchInput').addEventListener('input', renderGrid);
+  renderFilters();
+  renderGrid();
+}
+function filteredLinks(){
+  const q = ($('searchInput')?.value || '').trim().toLowerCase();
+  return links.filter(l => (!activeFilter || (l.categoryIds||[]).includes(activeFilter)) &&
+    (!q || l.title.toLowerCase().includes(q) || l.desc.toLowerCase().includes(q)));
+}
+function renderFilters(){
+  const wrap = $('filterPills'); wrap.innerHTML = '';
+  const allBtn = document.createElement('button');
+  allBtn.className = 'pill' + (activeFilter === null ? ' active' : '');
+  allBtn.textContent = 'Tudo';
+  allBtn.onclick = () => { activeFilter = null; renderFilters(); renderGrid(); };
+  wrap.appendChild(allBtn);
+  categories.forEach(cat => {
+    const btn = document.createElement('button');
+    const isActive = activeFilter === cat.id;
+    btn.className = 'pill' + (isActive ? ' active' : '');
+    btn.textContent = cat.name;
+    if(!isActive && cat.color) btn.style.borderColor = rgba(cat.color, 0.4);
+    btn.onclick = () => { activeFilter = isActive ? null : cat.id; renderFilters(); renderGrid(); };
+    wrap.appendChild(btn);
+  });
+}
+function renderGrid(){
+  const grid = $('publicGrid'); if(!grid) return;
+  grid.innerHTML = '';
+  const fl = filteredLinks();
+  if(activeFilter){
+    const cat = categories.find(c => c.id === activeFilter);
+    $('sectionLabel').textContent = cat ? `Links — ${cat.name}` : 'Links';
+  } else { $('sectionLabel').textContent = 'Todos os Links Disponíveis'; }
+  $('sectionCount').textContent = `(${fl.length})`;
+  if(!fl.length){
+    grid.innerHTML = '<div class="empty"><strong>Nenhum link encontrado</strong>Tente outro filtro ou termo de busca.</div>';
+    return;
+  }
+  fl.forEach(link => {
+    const linkCats = (link.categoryIds || []).map(id => categories.find(c => c.id === id)).filter(Boolean);
+    const card = document.createElement('div'); card.className = 'link-card';
+    const bar = document.createElement('div'); bar.className = 'card-top-bar';
+    if(linkCats[0]?.color) bar.style.background = linkCats[0].color;
+    card.appendChild(bar);
+    const body = document.createElement('div'); body.className = 'card-body';
+    const header = document.createElement('div'); header.className = 'card-header';
+    const titleRow = document.createElement('div'); titleRow.className = 'card-title-row';
+    const favList = favicons(link.url);
+    if(favList.length){
+      const img = document.createElement('img'); img.className = 'favicon'; img.referrerPolicy = 'no-referrer';
+      let attempt = 0; img.src = favList[0];
+      img.onerror = () => { attempt++; attempt < favList.length ? (img.src = favList[attempt]) : (img.style.display='none'); };
+      titleRow.appendChild(img);
+    }
+    const titleLink = document.createElement('a'); titleLink.className = 'card-title';
+    titleLink.href = link.url; titleLink.target = '_blank'; titleLink.rel = 'noopener noreferrer'; titleLink.textContent = link.title;
+    titleRow.appendChild(titleLink); header.appendChild(titleRow);
+    body.appendChild(header);
+    if(linkCats.length){
+      const badgeRow = document.createElement('div');
+      badgeRow.style.cssText = 'display:flex; flex-wrap:wrap; gap:6px;';
+      linkCats.forEach(cat => {
+        const badge = document.createElement('span'); badge.className = 'card-badge'; badge.textContent = cat.name.toUpperCase();
+        badge.style.setProperty('--badge-bg', rgba(cat.color, 0.12)); badge.style.setProperty('--badge-fg', cat.color);
+        badgeRow.appendChild(badge);
+      });
+      body.appendChild(badgeRow);
+    }
+    if(link.desc){ const p = document.createElement('p'); p.className = 'card-desc'; p.textContent = link.desc; body.appendChild(p); }
+    else { const sp = document.createElement('div'); sp.style.flex = '1'; body.appendChild(sp); }
+    const footer = document.createElement('div'); footer.className = 'card-footer';
+    const date = document.createElement('div'); date.className = 'card-date';
+    date.innerHTML = `<strong>Adicionado em:</strong>${fmtDate(link.createdAt)}`;
+    footer.appendChild(date);
+    const actions = document.createElement('div'); actions.className = 'card-actions';
+    const copyBtn = document.createElement('button'); copyBtn.className = 'btn-copy'; copyBtn.type = 'button';
+    copyBtn.title = 'Copiar link'; copyBtn.setAttribute('aria-label', 'Copiar link');
+    copyBtn.innerHTML = phIcon('copy');
+    copyBtn.onclick = () => { navigator.clipboard.writeText(link.url).catch(()=>{}); showToast('Link copiado!'); };
+    const accessBtn = document.createElement('a'); accessBtn.className = 'btn-access';
+    accessBtn.href = link.url; accessBtn.target = '_blank'; accessBtn.rel = 'noopener noreferrer';
+    accessBtn.innerHTML = 'Acessar' + phIcon('arrow-square-out');
+    actions.append(copyBtn, accessBtn); footer.appendChild(actions);
+    body.appendChild(footer); card.appendChild(body); grid.appendChild(card);
+  });
+}
+
+/* ======================= ALUNO (registro público) ======================= */
+let alunoMode = 'register'; // 'register' | 'login'
+function renderAlunoPage(){
+  root().innerHTML = `
+    <div class="main narrow">
+      <div class="gate-box" style="margin-top:20px;">
+        <span class="eyebrow-badge"><span class="dot lv-gradient-dot"></span>Acesso de aluno</span>
+        <h2>Área do aluno</h2>
+        <div class="tab-nav" id="alunoModeTabs" style="justify-content:center; border-bottom:none; padding-bottom:0; margin-top:20px; margin-bottom:8px;"></div>
+        <div id="alunoModeBody"></div>
+      </div>
+    </div>`;
+  const tabsWrap = $('alunoModeTabs');
+  [['register', 'Quero me registrar'], ['login', 'Já me registrei']].forEach(([id, label]) => {
+    const b = document.createElement('button');
+    b.className = 'tab-btn' + (alunoMode === id ? ' active' : '');
+    b.textContent = label;
+    b.onclick = () => { alunoMode = id; renderAlunoModeBody(); };
+    tabsWrap.appendChild(b);
+  });
+  renderAlunoModeBody();
+}
+function renderAlunoModeBody(){
+  document.querySelectorAll('#alunoModeTabs .tab-btn').forEach(btn => {
+    btn.classList.toggle('active', (btn.textContent === 'Quero me registrar') === (alunoMode === 'register'));
+  });
+  const body = $('alunoModeBody');
+  if(alunoMode === 'register'){
+    body.innerHTML = `
+      <p>Informe seu nome completo e e-mail. O professor vai avaliar e te incluir em um dos grupos.</p>
+      <input id="alunoName" class="field" type="text" placeholder="Nome completo">
+      <input id="alunoEmail" class="field" type="email" placeholder="E-mail">
+      <div class="error-msg" id="alunoError"></div>
+      <div class="success-msg" id="alunoSuccess"></div>
+      <button class="btn-primary" id="alunoSubmitBtn">Registrar</button>`;
+    $('alunoSubmitBtn').onclick = submitStudentRegistration;
+    $('alunoEmail').addEventListener('keydown', e => { if(e.key === 'Enter') submitStudentRegistration(); });
+  } else {
+    body.innerHTML = `
+      <p>Digite seu e-mail e a senha do seu grupo pra entrar.</p>
+      <input id="alunoLoginEmail" class="field" type="email" placeholder="E-mail">
+      <input id="alunoLoginPassword" class="field" type="password" placeholder="Senha do grupo">
+      <div class="error-msg" id="alunoLoginError"></div>
+      <button class="btn-primary" id="alunoLoginBtn">Entrar</button>`;
+    $('alunoLoginBtn').onclick = submitStudentLogin;
+    $('alunoLoginPassword').addEventListener('keydown', e => { if(e.key === 'Enter') submitStudentLogin(); });
+  }
+}
+async function submitStudentRegistration(){
+  const name = $('alunoName').value.trim();
+  const email = $('alunoEmail').value.trim();
+  $('alunoError').textContent = ''; $('alunoSuccess').textContent = '';
+  if(!name || !email){ $('alunoError').textContent = 'Preencha nome e e-mail.'; return; }
+  if(!/^\S+@\S+\.\S+$/.test(email)){ $('alunoError').textContent = 'Informe um e-mail válido.'; return; }
+  $('alunoSubmitBtn').disabled = true;
+  const { error } = await sb.from('students').insert({ full_name: name, email, status: 'pending' });
+  $('alunoSubmitBtn').disabled = false;
+  if(error){ $('alunoError').textContent = 'Não foi possível registrar agora. Tente novamente.'; return; }
+  $('alunoName').value=''; $('alunoEmail').value='';
+  $('alunoSuccess').textContent = 'Registrado! Assim que o professor te incluir em um grupo, use a aba "Já me registrei" pra entrar.';
+}
+async function submitStudentLogin(){
+  const email = $('alunoLoginEmail').value.trim();
+  const password = $('alunoLoginPassword').value;
+  $('alunoLoginError').textContent = '';
+  if(!email || !password){ $('alunoLoginError').textContent = 'Preencha e-mail e senha.'; return; }
+  $('alunoLoginBtn').disabled = true;
+  const { data, error } = await sb.rpc('student_group_login', { p_email: email, p_password: password });
+  $('alunoLoginBtn').disabled = false;
+  if(error){ $('alunoLoginError').textContent = 'Não foi possível entrar agora. Tente novamente.'; return; }
+  if(!data || data.error === 'e-mail não encontrado'){ $('alunoLoginError').textContent = 'E-mail não encontrado. Use a aba "Quero me registrar".'; return; }
+  if(data.error === 'pending'){ $('alunoLoginError').textContent = 'Seu registro ainda está pendente — aguarde o professor te incluir em um grupo.'; return; }
+  if(data.error === 'senha incorreta'){ $('alunoLoginError').textContent = 'Senha incorreta.'; return; }
+  await loadRubric();
+  groupSession = { slug: data.slug, password };
+  currentRoute = { name: 'grupo', slug: data.slug };
+  renderHeaderNav();
+  renderGrupoPublic(data);
+}
+
+/* ======================= RUBRIC GRID (shared: admin + professores) ======================= */
+function renderRubricGrid(rubricData, group, opts){
+  const wrapper = document.createElement('div');
+  const evaluators = group.evaluators || [];
+  const scores = group.scores || [];
+  if(!evaluators.length){
+    wrapper.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Nenhum avaliador cadastrado para este grupo ainda.</p>';
+    return wrapper;
+  }
+  rubricData.forEach(cat => {
+    const catDiv = document.createElement('div'); catDiv.className = 'rubric-category';
+    const heading = document.createElement('div'); heading.className = 'cat-heading';
+    heading.innerHTML = `<span class="cat-num">${cat.order_index}</span>${esc(cat.title)}`;
+    catDiv.appendChild(heading);
+    (cat.questions||[]).forEach(q => {
+      const qDiv = document.createElement('div'); qDiv.className = 'rubric-question';
+      const qText = document.createElement('div'); qText.className = 'q-text'; qText.textContent = q.question;
+      qDiv.appendChild(qText);
+      const grid = document.createElement('div'); grid.className = 'score-eval-grid';
+      evaluators.forEach(ev => {
+        const existing = scores.find(s => s.evaluator_id === ev.id && s.question_id === q.id);
+        const cell = document.createElement('div');
+        cell.className = 'score-cell' + (existing && existing.rating ? ' answered' : '');
+        const nameRow = document.createElement('div'); nameRow.className = 'eval-name';
+        const nameSpan = document.createElement('span'); nameSpan.textContent = ev.name;
+        const checkSpan = document.createElement('span'); checkSpan.className = 'check';
+        checkSpan.innerHTML = existing && existing.rating ? phIcon('check', {weight:'bold'}) : '';
+        nameRow.append(nameSpan, checkSpan);
+        const select = document.createElement('select');
+        select.disabled = !opts.canEdit;
+        select.innerHTML = '<option value="">— sem nota —</option>' +
+          RATING_ORDER.map(r => `<option value="${r}" ${existing && existing.rating===r ? 'selected':''}>${RATING_LABELS[r]}</option>`).join('');
+        if(opts.canEdit){
+          select.onchange = async () => {
+            select.disabled = true;
+            await opts.onScoreChange(ev.id, q.id, select.value || null);
+            select.disabled = false;
+            cell.classList.toggle('answered', !!select.value);
+            checkSpan.innerHTML = select.value ? phIcon('check', {weight:'bold'}) : '';
+          };
+        }
+        cell.append(nameRow, select);
+        grid.appendChild(cell);
+      });
+      qDiv.appendChild(grid); catDiv.appendChild(qDiv);
+    });
+    wrapper.appendChild(catDiv);
+  });
+  return wrapper;
+}
+
+/* ---- Versão de visualização (sem cara de formulário) — usada só na
+   página pública do grupo, mostra o conceito como selo, não como select ---- */
+/* ---- Painel de resultados: nota geral, distribuição, médias por critério ---- */
+const RATING_VALUES = { muito_fraco: 1, regular: 2, bom: 3, muito_bom: 4, excelente: 5 };
+const RATING_BAR_COLORS = { muito_fraco: '#DC2626', regular: '#D97706', bom: '#D4A017', muito_bom: '#4ADE80', excelente: '#16A34A' };
+
+function computeBancaStats(rubricData, banca){
+  const scores = (banca.scores || []).filter(s => s.rating && RATING_VALUES[s.rating] != null);
+  const total = scores.length;
+  const overallAvg = total ? scores.reduce((sum, s) => sum + RATING_VALUES[s.rating], 0) / total : null;
+
+  const distribution = {};
+  RATING_ORDER.forEach(r => { distribution[r] = 0; });
+  scores.forEach(s => { distribution[s.rating]++; });
+
+  const perCategory = rubricData.map(cat => {
+    const qIds = new Set((cat.questions || []).map(q => q.id));
+    const catScores = scores.filter(s => qIds.has(s.question_id));
+    const avg = catScores.length ? catScores.reduce((sum, s) => sum + RATING_VALUES[s.rating], 0) / catScores.length : null;
+    return { title: cat.title, order_index: cat.order_index, avg };
+  });
+
+  return { overallAvg, total, distribution, perCategory };
+}
+function nearestRatingKey(avg){
+  const rounded = Math.min(5, Math.max(1, Math.round(avg)));
+  return RATING_ORDER[rounded - 1];
+}
+function renderResultsDashboard(rubricData, banca){
+  const wrapper = document.createElement('div');
+  const stats = computeBancaStats(rubricData, banca);
+
+  const statsGrid = document.createElement('div');
+  statsGrid.className = 'stats-grid';
+
+  const geralCard = document.createElement('div');
+  geralCard.className = 'stat-card';
+  if(stats.overallAvg == null){
+    geralCard.innerHTML = `<div class="stat-label">Nota geral</div><p class="stat-empty">A banca ainda não avaliou esta etapa.</p>`;
+  } else {
+    const key = nearestRatingKey(stats.overallAvg);
+    const pct = (stats.overallAvg / 5) * 100;
+    geralCard.innerHTML = `
+      <div class="stat-label">Nota geral</div>
+      <div class="stat-big-number"><span class="num">${stats.overallAvg.toFixed(2)}</span><span class="denom">/ 5,00</span></div>
+      <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%; background:${RATING_BAR_COLORS[key]};"></div></div>
+      <div class="stat-concept">Conceito final: <strong style="color:${RATING_BAR_COLORS[key]}">${esc(RATING_LABELS[key])}</strong></div>`;
+  }
+  statsGrid.appendChild(geralCard);
+
+  const distCard = document.createElement('div');
+  distCard.className = 'stat-card';
+  const distRows = RATING_ORDER.map(r => {
+    const count = stats.distribution[r];
+    const pct = stats.total ? (count / stats.total) * 100 : 0;
+    return `
+      <div class="dist-row">
+        <span class="dist-label">${esc(RATING_LABELS[r])}</span>
+        <div class="dist-track"><div class="dist-fill" style="width:${pct}%; background:${RATING_BAR_COLORS[r]};"></div></div>
+        <span class="dist-count">${count} (${Math.round(pct)}%)</span>
+      </div>`;
+  }).join('');
+  distCard.innerHTML = `<div class="stat-label">Distribuição das avaliações</div>${distRows}`;
+  statsGrid.appendChild(distCard);
+
+  wrapper.appendChild(statsGrid);
+
+  const critHeading = document.createElement('div');
+  critHeading.className = 'criteria-heading';
+  critHeading.textContent = 'Médias por Critério';
+  wrapper.appendChild(critHeading);
+
+  const critGrid = document.createElement('div');
+  critGrid.className = 'criteria-grid';
+  stats.perCategory.forEach(cat => {
+    const card = document.createElement('div');
+    card.className = 'criteria-card';
+    if(cat.avg == null){
+      card.innerHTML = `<div class="crit-num">${String(cat.order_index).padStart(2,'0')}</div><div class="crit-title">${esc(cat.title)}</div><p class="stat-empty">Sem notas ainda.</p>`;
+    } else {
+      const key = nearestRatingKey(cat.avg);
+      const pct = (cat.avg / 5) * 100;
+      card.innerHTML = `
+        <div class="crit-num">${String(cat.order_index).padStart(2,'0')}</div>
+        <div class="crit-title">${esc(cat.title)}</div>
+        <div class="crit-score"><span class="num">${cat.avg.toFixed(2)}</span><span class="denom">/ 5</span></div>
+        <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%; background:${RATING_BAR_COLORS[key]};"></div></div>`;
+    }
+    critGrid.appendChild(card);
+  });
+  wrapper.appendChild(critGrid);
+
+  return wrapper;
+}
+
+function renderRubricResultsView(rubricData, banca){
+  const wrapper = document.createElement('div');
+  const evaluators = banca.evaluators || [];
+  const scores = banca.scores || [];
+  if(!evaluators.length){
+    wrapper.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">A banca ainda não avaliou esta etapa.</p>';
+    return wrapper;
+  }
+  rubricData.forEach(cat => {
+    const catDiv = document.createElement('div'); catDiv.className = 'rubric-category';
+    const heading = document.createElement('div'); heading.className = 'cat-heading';
+    heading.innerHTML = `<span class="cat-num">${cat.order_index}</span>${esc(cat.title)}`;
+    catDiv.appendChild(heading);
+    (cat.questions || []).forEach(q => {
+      const qDiv = document.createElement('div'); qDiv.className = 'rubric-question';
+      const qText = document.createElement('div'); qText.className = 'q-text'; qText.textContent = q.question;
+      qDiv.appendChild(qText);
+      const grid = document.createElement('div'); grid.className = 'result-eval-grid';
+      evaluators.forEach(ev => {
+        const existing = scores.find(s => s.evaluator_id === ev.id && s.question_id === q.id);
+        const rating = existing?.rating;
+        const cell = document.createElement('div'); cell.className = 'result-cell';
+        cell.innerHTML = `
+          <span class="result-eval-name">${esc(ev.name)}</span>
+          <span class="result-badge ${rating ? 'rating-' + rating : 'rating-none'}">${rating ? esc(RATING_LABELS[rating]) : 'Aguardando'}</span>`;
+        grid.appendChild(cell);
+      });
+      qDiv.appendChild(grid); catDiv.appendChild(qDiv);
+    });
+    wrapper.appendChild(catDiv);
+  });
+  return wrapper;
+}
+
+/* ======================= PROFESSORES (senha geral da banca) ======================= */
+async function tryLeituraLogin(){
+  const pw = $('leituraPassword').value;
+  if(!pw){ $('leituraError').textContent = 'Digite a senha.'; return; }
+  if(!sb){ $('leituraError').textContent = 'Supabase não configurado.'; return; }
+  $('leituraEnterBtn').disabled = true;
+  const { data, error } = await sb.rpc('banca_reader_login', { p_password: pw });
+  $('leituraEnterBtn').disabled = false;
+  if(error || !data || data.error){ $('leituraError').textContent = 'Senha incorreta.'; return; }
+  readerPassword = pw;
+  renderLeituraPanel(data);
+}
+let leituraData = null; // { reader_id, reader_name, rubric, groups }
+
+function myAssignments(g){
+  const readerId = leituraData.reader_id;
+  return (g.bancas || [])
+    .map(b => ({ banca: b, evaluator: (b.evaluators || []).find(e => e.reader_id === readerId) }))
+    .filter(x => x.evaluator);
+}
+function myProgress(banca, evaluatorId){
+  const total = (leituraData.rubric || []).reduce((sum, cat) => sum + (cat.questions || []).length, 0);
+  const answered = (banca.scores || []).filter(s => s.evaluator_id === evaluatorId && s.rating).length;
+  return { answered, total };
+}
+
+function renderLeituraPanel(data){
+  leituraData = data;
+  renderLeituraGroupList();
+}
+function renderLeituraGroupList(){
+  const allGroups = leituraData.groups || [];
+  const myGroups = allGroups.filter(g => myAssignments(g).length > 0);
+  root().innerHTML = `
+    <div class="main">
+      <div class="section-title">Olá, ${esc(leituraData.reader_name || '')} <span class="section-count">(${myGroups.length} ${myGroups.length === 1 ? 'grupo' : 'grupos'})</span></div>
+      <div class="section-sub">Selecione o grupo para lançar as notas.</div>
+      <div class="group-cards-grid" id="leituraGroupsGrid"></div>
+    </div>`;
+  const grid = $('leituraGroupsGrid');
+  if(!myGroups.length){
+    grid.innerHTML = '<div class="empty small"><strong>Você ainda não foi incluído em nenhuma banca</strong>Fale com o professor para ser adicionado a um grupo.</div>';
+    return;
+  }
+  myGroups.forEach(g => {
+    const assignments = myAssignments(g);
+    const card = document.createElement('div'); card.className = 'group-card';
+    let subtitle;
+    if(assignments.length === 1){
+      const { answered, total } = myProgress(assignments[0].banca, assignments[0].evaluator.id);
+      subtitle = `${esc(BANCA_LABELS[assignments[0].banca.stage])} · ${answered}/${total} respondidas`;
+    } else {
+      subtitle = `${assignments.length} etapas atribuídas a você`;
+    }
+    card.innerHTML = `<span class="proj-title">${esc(g.project_title || g.group_name)}</span><span class="authors">${subtitle}</span>`;
+    card.onclick = () => openGroupAssignment(g);
+    grid.appendChild(card);
+  });
+}
+function openGroupAssignment(g){
+  const assignments = myAssignments(g);
+  if(assignments.length === 1){
+    const { banca, evaluator } = assignments[0];
+    openNotesWizard(leituraData.rubric || [], banca, evaluator, () => renderLeituraGroupList());
+    return;
+  }
+  root().innerHTML = `
+    <div class="main">
+      <button type="button" class="back-link" id="leituraBack" style="margin-bottom:16px; display:inline-flex;">${phIcon('arrow-left')}Voltar aos grupos</button>
+      <div class="section-title" style="margin-bottom:2px;">${esc(g.project_title || g.group_name)}</div>
+      <div class="section-sub">Você foi incluído em mais de uma etapa deste grupo — escolha qual.</div>
+      <div class="group-cards-grid" id="leituraStageGrid"></div>
+    </div>`;
+  $('leituraBack').onclick = () => renderLeituraGroupList();
+  const grid = $('leituraStageGrid');
+  assignments.forEach(({ banca, evaluator }) => {
+    const { answered, total } = myProgress(banca, evaluator.id);
+    const card = document.createElement('div'); card.className = 'group-card';
+    card.innerHTML = `<span class="proj-title">${esc(BANCA_LABELS[banca.stage])}</span><span class="authors">${answered}/${total} respondidas${banca.scheduled_date ? ' · ' + fmtDate(banca.scheduled_date) : ''}</span>`;
+    card.onclick = () => openNotesWizard(leituraData.rubric || [], banca, evaluator, () => renderLeituraGroupList());
+    grid.appendChild(card);
+  });
+}
+
+/* ======================= GRUPO (página pública do grupo) ======================= */
+function renderGrupoGate(slug){
+  root().innerHTML = `
+    <div class="main narrow">
+      <div class="gate-box" style="margin-top:20px;">
+        <span class="eyebrow-badge"><span class="dot lv-gradient-dot"></span>Área do grupo</span><h2>Página do grupo</h2>
+        <p>Digite a senha de acesso do grupo.</p>
+        <input id="grupoPassword" class="field" type="password" placeholder="Senha">
+        <div class="error-msg" id="grupoError"></div>
+        <button class="btn-primary" id="grupoEnterBtn">Entrar</button>
+      </div>
+    </div>`;
+  $('grupoEnterBtn').onclick = () => tryGrupoLogin(slug);
+  $('grupoPassword').addEventListener('keydown', e => { if(e.key==='Enter') tryGrupoLogin(slug); });
+}
+async function tryGrupoLogin(slug){
+  const pw = $('grupoPassword').value;
+  if(!pw){ $('grupoError').textContent = 'Digite a senha.'; return; }
+  if(!sb){ $('grupoError').textContent = 'Supabase não configurado.'; return; }
+  $('grupoEnterBtn').disabled = true;
+  const { data, error } = await sb.rpc('get_group_public_view', { p_slug: slug, p_password: pw });
+  $('grupoEnterBtn').disabled = false;
+  if(error || !data || data.error){ $('grupoError').textContent = 'Senha incorreta.'; return; }
+  await loadRubric();
+  groupSession = { slug, password: pw };
+  renderGrupoPublic(data);
+}
+function renderGrupoPublic(g){
+  publicBancaStage = 1;
+  const memberNames = (g.students || []).map(s => esc(s.full_name)).join(', ') || 'Nenhum aluno atribuído ainda.';
+  root().innerHTML = `
+    <div class="main">
+      <div class="section-title" style="margin-bottom:2px;">${esc(g.project_title || g.group_name)}</div>
+      <div class="section-sub" style="margin-bottom:2px;">${esc(g.group_name)}</div>
+      <div class="section-sub" style="margin-top:0;">${memberNames}</div>
+
+      <div class="tab-nav" id="publicBancaTabs"></div>
+      <div id="publicBancaBody"></div>
+    </div>`;
+  const bancas = g.bancas || [];
+  const tabsWrap = $('publicBancaTabs');
+  [1,2,3].forEach(stage => {
+    const b = document.createElement('button');
+    b.className = 'tab-btn' + (publicBancaStage === stage ? ' active' : '');
+    b.textContent = BANCA_LABELS[stage];
+    b.onclick = () => { publicBancaStage = stage; renderPublicBancaBody(bancas); };
+    tabsWrap.appendChild(b);
+  });
+  renderPublicBancaBody(bancas);
+}
+function renderPublicBancaBody(bancas){
+  document.querySelectorAll('#publicBancaTabs .tab-btn').forEach((btn, i) => btn.classList.toggle('active', i + 1 === publicBancaStage));
+  const banca = bancas.find(b => b.stage === publicBancaStage) || { evaluators:[], scores:[] };
+  const reportUrl = getPublicFileUrl(banca.report_file_path);
+  const body = $('publicBancaBody');
+  body.innerHTML = `
+    <div class="admin-section">
+      <h3>${esc(BANCA_LABELS[publicBancaStage])}</h3>
+      <div class="hint">${banca.scheduled_date ? 'Data: ' + fmtDate(banca.scheduled_date) : 'Data ainda não definida.'}</div>
+    </div>
+    <div class="admin-section">
+      <h3>Anexos</h3>
+      <div class="hint">Envie o relatório (PDF ou DOCX) e cole o link da apresentação desta etapa.</div>
+      <div class="simple-list" style="margin-bottom:14px;">
+        ${reportUrl ? `<div class="simple-row"><div class="meta"><strong>${esc(banca.report_file_name || 'Relatório')}</strong></div><a class="btn-sm" href="${reportUrl}" target="_blank" rel="noopener">Baixar</a></div>` : ''}
+        ${(!reportUrl && !banca.presentation_link) ? '<p style="font-size:13px;color:var(--ink-soft)">Nenhum anexo enviado ainda.</p>' : ''}
+      </div>
+      <div class="form-grid">
+        <div>
+          <label>Relatório (substitui o atual, se enviar um novo)</label>
+          <input id="pubReportFile" type="file" accept=".pdf,.doc,.docx">
+        </div>
+        <div><label>Link da apresentação</label><input id="pubPresentation" class="field" value="${esc(banca.presentation_link||'')}" placeholder="https://docs.google.com/presentation/..."></div>
+      </div>
+      <div class="error-msg" id="pubAttachError"></div>
+      <div class="success-msg" id="pubAttachSuccess"></div>
+      <div style="display:flex; justify-content:flex-end;"><button class="btn-primary auto" id="pubSaveAttachBtn">Salvar anexos</button></div>
+    </div>
+    <div class="admin-section">
+      <h3>Banca avaliadora</h3>
+      ${(banca.evaluators||[]).map(ev => `
+        <div class="evaluator-row">
+          <div class="meta"><strong>${esc(ev.name)}</strong><span>${esc(ev.role||'')}</span>${ev.comment ? `<div class="comment">${esc(ev.comment)}</div>` : ''}</div>
+        </div>`).join('') || '<p style="font-size:13px;color:var(--ink-soft)">Banca ainda não definida para esta etapa.</p>'}
+    </div>
+    <div id="resultsDashboard"></div>
+    <div class="admin-section">
+      <h3>Detalhamento por pergunta</h3>
+      <div id="grupoScoreGrid"></div>
+    </div>`;
+  $('resultsDashboard').appendChild(renderResultsDashboard(rubric, banca));
+  $('grupoScoreGrid').appendChild(renderRubricResultsView(rubric, banca));
+
+  $('pubSaveAttachBtn').onclick = async () => {
+    $('pubAttachError').textContent = ''; $('pubAttachSuccess').textContent = '';
+    const file = $('pubReportFile').files[0];
+    let reportPath = null, reportName = null;
+    if(file){
+      const path = `${groupSession.slug}/${publicBancaStage}/${Date.now()}-${file.name}`;
+      const { error: upErr } = await sb.storage.from('group-attachments').upload(path, file, { upsert: true });
+      if(upErr){ $('pubAttachError').textContent = 'Não foi possível enviar o arquivo agora.'; return; }
+      reportPath = path; reportName = file.name;
+    }
+    $('pubSaveAttachBtn').disabled = true;
+    const { data: ok, error } = await sb.rpc('submit_banca_attachments', {
+      p_group_slug: groupSession.slug, p_group_password: groupSession.password, p_stage: publicBancaStage,
+      p_report_file_path: reportPath, p_report_file_name: reportName,
+      p_presentation_link: $('pubPresentation').value.trim() || null,
+    });
+    $('pubSaveAttachBtn').disabled = false;
+    if(error || !ok){ $('pubAttachError').textContent = 'Não foi possível salvar agora. Tente novamente.'; return; }
+    if(reportPath){ banca.report_file_path = reportPath; banca.report_file_name = reportName; }
+    banca.presentation_link = $('pubPresentation').value.trim() || null;
+    $('pubAttachSuccess').textContent = 'Anexos salvos.';
+    renderPublicBancaBody(bancas);
+  };
+}
+
+/* ======================= ADMIN: LOGIN ======================= */
+let adminLoginMode = 'professor'; // 'professor' | 'banca'
+function renderAdminLogin(){
+  root().innerHTML = `
+    <div class="main narrow">
+      <div class="gate-box" style="margin-top:20px;">
+        <span class="eyebrow-badge"><span class="dot lv-gradient-dot"></span>Acesso restrito</span>
+        <h2>Entrar</h2>
+        <div class="tab-nav" id="adminLoginTabs" style="justify-content:center; border-bottom:none; padding-bottom:0; margin-top:20px; margin-bottom:8px;"></div>
+        <div id="adminLoginBody"></div>
+      </div>
+    </div>`;
+  const tabsWrap = $('adminLoginTabs');
+  [['professor', 'Professor'], ['banca', 'Banca']].forEach(([id, label]) => {
+    const b = document.createElement('button');
+    b.className = 'tab-btn' + (adminLoginMode === id ? ' active' : '');
+    b.textContent = label;
+    b.onclick = () => { adminLoginMode = id; renderAdminLoginBody(); };
+    tabsWrap.appendChild(b);
+  });
+  renderAdminLoginBody();
+}
+function renderAdminLoginBody(){
+  document.querySelectorAll('#adminLoginTabs .tab-btn').forEach(btn => {
+    btn.classList.toggle('active', (btn.textContent === 'Professor') === (adminLoginMode === 'professor'));
+  });
+  const body = $('adminLoginBody');
+  if(adminLoginMode === 'professor'){
+    body.innerHTML = `
+      <p>Entre com seu e-mail e senha de administrador.</p>
+      <input type="email" id="loginEmail" class="field" placeholder="E-mail">
+      <input type="password" id="loginPassword" class="field" placeholder="Senha">
+      <div class="error-msg" id="loginError"></div>
+      <button class="btn-primary" id="loginBtn">Entrar</button>`;
+    $('loginBtn').onclick = doAdminLogin;
+    $('loginPassword').addEventListener('keydown', e => { if(e.key==='Enter') doAdminLogin(); });
+  } else {
+    body.innerHTML = `
+      <p>Digite sua senha pessoal para ver todos os grupos (somente leitura).</p>
+      <input id="leituraPassword" class="field" type="password" placeholder="Senha">
+      <div class="error-msg" id="leituraError"></div>
+      <button class="btn-primary" id="leituraEnterBtn">Entrar</button>`;
+    $('leituraEnterBtn').onclick = tryLeituraLogin;
+    $('leituraPassword').addEventListener('keydown', e => { if(e.key==='Enter') tryLeituraLogin(); });
+  }
+}
+async function doAdminLogin(){
+  if(!sb){ $('loginError').textContent = 'Supabase não configurado.'; return; }
+  const email = $('loginEmail').value.trim();
+  const pass = $('loginPassword').value;
+  $('loginBtn').disabled = true; $('loginError').textContent = '';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  $('loginBtn').disabled = false;
+  if(error){ $('loginError').textContent = 'E-mail ou senha incorretos.'; return; }
+  session = data.session;
+  await bootAdminPanel();
+}
+async function doLogout(){
+  if(sb) await sb.auth.signOut();
+  session = null;
+  goHome();
+}
+
+/* ======================= ADMIN: PANEL SHELL ======================= */
+async function bootAdminPanel(){
+  renderHeaderNav();
+  await Promise.all([loadLinksData(), loadRubric(), loadAdminGroups(), loadAdminStudents()]);
+  openGroupId = null;
+  renderAdminPanel();
+}
+async function loadAdminGroups(){
+  const { data } = await sb.from('groups').select('*').order('order_index');
+  adminGroups = data || [];
+}
+async function loadAdminStudents(){
+  const { data } = await sb.from('students').select('*').order('created_at');
+  adminStudents = data || [];
+}
+function renderAdminPanel(){
+  root().innerHTML = `
+    <div class="main">
+      <div class="session-label">Logado como <strong>${esc(session?.user?.email || '')}</strong></div>
+      <div class="admin-layout">
+        <div class="admin-sidebar" id="adminTabNav"></div>
+        <div class="admin-content" id="adminTabBody"></div>
+      </div>
+    </div>`;
+  const tabs = [ ['links','Links'], ['alunos','Alunos'], ['grupos','Grupos'], ['usuarios','Usuários'], ['config','Configurações'] ];
+  const nav = $('adminTabNav');
+  tabs.forEach(([id,label]) => {
+    const b = document.createElement('button');
+    b.className = 'sidebar-tab-btn' + (adminTab === id ? ' active' : '');
+    b.textContent = label;
+    b.onclick = () => { adminTab = id; openGroupId = null; renderAdminPanel(); };
+    nav.appendChild(b);
+  });
+  const body = $('adminTabBody');
+  if(adminTab === 'links') renderAdminLinksTab(body);
+  else if(adminTab === 'alunos') renderAdminAlunosTab(body);
+  else if(adminTab === 'grupos') { openGroupId ? renderAdminGroupDetail(body, openGroupId) : renderAdminGruposTab(body); }
+  else if(adminTab === 'usuarios') renderAdminUsuariosTab(body);
+  else if(adminTab === 'config') renderAdminConfigTab(body);
+}
+
+/* ======================= ADMIN: LINKS TAB ======================= */
+const PALETTE = ['#2563EB','#16A34A','#DC2626','#9333EA','#D97706','#0891B2','#DB2777','#475569'];
+function nextColor(){
+  const used = new Set(categories.map(c => c.color));
+  const pool = PALETTE.filter(c => !used.has(c));
+  const src = pool.length ? pool : PALETTE;
+  return src[Math.floor(Math.random() * src.length)];
+}
+function renderAdminLinksTab(body){
+  body.innerHTML = `
+    <div class="admin-bar">
+      <div class="admin-bar-left">Cadastre e organize os links do repositório.</div>
+      <button class="btn-sm primary-outline" id="newLinkBtn">+ Novo link</button>
+    </div>
+    <div class="admin-section">
+      <h3 style="margin-bottom:14px;">Links cadastrados</h3>
+      <div class="admin-link-list" id="adminLinkList"></div>
+    </div>`;
+  $('newLinkBtn').onclick = () => openLinkModal(null, body);
+  renderLinkList(body);
+}
+
+/* Modal única para criar/editar link (título, URL, descrição, categoria,
+   data), no mesmo padrão do "+ Novo grupo". */
+function openLinkModal(link, body){
+  const isEdit = !!link;
+  showModal((box, close) => {
+    box.style.maxWidth = '460px';
+    box.innerHTML = `
+      <h3>${isEdit ? 'Editar link' : 'Novo link'}</h3>
+      <div style="margin-bottom:10px;">
+        <span class="modal-field-label">Título</span>
+        <input class="field" id="modalLinkTitle" style="margin-bottom:0;" placeholder="Título">
+      </div>
+      <div style="margin-bottom:10px;">
+        <span class="modal-field-label">URL</span>
+        <input class="field" id="modalLinkUrl" style="margin-bottom:0;" placeholder="https://exemplo.com">
+      </div>
+      <div style="margin-bottom:10px;">
+        <span class="modal-field-label">Descrição (opcional)</span>
+        <textarea class="field" id="modalLinkDesc" style="margin-bottom:0; resize:vertical; min-height:60px;" placeholder="Descrição curta"></textarea>
+      </div>
+      <div style="margin-bottom:10px;">
+        <span class="modal-field-label">Categoria</span>
+        <div class="ms-wrap" id="modalCategoryMs"></div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <span class="modal-field-label">Data de publicação</span>
+        <input type="date" class="field" id="modalLinkDate" style="margin-bottom:0;">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-sm" id="modalCancel">Cancelar</button>
+        <button class="btn-primary auto" id="modalSave">Salvar</button>
+      </div>`;
+    box.querySelector('#modalLinkTitle').value = isEdit ? link.title : '';
+    box.querySelector('#modalLinkUrl').value = isEdit ? link.url : '';
+    box.querySelector('#modalLinkDesc').value = isEdit ? link.desc : '';
+    box.querySelector('#modalLinkDate').value = isEdit ? fmtDateInput(link.createdAt) : new Date().toISOString().slice(0, 10);
+    renderCategoryMultiselect(box.querySelector('#modalCategoryMs'), isEdit ? (link.categoryIds || []) : [], () => {});
+    box.querySelector('#modalCancel').onclick = () => close(null);
+    box.querySelector('#modalSave').onclick = async () => {
+      const title = box.querySelector('#modalLinkTitle').value.trim();
+      const url = box.querySelector('#modalLinkUrl').value.trim();
+      const desc = box.querySelector('#modalLinkDesc').value.trim();
+      const categoryIds = box.querySelector('#modalCategoryMs')._getSelectedIds();
+      const dateValue = box.querySelector('#modalLinkDate').value;
+      if(!title || !url){ showAlert('Preencha ao menos o título e a URL.'); return; }
+      const payload = { title, url, description: desc };
+      if(dateValue) payload.created_at = new Date(dateValue + 'T12:00:00').toISOString();
+      let linkId = isEdit ? link.id : null;
+      if(isEdit){
+        const { error } = await sb.from('links').update(payload).eq('id', link.id);
+        if(error){ showAlert(error.message); return; }
+      } else {
+        const { data, error } = await sb.from('links').insert(payload).select().single();
+        if(error){ showAlert(error.message); return; }
+        linkId = data.id;
+      }
+      await saveLinkCategories(linkId, categoryIds);
+      await loadLinksData();
+      close(true);
+      renderLinkList(body);
+    };
+  });
+}
+
+function renderLinkList(body){
+  const wrap = $('adminLinkList'); wrap.innerHTML = '';
+  if(!links.length){ wrap.innerHTML = '<span style="font-size:13px;color:var(--ink-soft)">Nenhum link ainda.</span>'; return; }
+  links.forEach(link => wrap.appendChild(buildLinkDisplayRow(link, body)));
+}
+function buildLinkDisplayRow(link, body){
+  const cats = (link.categoryIds || []).map(id => categories.find(c => c.id === id)).filter(Boolean);
+  const row = document.createElement('div'); row.className = 'admin-link-row';
+  const meta = document.createElement('div'); meta.className = 'meta';
+  meta.style.cssText = 'display:flex; align-items:center; gap:10px; min-width:0;';
+  const favList = favicons(link.url);
+  if(favList.length){
+    const img = document.createElement('img'); img.className = 'favicon'; img.referrerPolicy = 'no-referrer';
+    let attempt = 0; img.src = favList[0];
+    img.onerror = () => { attempt++; attempt < favList.length ? (img.src = favList[attempt]) : (img.style.display = 'none'); };
+    meta.appendChild(img);
+  }
+  const textWrap = document.createElement('div'); textWrap.style.minWidth = '0';
+  textWrap.innerHTML = `<strong>${esc(link.title)}</strong><span>${cats.length ? esc(cats.map(c=>c.name).join(', ')) : 'Sem categoria'}</span>`;
+  meta.appendChild(textWrap);
+  const acts = document.createElement('div'); acts.className = 'row-acts';
+  const eb = document.createElement('button'); eb.className = 'btn-sm'; eb.textContent = 'Editar';
+  eb.onclick = () => openLinkModal(link, body);
+  const db = document.createElement('button'); db.className = 'btn-sm danger'; db.textContent = 'Excluir';
+  db.onclick = async () => {
+    if(!(await showConfirm('Excluir este link?'))) return;
+    const { error } = await sb.from('links').delete().eq('id', link.id);
+    if(error){ showAlert(error.message); return; }
+    links = links.filter(l => l.id !== link.id);
+    renderLinkList(body);
+  };
+  acts.append(eb, db); row.append(meta, acts);
+  return row;
+}
+
+/* Multiselect de categorias: chips removíveis + dropdown com checkboxes,
+   com adicionar/renomear/excluir embutidos na própria lista.
+   container._getSelectedIds() devolve o array de ids selecionados. */
+function renderCategoryMultiselect(container, initialIds, onCategoriesChanged){
+  const instanceName = 'catradio-' + Math.random().toString(36).slice(2, 9);
+  const selected = new Set((initialIds || []).slice(0, 1)); // só uma categoria por link
+  container._getSelectedIds = () => Array.from(selected);
+
+  container.innerHTML = `
+    <div class="ms-box">
+      <div class="ms-chips"></div>
+      <button type="button" class="ms-toggle">${phIcon('caret-down')}</button>
+    </div>
+    <div class="ms-dropdown" style="display:none;">
+      <div class="ms-add-row">
+        <input type="text" class="ms-add-input" placeholder="Nova categoria">
+        <button type="button" class="ms-add-btn">+</button>
+      </div>
+      <div class="ms-list"></div>
+    </div>`;
+  const box = container.querySelector('.ms-box');
+  const chipsWrap = container.querySelector('.ms-chips');
+  const dropdown = container.querySelector('.ms-dropdown');
+  const list = container.querySelector('.ms-list');
+
+  function renderChips(){
+    if(!selected.size){ chipsWrap.innerHTML = '<span class="ms-placeholder">Selecionar categoria</span>'; return; }
+    chipsWrap.innerHTML = '';
+    Array.from(selected).forEach(id => {
+      const cat = categories.find(c => c.id === id);
+      if(!cat) return;
+      const chip = document.createElement('span'); chip.className = 'ms-chip';
+      chip.style.borderColor = rgba(cat.color, 0.5); chip.style.color = cat.color; chip.style.background = rgba(cat.color, 0.1);
+      const label = document.createElement('span'); label.textContent = cat.name;
+      const x = document.createElement('button'); x.type = 'button'; x.className = 'ms-chip-x'; x.innerHTML = phIcon('x');
+      x.onclick = (e) => { e.stopPropagation(); selected.delete(id); renderChips(); renderList(); };
+      chip.append(label, x); chipsWrap.appendChild(chip);
+    });
+  }
+  function renderList(){
+    list.innerHTML = '';
+    if(!categories.length){ list.innerHTML = '<p class="ms-empty">Nenhuma categoria ainda.</p>'; return; }
+    categories.forEach(cat => {
+      const item = document.createElement('div'); item.className = 'ms-item';
+      const label = document.createElement('label'); label.className = 'ms-item-label';
+      const cb = document.createElement('input'); cb.type = 'radio'; cb.name = instanceName; cb.checked = selected.has(cat.id);
+      cb.onchange = () => { selected.clear(); selected.add(cat.id); renderChips(); };
+      const span = document.createElement('span'); span.textContent = cat.name;
+      label.append(cb, span);
+      const acts = document.createElement('span'); acts.className = 'ms-item-actions';
+      const editBtn = document.createElement('button'); editBtn.type = 'button'; editBtn.innerHTML = phIcon('pencil-simple'); editBtn.title = 'Renomear';
+      editBtn.onclick = async (e) => {
+        e.stopPropagation();
+        const result = await showPrompt('Renomear categoria', [{ key: 'name', label: 'Nome', value: cat.name }]);
+        if(!result || !result.name) return;
+        const { error } = await sb.from('categories').update({ name: result.name }).eq('id', cat.id);
+        if(error){ showAlert(error.message); return; }
+        cat.name = result.name;
+        renderChips(); renderList();
+        if(onCategoriesChanged) onCategoriesChanged();
+      };
+      const delBtn = document.createElement('button'); delBtn.type = 'button'; delBtn.innerHTML = phIcon('trash'); delBtn.title = 'Excluir';
+      delBtn.onclick = async (e) => {
+        e.stopPropagation();
+        if(!(await showConfirm(`Excluir a categoria "${cat.name}"?`))) return;
+        const { error } = await sb.from('categories').delete().eq('id', cat.id);
+        if(error){ showAlert(error.message); return; }
+        categories = categories.filter(c => c.id !== cat.id);
+        selected.delete(cat.id);
+        renderChips(); renderList();
+        if(onCategoriesChanged) onCategoriesChanged();
+      };
+      acts.append(editBtn, delBtn);
+      item.append(label, acts);
+      list.appendChild(item);
+    });
+  }
+  function setOpen(next){
+    dropdown.style.display = next ? '' : 'none';
+    box.classList.toggle('open', next);
+  }
+  box.addEventListener('click', (e) => { if(e.target.closest('.ms-chip-x')) return; setOpen(dropdown.style.display === 'none'); });
+  document.addEventListener('mousedown', (e) => { if(!container.contains(e.target)) setOpen(false); });
+
+  const addInput = container.querySelector('.ms-add-input');
+  container.querySelector('.ms-add-btn').onclick = async () => {
+    const name = addInput.value.trim();
+    if(!name) return;
+    const { data, error } = await sb.from('categories').insert({ name, color: nextColor() }).select().single();
+    if(error){ showAlert(error.message); return; }
+    categories.push(data);
+    selected.clear();
+    selected.add(data.id);
+    addInput.value = '';
+    renderChips(); renderList();
+    if(onCategoriesChanged) onCategoriesChanged();
+  };
+  addInput.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); container.querySelector('.ms-add-btn').click(); } });
+  addInput.addEventListener('click', e => e.stopPropagation());
+
+  renderChips();
+  renderList();
+}
+
+/* ======================= ADMIN: ALUNOS TAB ======================= */
+function renderAdminAlunosTab(body){
+  const pending = adminStudents.filter(s => s.status === 'pending');
+  const assigned = adminStudents.filter(s => s.status === 'assigned');
+  body.innerHTML = `
+    <div class="admin-section">
+      <h3>Registros pendentes <span style="font-weight:400;color:var(--ink-soft);">(${pending.length})</span></h3>
+      <div class="hint">Alunos que se registraram e ainda não foram incluídos em um grupo.</div>
+      <div class="simple-list" id="pendingList"></div>
+    </div>
+    <div class="admin-section">
+      <h3>Alunos atribuídos <span style="font-weight:400;color:var(--ink-soft);">(${assigned.length})</span></h3>
+      <div class="simple-list" id="assignedList"></div>
+    </div>`;
+  const pendingWrap = $('pendingList');
+  if(!pending.length){ pendingWrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Nenhum registro pendente.</p>'; }
+  else pending.forEach(s => {
+    const row = document.createElement('div'); row.className = 'simple-row';
+    const meta = document.createElement('div'); meta.className = 'meta';
+    meta.innerHTML = `<strong>${esc(s.full_name)}</strong><span>${esc(s.email)}</span>`;
+    const sel = document.createElement('select'); sel.className = 'btn-sm'; sel.style.cssText='padding:8px 10px;';
+    sel.innerHTML = '<option value="">Atribuir a um grupo…</option>' + adminGroups.map(g => `<option value="${g.id}">${esc(g.group_name)}</option>`).join('');
+    sel.onchange = async () => {
+      if(!sel.value) return;
+      const { error } = await sb.from('students').update({ status: 'assigned', group_id: sel.value }).eq('id', s.id);
+      if(error){ showAlert(error.message); return; }
+      await loadAdminStudents();
+      renderAdminAlunosTab(body);
+    };
+    const del = document.createElement('button'); del.className = 'btn-sm danger'; del.textContent = 'Remover';
+    del.onclick = async () => {
+      if(!(await showConfirm('Remover este registro?'))) return;
+      await sb.from('students').delete().eq('id', s.id);
+      await loadAdminStudents(); renderAdminAlunosTab(body);
+    };
+    const acts = document.createElement('div'); acts.className = 'row-acts'; acts.append(sel, del);
+    row.append(meta, acts); pendingWrap.appendChild(row);
+  });
+  const assignedWrap = $('assignedList');
+  if(!assigned.length){ assignedWrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Nenhum aluno atribuído ainda.</p>'; }
+  else assigned.forEach(s => {
+    const g = adminGroups.find(g => g.id === s.group_id);
+    const row = document.createElement('div'); row.className = 'simple-row';
+    const meta = document.createElement('div'); meta.className = 'meta';
+    meta.innerHTML = `<strong>${esc(s.full_name)}</strong><span>${esc(s.email)} · ${esc(g?.group_name || 'grupo removido')}</span>`;
+    const unassign = document.createElement('button'); unassign.className = 'btn-sm'; unassign.textContent = 'Remover do grupo';
+    unassign.onclick = async () => {
+      await sb.from('students').update({ status: 'pending', group_id: null }).eq('id', s.id);
+      await loadAdminStudents(); renderAdminAlunosTab(body);
+    };
+    const acts = document.createElement('div'); acts.className = 'row-acts'; acts.appendChild(unassign);
+    row.append(meta, acts); assignedWrap.appendChild(row);
+  });
+}
+
+/* ======================= ADMIN: GRUPOS TAB (lista) ======================= */
+function renderAdminGruposTab(body){
+  body.innerHTML = `
+    <div class="admin-bar">
+      <div class="admin-bar-left">Cadastre grupos, defina a senha de acesso e registre as avaliações da banca.</div>
+      <button class="btn-sm primary-outline" id="newGroupBtn">+ Novo grupo</button>
+    </div>
+    <div class="group-cards-grid" id="groupCardsGrid"></div>`;
+  $('newGroupBtn').onclick = async () => {
+    const result = await showPrompt('Novo grupo', [
+      { key: 'name', label: 'Nome do grupo', placeholder: 'ex: MechFinder' },
+    ]);
+    if(!result || !result.name) return;
+    const name = result.name;
+    const base = slugify(name);
+    let slug = base, n = 1;
+    while(adminGroups.some(g => g.slug === slug)) { slug = base + (++n); }
+    const { data, error } = await sb.from('groups').insert({
+      slug, group_name: name.trim(), order_index: adminGroups.length
+    }).select().single();
+    if(error){ showAlert(error.message); return; }
+    adminGroups.push(data);
+    openGroupId = data.id;
+    renderAdminPanel();
+  };
+  const grid = $('groupCardsGrid');
+  if(!adminGroups.length){
+    grid.innerHTML = '<div class="empty small"><strong>Nenhum grupo criado ainda</strong>Clique em "+ Novo grupo" para começar.</div>';
+    return;
+  }
+  adminGroups.forEach(g => {
+    const students = adminStudents.filter(s => s.group_id === g.id);
+    const card = document.createElement('div'); card.className = 'group-card';
+    card.innerHTML = `<span class="code">${esc(g.slug)}</span><span class="proj-title">${esc(g.project_title || g.group_name)}</span><span class="authors">${students.map(s=>esc(s.full_name)).join(' · ') || 'sem alunos atribuídos'}</span>`;
+    card.onclick = () => { openGroupId = g.id; renderAdminPanel(); };
+    grid.appendChild(card);
+  });
+}
+
+/* ======================= ADMIN: GRUPO DETALHE ======================= */
+let adminBancas = [];
+async function renderAdminGroupDetail(body, groupId){
+  const g = adminGroups.find(x => x.id === groupId);
+  if(!g){ openGroupId = null; renderAdminGruposTab(body); return; }
+  const students = adminStudents.filter(s => s.group_id === g.id);
+  const { data: bancasData } = await sb.from('bancas').select('*').eq('group_id', g.id).order('stage');
+  adminBancas = bancasData || [];
+
+  body.innerHTML = `
+    <button type="button" class="back-link" id="backToGroups" style="margin-bottom:16px; display:inline-flex;">${phIcon('arrow-left')}Voltar aos grupos</button>
+    <div class="section-title" style="margin-bottom:2px;">${esc(g.project_title || g.group_name)}</div>
+    <div class="section-sub">${esc(g.slug)}</div>
+
+    <div class="admin-section">
+      <h3>Dados do grupo</h3>
+      <div class="hint">Edite as informações cadastrais do grupo.</div>
+      <div class="form-grid">
+        <div><label>Nome do grupo</label><input id="gName" class="field" value="${esc(g.group_name)}"></div>
+        <div><label>Título do projeto</label><input id="gTitle" class="field" value="${esc(g.project_title||'')}"></div>
+        <div class="full"><label>Autores (gerado a partir dos alunos)</label><input class="field" value="${students.map(s=>esc(s.full_name)).join(', ') || '—'}" disabled></div>
+      </div>
+      <div style="display:flex; justify-content:flex-end;">
+        <button class="btn-primary auto" id="saveGroupBtn">Salvar dados</button>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h3>Senha de acesso do grupo</h3>
+      <div class="hint">Esta senha é exigida na página pública do grupo (/?grupo=${esc(g.slug)}) e vale para as 3 bancas.</div>
+      <div class="form-row">
+        <input id="gPassword" type="text" placeholder="Nova senha">
+        <button class="btn-primary auto" id="setPasswordBtn">Atualizar senha</button>
+      </div>
+      <div class="success-msg" id="passwordMsg"></div>
+    </div>
+
+    <div class="section-sub" style="margin-top:8px;">Cada grupo passa por 3 bancas — cada uma com data, anexos, avaliadores e notas próprios.</div>
+    <div class="tab-nav" id="bancaTabs"></div>
+    <div id="bancaBody"></div>
+
+    <div class="danger-zone">
+      <h3>Zona de risco</h3>
+      <p>Excluir o grupo remove permanentemente seus dados, senha, anexos, banca avaliadora e notas das 3 etapas. Os alunos atribuídos ficam sem grupo. Esta ação não pode ser desfeita.</p>
+      <button class="btn-sm danger" id="deleteGroupBtn">Excluir grupo</button>
+    </div>`;
+
+  $('backToGroups').onclick = () => { openGroupId = null; renderAdminPanel(); };
+
+  $('saveGroupBtn').onclick = async () => {
+    const payload = {
+      group_name: $('gName').value.trim() || g.group_name,
+      project_title: $('gTitle').value.trim() || null,
+    };
+    const { error } = await sb.from('groups').update(payload).eq('id', g.id);
+    if(error){ showAlert(error.message); return; }
+    await loadAdminGroups();
+    renderAdminPanel();
+  };
+  $('deleteGroupBtn').onclick = async () => {
+    if(!(await showConfirm('Excluir este grupo? Os alunos atribuídos ficam sem grupo. Esta ação não pode ser desfeita.'))) return;
+    const { error } = await sb.from('groups').delete().eq('id', g.id);
+    if(error){ showAlert(error.message); return; }
+    await Promise.all([loadAdminGroups(), loadAdminStudents()]);
+    openGroupId = null; renderAdminPanel();
+  };
+  $('setPasswordBtn').onclick = async () => {
+    const pw = $('gPassword').value;
+    if(!pw){ return; }
+    const { error } = await sb.rpc('admin_set_group_password', { p_group_id: g.id, p_password: pw });
+    if(error){ showAlert(error.message); return; }
+    $('gPassword').value = '';
+    $('passwordMsg').textContent = 'Senha atualizada.';
+    setTimeout(() => { $('passwordMsg').textContent = ''; }, 2000);
+  };
+
+  const tabsWrap = $('bancaTabs');
+  [1,2,3].forEach(stage => {
+    const b = document.createElement('button');
+    b.className = 'tab-btn' + (openBancaStage === stage ? ' active' : '');
+    b.textContent = BANCA_LABELS[stage];
+    b.onclick = () => { openBancaStage = stage; renderBancaStageBody(); };
+    tabsWrap.appendChild(b);
+  });
+  renderBancaStageBody();
+}
+
+function renderBancaStageBody(){
+  document.querySelectorAll('#bancaTabs .tab-btn').forEach((btn, i) => btn.classList.toggle('active', i + 1 === openBancaStage));
+  const banca = adminBancas.find(b => b.stage === openBancaStage);
+  const wrap = $('bancaBody');
+  if(!banca){
+    wrap.innerHTML = '<div class="empty small"><strong>Esta banca ainda não foi inicializada.</strong>Recarregue a página — ela é criada automaticamente ao salvar o grupo.</div>';
+    return;
+  }
+  wrap.innerHTML = `
+    <div class="admin-section">
+      <h3>Data desta banca</h3>
+      <div class="form-row">
+        <input id="bDate" type="date" value="${fmtDateInput(banca.scheduled_date)}">
+        <button class="btn-primary auto" id="saveBancaDateBtn">Salvar data</button>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h3>Anexos</h3>
+      <div class="hint">Envie o relatório (PDF ou DOCX) e cole o link da apresentação desta etapa.</div>
+      <div class="form-grid">
+        <div>
+          <label>Relatório</label>
+          <div id="reportFileInfo" style="font-size:13px; color:var(--ink-mid); margin-bottom:6px;">${banca.report_file_name ? esc(banca.report_file_name) : 'Nenhum arquivo enviado.'}</div>
+          <input id="bReportFile" type="file" accept=".pdf,.doc,.docx">
+        </div>
+        <div><label>Link da apresentação</label><input id="bPresentation" class="field" value="${esc(banca.presentation_link||'')}" placeholder="https://docs.google.com/presentation/..."></div>
+      </div>
+      <div style="display:flex; justify-content:flex-end;"><button class="btn-primary auto" id="saveBancaAttachmentsBtn">Salvar anexos</button></div>
+    </div>
+
+    <div class="admin-section">
+      <h3>Banca avaliadora</h3>
+      <div class="simple-list" id="evaluatorList"></div>
+      <div class="form-row" style="margin-top:12px;">
+        <button class="btn-primary auto" id="addEvalBtn">+ Adicionar avaliador</button>
+      </div>
+      <div style="margin-top:10px;">
+        <button class="btn-sm" id="seedEvalBtn">${phIcon('sparkle')} Adicionar avaliadores de exemplo (com notas)</button>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h3>Notas</h3>
+      <div class="hint">Selecione o conceito atribuído por cada avaliador para cada pergunta.</div>
+      <div id="adminScoreGrid"></div>
+    </div>`;
+
+  $('saveBancaDateBtn').onclick = async () => {
+    const dateVal = $('bDate').value || null;
+    const { error } = await sb.from('bancas').update({ scheduled_date: dateVal }).eq('id', banca.id);
+    if(error){ showAlert(error.message); return; }
+    banca.scheduled_date = dateVal;
+    showToast('Data salva.');
+  };
+  $('saveBancaAttachmentsBtn').onclick = async () => {
+    const file = $('bReportFile').files[0];
+    const payload = { presentation_link: $('bPresentation').value.trim() || null };
+    if(file){
+      const path = `${banca.id}/${Date.now()}-${file.name}`;
+      const { error: upErr } = await sb.storage.from('group-attachments').upload(path, file, { upsert: true });
+      if(upErr){ showAlert(upErr.message); return; }
+      payload.report_file_path = path;
+      payload.report_file_name = file.name;
+    }
+    const { error } = await sb.from('bancas').update(payload).eq('id', banca.id);
+    if(error){ showAlert(error.message); return; }
+    Object.assign(banca, payload);
+    renderBancaStageBody();
+  };
+
+  renderEvaluatorList(banca);
+  $('addEvalBtn').onclick = () => openEvaluatorModal(banca, () => { renderEvaluatorList(banca); loadGroupScoreGrid(banca); });
+  $('seedEvalBtn').onclick = async () => {
+    $('seedEvalBtn').disabled = true;
+    $('seedEvalBtn').textContent = 'Adicionando…';
+    const sampleEvaluators = [
+      { name: 'Jonathan Pinto', role: 'Product Designer', comment: 'Importante refinar o modelo de negócios para ter retenção.' },
+      { name: 'Guilherme Montelli', role: 'Product Designer', comment: null },
+      { name: 'Coriolano Borges', role: 'Professor', comment: null },
+      { name: 'Raul Torma', role: 'Conector de Inovação', comment: null },
+      { name: 'Érica Martins', role: 'Empreendedora', comment: 'Para efetivar a implantação da solução, sugiro especialmente dar atenção à questão do meio de pagamento, conforme ponderei na apresentação oral.' },
+    ];
+    const ratingPool = ['bom', 'muito_bom', 'excelente', 'muito_bom', 'excelente', 'bom', 'regular'];
+    let ratingIdx = 0;
+    const nextRating = () => ratingPool[(ratingIdx++) % ratingPool.length];
+    const errors = [];
+    let createdCount = 0;
+
+    for(const sample of sampleEvaluators){
+      const { data: ev, error } = await sb.from('evaluators')
+        .insert({ banca_id: banca.id, name: sample.name, role: sample.role, comment: sample.comment, order_index: 0 })
+        .select().single();
+      if(error || !ev){ errors.push(`${sample.name}: ${error?.message || 'falha desconhecida ao criar avaliador'}`); continue; }
+      createdCount++;
+      for(const cat of rubric){
+        for(const q of (cat.questions || [])){
+          const { error: scoreErr } = await sb.from('scores').upsert(
+            { banca_id: banca.id, evaluator_id: ev.id, question_id: q.id, rating: nextRating(), updated_at: new Date().toISOString() },
+            { onConflict: 'evaluator_id,question_id' }
+          );
+          if(scoreErr && !errors.some(e => e.startsWith('Notas:'))) errors.push(`Notas: ${scoreErr.message}`);
+        }
+      }
+    }
+    $('seedEvalBtn').disabled = false;
+    $('seedEvalBtn').innerHTML = phIcon('sparkle') + ' Adicionar avaliadores de exemplo (com notas)';
+    if(errors.length){
+      showAlert(`Criado(s) ${createdCount} de ${sampleEvaluators.length} avaliador(es). Problemas encontrados:\n${errors.join('\n')}`, 'Concluído com avisos');
+    }
+    renderEvaluatorList(banca);
+    loadGroupScoreGrid(banca);
+  };
+
+  loadGroupScoreGrid(banca);
+}
+/* Assistente de notas — uma pergunta por vez, estilo Typeform, com
+   indicador de passos (check nos já respondidos) e etapa final de
+   Considerações. Aberto por avaliador, dentro de uma banca específica. */
+function openNotesWizard(rubricData, banca, evaluator, onClose){
+  const steps = [];
+  rubricData.forEach(cat => {
+    (cat.questions || []).forEach(q => {
+      steps.push({ type: 'question', category: cat.title, question: q });
+    });
+  });
+  steps.push({ type: 'considerations' });
+
+  const answers = {};
+  (banca.scores || []).forEach(s => { if(s.evaluator_id === evaluator.id && s.rating) answers[s.question_id] = s.rating; });
+  let commentValue = evaluator.comment || '';
+  let stepIndex = steps.findIndex(st => st.type === 'question' && !answers[st.question.id]);
+  if(stepIndex === -1) stepIndex = 0;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'wizard-overlay';
+  overlay.innerHTML = `
+    <button type="button" class="wizard-close" id="wizClose">${phIcon('x')}</button>
+    <div class="wizard-inner">
+      <div class="wizard-steps" id="wizSteps"></div>
+      <div class="wizard-body" id="wizBody"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  function isStepComplete(i){
+    const st = steps[i];
+    if(st.type === 'question') return !!answers[st.question.id];
+    return !!(commentValue && commentValue.trim());
+  }
+  function close(){
+    overlay.remove();
+    document.removeEventListener('keydown', onEsc);
+    if(onClose) onClose();
+  }
+  function onEsc(e){ if(e.key === 'Escape') close(); }
+  document.addEventListener('keydown', onEsc);
+  overlay.querySelector('#wizClose').onclick = close;
+
+  function renderStepsIndicator(){
+    const stepsWrap = overlay.querySelector('#wizSteps');
+    stepsWrap.innerHTML = '';
+    steps.forEach((st, i) => {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'wizard-dot' + (i === stepIndex ? ' current' : '') + (isStepComplete(i) ? ' done' : '');
+      dot.innerHTML = isStepComplete(i) ? phIcon('check', {weight:'bold'}) : (i === steps.length - 1 ? phIcon('pencil-simple') : String(i + 1));
+      dot.title = st.type === 'question' ? st.question.question : 'Considerações';
+      dot.onclick = () => { stepIndex = i; renderStep(); };
+      stepsWrap.appendChild(dot);
+    });
+  }
+  function renderStep(){
+    renderStepsIndicator();
+    const body = overlay.querySelector('#wizBody');
+    const st = steps[stepIndex];
+    if(st.type === 'question'){
+      body.innerHTML = `
+        <div class="wizard-eyebrow">${esc(st.category)}</div>
+        <h2 class="wizard-question">${esc(st.question.question)}</h2>
+        <div class="wizard-options" id="wizOptions"></div>
+        <div class="wizard-nav">
+          <button type="button" class="btn-sm" id="wizBack" ${stepIndex === 0 ? 'disabled' : ''}>${phIcon('arrow-left')} Voltar</button>
+          <span class="wizard-progress">${stepIndex + 1} de ${steps.length}</span>
+        </div>`;
+      const optsWrap = overlay.querySelector('#wizOptions');
+      RATING_ORDER.forEach(r => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'wizard-option' + (answers[st.question.id] === r ? ' selected' : '');
+        btn.textContent = RATING_LABELS[r];
+        btn.onclick = async () => {
+          answers[st.question.id] = r;
+          const { data: ok } = await sb.rpc('reader_submit_score', {
+            p_password: readerPassword, p_evaluator_id: evaluator.id, p_question_id: st.question.id, p_rating: r,
+          });
+          if(!ok){ showAlert('Não foi possível salvar a nota agora. Tente novamente.'); return; }
+          const existing = banca.scores.find(s => s.evaluator_id === evaluator.id && s.question_id === st.question.id);
+          if(existing) existing.rating = r; else banca.scores.push({ evaluator_id: evaluator.id, question_id: st.question.id, rating: r });
+          if(stepIndex < steps.length - 1){
+            setTimeout(() => { stepIndex++; renderStep(); }, 200);
+          } else {
+            renderStep();
+          }
+        };
+        optsWrap.appendChild(btn);
+      });
+      overlay.querySelector('#wizBack').onclick = () => { if(stepIndex > 0){ stepIndex--; renderStep(); } };
+    } else {
+      body.innerHTML = `
+        <div class="wizard-eyebrow">Última etapa</div>
+        <h2 class="wizard-question">Considerações</h2>
+        <textarea id="wizComment" class="wizard-textarea" placeholder="Comentário/observação (opcional)"></textarea>
+        <div class="wizard-nav">
+          <button type="button" class="btn-sm" id="wizBack">${phIcon('arrow-left')} Voltar</button>
+          <button type="button" class="btn-primary auto" id="wizFinish">Concluir</button>
+        </div>`;
+      overlay.querySelector('#wizComment').value = commentValue;
+      overlay.querySelector('#wizBack').onclick = () => { stepIndex--; renderStep(); };
+      overlay.querySelector('#wizFinish').onclick = async () => {
+        commentValue = overlay.querySelector('#wizComment').value;
+        const { data: ok } = await sb.rpc('reader_submit_comment', {
+          p_password: readerPassword, p_evaluator_id: evaluator.id, p_comment: commentValue.trim() || null,
+        });
+        if(!ok){ showAlert('Não foi possível salvar agora. Tente novamente.'); return; }
+        evaluator.comment = commentValue.trim() || null;
+        close();
+      };
+    }
+  }
+  renderStep();
+}
+
+/* Modal para adicionar avaliador a uma banca: escolhe um membro já
+   cadastrado (liga o login dele ao registro) ou entra como convidado
+   (sem acesso ao formulário, só informativo). */
+async function openEvaluatorModal(banca, onDone){
+  const { data: readers } = await sb.from('banca_readers').select('*').order('name');
+  showModal((box, close) => {
+    box.innerHTML = `
+      <h3>Adicionar avaliador</h3>
+      <div style="margin-bottom:10px;">
+        <span class="modal-field-label">Membro da banca</span>
+        <select class="field" id="modalEvalReader" style="margin-bottom:0;">
+          <option value="">Convidado (sem login, só informativo)</option>
+          ${(readers || []).map(r => `<option value="${r.id}">${esc(r.name)}${r.role ? ' — ' + esc(r.role) : ''}</option>`).join('')}
+        </select>
+      </div>
+      <div id="modalEvalGuestFields">
+        <div style="margin-bottom:10px;">
+          <span class="modal-field-label">Nome</span>
+          <input class="field" id="modalEvalName" style="margin-bottom:0;" placeholder="Nome">
+        </div>
+        <div style="margin-bottom:10px;">
+          <span class="modal-field-label">Cargo</span>
+          <input class="field" id="modalEvalRole" style="margin-bottom:0;" placeholder="ex: Presidente da Banca">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-sm" id="modalCancel">Cancelar</button>
+        <button class="btn-primary auto" id="modalSave">Adicionar</button>
+      </div>`;
+    const select = box.querySelector('#modalEvalReader');
+    const guestFields = box.querySelector('#modalEvalGuestFields');
+    const syncVisibility = () => { guestFields.style.display = select.value ? 'none' : ''; };
+    select.onchange = syncVisibility;
+    syncVisibility();
+    box.querySelector('#modalCancel').onclick = () => close(null);
+    box.querySelector('#modalSave').onclick = async () => {
+      let payload;
+      if(select.value){
+        const reader = (readers || []).find(r => r.id === select.value);
+        payload = { banca_id: banca.id, reader_id: reader.id, name: reader.name, role: reader.role || null, order_index: 0 };
+      } else {
+        const name = box.querySelector('#modalEvalName').value.trim();
+        const role = box.querySelector('#modalEvalRole').value.trim();
+        if(!name){ showAlert('Preencha o nome.'); return; }
+        payload = { banca_id: banca.id, reader_id: null, name, role: role || null, order_index: 0 };
+      }
+      const { error } = await sb.from('evaluators').insert(payload);
+      if(error){ showAlert(error.message); return; }
+      close(true);
+      if(onDone) onDone();
+    };
+  });
+}
+
+async function renderEvaluatorList(banca){
+  const wrap = $('evaluatorList');
+  const { data: evaluators } = await sb.from('evaluators').select('*').eq('banca_id', banca.id).order('order_index');
+  wrap.innerHTML = '';
+  if(!evaluators || !evaluators.length){ wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Nenhum avaliador ainda.</p>'; return; }
+  evaluators.forEach(ev => {
+    const row = document.createElement('div'); row.className = 'evaluator-row';
+    row.innerHTML = `<div class="meta"><strong>${esc(ev.name)}</strong><span>${esc(ev.role||'')}</span>${ev.comment ? `<div class="comment">${esc(ev.comment)}</div>` : ''}</div>`;
+    const acts = document.createElement('div'); acts.className = 'row-acts';
+    const edit = document.createElement('button'); edit.className = 'btn-sm'; edit.textContent = 'Editar';
+    edit.onclick = async () => {
+      const result = await showPrompt('Editar avaliador', [
+        { key: 'name', label: 'Nome', value: ev.name },
+        { key: 'role', label: 'Cargo', value: ev.role || '' },
+        { key: 'comment', label: 'Comentário/observação (opcional)', value: ev.comment || '' },
+      ]);
+      if(!result) return;
+      await sb.from('evaluators').update({ name: result.name || ev.name, role: result.role, comment: result.comment || null }).eq('id', ev.id);
+      renderEvaluatorList(banca);
+    };
+    const del = document.createElement('button'); del.className = 'btn-sm danger'; del.textContent = 'Excluir';
+    del.onclick = async () => {
+      if(!(await showConfirm('Excluir este avaliador? As notas dele nesta banca também serão apagadas.'))) return;
+      await sb.from('evaluators').delete().eq('id', ev.id);
+      renderEvaluatorList(banca);
+      loadGroupScoreGrid(banca);
+    };
+    acts.append(edit, del); row.appendChild(acts); wrap.appendChild(row);
+  });
+}
+async function loadGroupScoreGrid(banca){
+  const gridWrap = $('adminScoreGrid');
+  const { data: evaluators } = await sb.from('evaluators').select('*').eq('banca_id', banca.id).order('order_index');
+  const { data: scores } = await sb.from('scores').select('*').eq('banca_id', banca.id);
+  const bancaForGrid = { evaluators: evaluators || [], scores: (scores||[]).map(s => ({ evaluator_id: s.evaluator_id, question_id: s.question_id, rating: s.rating })) };
+  gridWrap.innerHTML = '';
+  gridWrap.appendChild(renderRubricGrid(rubric, bancaForGrid, {
+    canEdit: true,
+    onScoreChange: async (evaluatorId, questionId, rating) => {
+      await sb.from('scores').upsert({ banca_id: banca.id, evaluator_id: evaluatorId, question_id: questionId, rating, updated_at: new Date().toISOString() }, { onConflict: 'evaluator_id,question_id' });
+    }
+  }));
+}
+
+/* ======================= ADMIN: CONFIG TAB ======================= */
+function renderAdminConfigTab(body){
+  const alunoUrl = location.origin + location.pathname + '?aluno=1';
+  const profUrl = location.origin + location.pathname + '?professores=1';
+  body.innerHTML = `
+    <div class="admin-section">
+      <h3 style="margin-bottom:14px;">Links úteis para compartilhar</h3>
+      <div class="simple-list">
+        <div class="simple-row"><div class="meta"><strong>Registro de alunos</strong><span>${esc(alunoUrl)}</span></div><button class="btn-sm" id="copyAlunoUrl">Copiar</button></div>
+        <div class="simple-row"><div class="meta"><strong>Acesso da banca (Professores/Banca)</strong><span>${esc(profUrl)}</span></div><button class="btn-sm" id="copyProfUrl">Copiar</button></div>
+      </div>
+    </div>`;
+  $('copyAlunoUrl').onclick = () => { navigator.clipboard.writeText(alunoUrl).catch(()=>{}); showToast('Copiado!'); };
+  $('copyProfUrl').onclick = () => { navigator.clipboard.writeText(profUrl).catch(()=>{}); showToast('Copiado!'); };
+}
+
+/* ======================= ADMIN: USUÁRIOS TAB ======================= */
+function renderAdminUsuariosTab(body){
+  body.innerHTML = `
+    <div class="admin-section">
+      <h3>Membros da banca (acesso de leitura)</h3>
+      <div class="hint">Cada um tem nome + cargo + senha próprios, sem precisar de conta — na página de acesso da banca, escolhem a aba "Banca" pra entrar com a senha própria e ver todos os grupos, sem editar nada.</div>
+      <div class="simple-list" id="bancaReadersList" style="margin-bottom:14px;"></div>
+      <button class="btn-primary auto" id="addReaderBtn">+ Adicionar membro</button>
+    </div>`;
+  renderBancaReadersList(body);
+  $('addReaderBtn').onclick = () => openReaderModal(null, body);
+}
+async function renderBancaReadersList(body){
+  const wrap = $('bancaReadersList');
+  const { data: readers } = await sb.from('banca_readers').select('*').order('created_at');
+  wrap.innerHTML = '';
+  if(!readers || !readers.length){ wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Nenhum membro cadastrado ainda.</p>'; return; }
+  readers.forEach(r => wrap.appendChild(buildReaderDisplayRow(r, body)));
+}
+function buildReaderDisplayRow(r, body){
+  const row = document.createElement('div'); row.className = 'simple-row';
+  row.innerHTML = `<div class="meta"><strong>${esc(r.name)}</strong><span>${esc(r.role || '')}</span></div>`;
+  const acts = document.createElement('div'); acts.className = 'row-acts';
+  const edit = document.createElement('button'); edit.className = 'btn-sm'; edit.textContent = 'Editar';
+  edit.onclick = () => openReaderModal(r, body);
+  const del = document.createElement('button'); del.className = 'btn-sm danger'; del.textContent = 'Remover';
+  del.onclick = async () => {
+    if(!(await showConfirm(`Remover o acesso de "${r.name}"?`))) return;
+    await sb.from('banca_readers').delete().eq('id', r.id);
+    renderBancaReadersList(body);
+  };
+  acts.append(edit, del); row.appendChild(acts);
+  return row;
+}
+
+/* Modal única para criar/editar um membro da banca (nome, cargo, senha
+   com gerador aleatório), no mesmo padrão do "+ Novo grupo". */
+function openReaderModal(r, body){
+  const isEdit = !!r;
+  showModal((box, close) => {
+    box.innerHTML = `
+      <h3>${isEdit ? 'Editar membro' : 'Adicionar membro'}</h3>
+      <div style="margin-bottom:10px;">
+        <span class="modal-field-label">Nome</span>
+        <input class="field" id="modalReaderName" style="margin-bottom:0;" placeholder="Nome">
+      </div>
+      <div style="margin-bottom:10px;">
+        <span class="modal-field-label">Cargo</span>
+        <input class="field" id="modalReaderRole" style="margin-bottom:0;" placeholder="ex: Avaliador externo">
+      </div>
+      <div style="margin-bottom:10px;">
+        <span class="modal-field-label">${isEdit ? 'Nova senha (deixe em branco para manter)' : 'Senha'}</span>
+        <div style="display:flex; gap:6px;">
+          <input class="field" id="modalReaderPassword" type="text" style="margin-bottom:0;" placeholder="Senha">
+          <button type="button" class="btn-sm" id="modalGenPasswordBtn" title="Gerar senha aleatória">${phIcon('dice-five')}</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-sm" id="modalCancel">Cancelar</button>
+        <button class="btn-primary auto" id="modalSave">Salvar</button>
+      </div>`;
+    box.querySelector('#modalReaderName').value = isEdit ? r.name : '';
+    box.querySelector('#modalReaderRole').value = isEdit ? (r.role || '') : '';
+    box.querySelector('#modalGenPasswordBtn').onclick = () => { box.querySelector('#modalReaderPassword').value = generateRandomPassword(); };
+    box.querySelector('#modalCancel').onclick = () => close(null);
+    box.querySelector('#modalSave').onclick = async () => {
+      const name = box.querySelector('#modalReaderName').value.trim();
+      const role = box.querySelector('#modalReaderRole').value.trim();
+      const pw = box.querySelector('#modalReaderPassword').value;
+      if(!name){ showAlert('O nome não pode ficar em branco.'); return; }
+      if(isEdit){
+        const { error } = await sb.from('banca_readers').update({ name, role }).eq('id', r.id);
+        if(error){ showAlert(error.message); return; }
+        if(pw){
+          const { error: pwErr } = await sb.rpc('admin_set_banca_reader_password', { p_reader_id: r.id, p_password: pw });
+          if(pwErr){ showAlert(pwErr.message); return; }
+        }
+      } else {
+        if(!pw){ showAlert('Defina uma senha.'); return; }
+        const { error } = await sb.rpc('admin_add_banca_reader', { p_name: name, p_role: role, p_password: pw });
+        if(error){ showAlert(error.message); return; }
+      }
+      close(true);
+      renderBancaReadersList(body);
+    };
+  });
+}
+
+/* ======================= INIT ======================= */
+async function renderRoute(){
+  renderHeaderNav();
+  const route = getRoute();
+
+  if(!sb){
+    if(route === 'admin') renderAdminLogin();
+    else if(route === 'aluno') renderAlunoPage();
+    else if(route === 'grupo') renderGrupoGate(currentRoute.slug);
+    else renderHomePage();
+    return;
+  }
+
+  if(route === 'admin'){
+    const { data: { session: s } } = await sb.auth.getSession();
+    if(s){ session = s; await bootAdminPanel(); }
+    else renderAdminLogin();
+  } else if(route === 'aluno'){
+    renderAlunoPage();
+  } else if(route === 'grupo'){
+    renderGrupoGate(currentRoute.slug);
+  } else {
+    await loadLinksData();
+    renderHomePage();
+  }
+}
+
+(async () => {
+  $('logoArea').onclick = goHome;
+  await renderRoute();
+})();
+</script>
+</body>
+</html>
