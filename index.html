@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -7,10 +7,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://unpkg.com/@phosphor-icons/web"></script>
-<style>
-  :root{
+</head>
+<body>  :root{
     --bg:#FCFBF8;
     --card:#FFFFFF;
     --ink:#0F0F0F;
@@ -27,6 +28,10 @@
   *{box-sizing:border-box; margin:0; padding:0;}
   .ph{vertical-align:-2px; line-height:1;}
   .icon-btn-gap{margin-right:5px;}
+  html, body{
+    margin:0;
+    padding:0;
+  }
   body{
     background:var(--bg);
     color:var(--ink);
@@ -37,6 +42,11 @@
 
   /* ---- HEADER ---- */
   .site-header{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    z-index:200;
     border-bottom:1px solid var(--line);
     background:var(--bg);
     padding:20px 32px;
@@ -44,6 +54,9 @@
     align-items:center;
     justify-content:space-between;
     gap:16px;
+  }
+  #appRoot{
+    padding-top:77px;
   }
   .logo-area{cursor:pointer; min-width:0; flex:1;}
   .logo-row{display:flex; align-items:center; gap:8px; margin-bottom:4px;}
@@ -95,7 +108,7 @@
   .back-link:hover{color:var(--ink);}
 
   /* ---- MAIN ---- */
-  .main{max-width:1100px; margin:0 auto; padding:32px 32px 64px;}
+  .main{max-width:1100px; margin:0 auto; padding:20px 32px 64px;}
   .main.narrow{max-width:640px;}
 
   /* ---- SEARCH ---- */
@@ -519,8 +532,6 @@
   }
   @media(prefers-reduced-motion:reduce){*{transition:none !important;}}
 </style>
-</head>
-<body>
 
 <div class="hero-blob" style="top:-90px; left:-70px; width:340px; height:340px; background:linear-gradient(135deg,var(--accent-a),var(--accent-b)); opacity:.14;"></div>
 <div class="hero-blob" style="top:10px; right:-110px; width:380px; height:380px; background:linear-gradient(135deg,var(--accent-b),#FFC85F); opacity:.11;"></div>
@@ -546,8 +557,8 @@
    CONFIGURAÇÃO — substitua pelos valores do seu projeto Supabase
    (Project Settings → API → Project URL + anon public key)
    ====================================================================== */
-const SUPABASE_URL      = "COLE_AQUI_SUA_SUPABASE_URL";
-const SUPABASE_ANON_KEY = "COLE_AQUI_SUA_SUPABASE_ANON_KEY";
+const SUPABASE_URL      = "https://veefxcmqfzpnurriquri.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_Dd53m02YLsnTMfX69m4euQ_B6RnDMU-";
 /* ====================================================================== */
 
 const isMockMode = !SUPABASE_URL.startsWith('http');
@@ -1220,7 +1231,6 @@ function renderAlunoPage(){
   root().innerHTML = `
     <div class="main narrow">
       <div class="gate-box" style="margin-top:20px;">
-        <span class="eyebrow-badge"><span class="dot lv-gradient-dot"></span>Acesso de aluno</span>
         <h2>Área do aluno</h2>
         <div class="tab-nav" id="alunoModeTabs" style="justify-content:center; border-bottom:none; padding-bottom:0; margin-top:20px; margin-bottom:8px;"></div>
         <div id="alunoModeBody"></div>
@@ -1563,7 +1573,7 @@ function renderGrupoGate(slug){
   root().innerHTML = `
     <div class="main narrow">
       <div class="gate-box" style="margin-top:20px;">
-        <span class="eyebrow-badge"><span class="dot lv-gradient-dot"></span>Área do grupo</span><h2>Página do grupo</h2>
+        <h2>Página do grupo</h2>
         <p>Digite a senha de acesso do grupo.</p>
         <input id="grupoPassword" class="field" type="password" placeholder="Senha">
         <div class="error-msg" id="grupoError"></div>
@@ -1682,7 +1692,6 @@ function renderAdminLogin(){
   root().innerHTML = `
     <div class="main narrow">
       <div class="gate-box" style="margin-top:20px;">
-        <span class="eyebrow-badge"><span class="dot lv-gradient-dot"></span>Acesso restrito</span>
         <h2>Entrar</h2>
         <div class="tab-nav" id="adminLoginTabs" style="justify-content:center; border-bottom:none; padding-bottom:0; margin-top:20px; margin-bottom:8px;"></div>
         <div id="adminLoginBody"></div>
