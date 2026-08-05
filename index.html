@@ -147,7 +147,8 @@
   .admin-layout{display:flex; align-items:flex-start; gap:28px;}
   .admin-sidebar{display:flex; flex-direction:column; gap:4px; width:190px; flex-shrink:0; position:sticky; top:20px;}
   .sidebar-tab-btn{
-    display:block; width:100%; text-align:left; font-size:13.5px; font-weight:700; font-family:inherit;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    width:100%; text-align:left; font-size:13.5px; font-weight:700; font-family:inherit;
     padding:11px 16px; border-radius:10px; border:none; background:transparent;
     color:var(--ink-soft); cursor:pointer; transition:.15s;
   }
@@ -155,6 +156,21 @@
   .sidebar-tab-btn.active{background:var(--ink); color:#fff;}
   .sidebar-tab-btn:disabled{opacity:.4; cursor:not-allowed; background:transparent;}
   .sidebar-tab-btn:disabled:hover{background:transparent; color:var(--ink-soft);}
+  .notif-badge{
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:18px; height:18px; padding:0 5px; border-radius:999px;
+    font-size:10px; font-weight:800; line-height:1; flex-shrink:0;
+    background:#EF4444; color:#fff; transition:.15s;
+  }
+  .sidebar-tab-btn.active .notif-badge{background:rgba(255,255,255,.25); color:#fff;}
+  .admin-notif-banner{
+    display:flex; align-items:center; gap:10px; padding:12px 16px; margin-bottom:16px;
+    background:color-mix(in srgb, #EF4444 8%, var(--card)); border:1px solid color-mix(in srgb, #EF4444 30%, var(--line));
+    border-radius:var(--radius); font-size:13.5px; color:var(--ink);
+  }
+  .admin-notif-banner .notif-icon{font-size:16px; flex-shrink:0; color:#EF4444;}
+  .admin-notif-banner a{color:#EF4444; font-weight:700; text-decoration:none; cursor:pointer;}
+  .admin-notif-banner a:hover{text-decoration:underline;}
   .admin-content{flex:1; min-width:0;}
   @media(max-width:760px){
     .admin-layout{flex-direction:column; gap:16px;}
@@ -1782,6 +1798,9 @@ async function loadAdminStudents(){
   adminStudents = data || [];
 }
 function renderAdminPanel(){
+  const pendingStudents = adminStudents.filter(s => s.status === 'pending').length;
+  const groupsSemSenha = adminGroups.filter(g => !g.password_hash).length;
+
   root().innerHTML = `
     <div class="main">
       <div class="session-label">Logado como <strong>${esc(session?.user?.email || '')}</strong></div>
@@ -1790,16 +1809,35 @@ function renderAdminPanel(){
         <div class="admin-content" id="adminTabBody"></div>
       </div>
     </div>`;
+
   const tabs = [ ['links','Links'], ['alunos','Alunos'], ['grupos','Grupos'], ['usuarios','Usuários'], ['config','Configurações'] ];
+  const badges = { alunos: pendingStudents, grupos: groupsSemSenha };
   const nav = $('adminTabNav');
   tabs.forEach(([id,label]) => {
     const b = document.createElement('button');
     b.className = 'sidebar-tab-btn' + (adminTab === id ? ' active' : '');
-    b.textContent = label;
+    const count = badges[id] || 0;
+    b.innerHTML = `<span>${esc(label)}</span>${count ? `<span class="notif-badge">${count}</span>` : ''}`;
     b.onclick = () => { adminTab = id; openGroupId = null; renderAdminPanel(); };
     nav.appendChild(b);
   });
+
   const body = $('adminTabBody');
+
+  // Banner de notificações pendentes
+  const items = [];
+  if(pendingStudents) items.push(`<a data-tab="alunos">${pendingStudents} aluno${pendingStudents > 1 ? 's' : ''} aguardando atribuição</a>`);
+  if(groupsSemSenha) items.push(`<a data-tab="grupos">${groupsSemSenha} grupo${groupsSemSenha > 1 ? 's' : ''} sem senha definida</a>`);
+  if(items.length){
+    const banner = document.createElement('div');
+    banner.className = 'admin-notif-banner';
+    banner.innerHTML = `<span class="notif-icon">${phIcon('bell-ringing', {weight:'fill'})}</span><span>Atenção: ${items.join(' · ')}</span>`;
+    banner.querySelectorAll('a[data-tab]').forEach(a => {
+      a.onclick = (e) => { e.preventDefault(); adminTab = a.dataset.tab; openGroupId = null; renderAdminPanel(); };
+    });
+    body.appendChild(banner);
+  }
+
   if(adminTab === 'links') renderAdminLinksTab(body);
   else if(adminTab === 'alunos') renderAdminAlunosTab(body);
   else if(adminTab === 'grupos') { openGroupId ? renderAdminGroupDetail(body, openGroupId) : renderAdminGruposTab(body); }
