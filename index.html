@@ -922,6 +922,14 @@ function showToast(msg){
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
 }
+function sanitizeFileName(name){
+  return name
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')  // remove acentos
+    .replace(/[–—]/g, '-')                              // em/en dash → hífen
+    .replace(/\s+/g, '_')                               // espaços → underscore
+    .replace(/[^a-zA-Z0-9._\-]/g, '')                  // remove demais especiais
+    .replace(/_{2,}/g, '_');                            // underscores duplos
+}
 function getPublicFileUrl(path){
   if(!sb || !path) return null;
   const { data } = sb.storage.from('group-attachments').getPublicUrl(path);
@@ -1667,7 +1675,8 @@ function renderPublicBancaBody(bancas){
     const file = $('pubReportFile').files[0];
     let reportPath = null, reportName = null;
     if(file){
-      const path = `${groupSession.slug}/${publicBancaStage}/${Date.now()}-${file.name}`;
+      const safeName = sanitizeFileName(file.name);
+      const path = `${groupSession.slug}/${publicBancaStage}/${Date.now()}-${safeName}`;
       const { error: upErr } = await sb.storage.from('group-attachments').upload(path, file, { upsert: true });
       if(upErr){ $('pubAttachError').textContent = 'Não foi possível enviar o arquivo agora.'; return; }
       reportPath = path; reportName = file.name;
@@ -2354,7 +2363,8 @@ function renderBancaStageBody(){
     const file = $('bReportFile').files[0];
     const payload = { presentation_link: $('bPresentation').value.trim() || null };
     if(file){
-      const path = `${banca.id}/${Date.now()}-${file.name}`;
+      const safeName = sanitizeFileName(file.name);
+      const path = `${banca.id}/${Date.now()}-${safeName}`;
       const { error: upErr } = await sb.storage.from('group-attachments').upload(path, file, { upsert: true });
       if(upErr){ showAlert(upErr.message); return; }
       payload.report_file_path = path;
