@@ -597,7 +597,7 @@ function createMockClient(){
         { id: c5, order_index: 5, title: 'Impacto Potencial' },
       ],
       rubric_questions: [
-        { id: muid(), category_id: c1, order_index: 1, question: 'O produto/serviço atende a uma necessidade real da área de pessoas?' },
+        { id: muid(), category_id: c1, order_index: 1, question: 'O produto/serviço atende a uma necessidade real do mercado?' },
         { id: muid(), category_id: c1, order_index: 2, question: 'O produto/serviço apresenta algum diferencial inovador?' },
         { id: muid(), category_id: c2, order_index: 1, question: 'O projeto é bem embasado teoricamente?' },
         { id: muid(), category_id: c3, order_index: 1, question: 'O projeto é tecnicamente viável?' },
@@ -2315,6 +2315,14 @@ function renderBancaStageBody(){
     wrap.innerHTML = '<div class="empty small"><strong>Esta banca ainda não foi inicializada.</strong>Recarregue a página — ela é criada automaticamente ao salvar o grupo.</div>';
     return;
   }
+  const _reportUrl = getPublicFileUrl(banca.report_file_path);
+  const _reportInfo = banca.report_file_name
+    ? (_reportUrl
+        ? `<a href="${_reportUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:var(--accent-a);font-weight:600;text-decoration:none;">${phIcon('file-text')} ${esc(banca.report_file_name)} ${phIcon('arrow-square-out')}</a>`
+        : `<span>${esc(banca.report_file_name)}</span>`)
+    : '<span style="color:var(--ink-soft)">Nenhum arquivo enviado.</span>';
+  const _presLink = banca.presentation_link || '';
+
   wrap.innerHTML = `
     <div class="admin-section">
       <h3>Data desta banca</h3>
@@ -2330,12 +2338,18 @@ function renderBancaStageBody(){
       <div class="form-grid">
         <div>
           <label>Relatório</label>
-          <div id="reportFileInfo" style="font-size:13px; color:var(--ink-mid); margin-bottom:6px;">${banca.report_file_name ? esc(banca.report_file_name) : 'Nenhum arquivo enviado.'}</div>
+          <div id="reportFileInfo" style="font-size:13px;margin-bottom:8px;">${_reportInfo}</div>
           <input id="bReportFile" type="file" accept=".pdf,.doc,.docx">
         </div>
-        <div><label>Link da apresentação</label><input id="bPresentation" class="field" value="${esc(banca.presentation_link||'')}" placeholder="https://docs.google.com/presentation/..."></div>
+        <div>
+          <label>Link da apresentação</label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input id="bPresentation" class="field" style="margin-bottom:0;flex:1;" value="${esc(_presLink)}" placeholder="https://docs.google.com/presentation/...">
+            ${_presLink ? `<a href="${esc(_presLink)}" target="_blank" rel="noopener" class="btn-sm" title="Abrir link" style="flex-shrink:0;">${phIcon('arrow-square-out')}</a>` : ''}
+          </div>
+        </div>
       </div>
-      <div style="display:flex; justify-content:flex-end;"><button class="btn-primary auto" id="saveBancaAttachmentsBtn">Salvar anexos</button></div>
+      <div style="display:flex; justify-content:flex-end;margin-top:12px;"><button class="btn-primary auto" id="saveBancaAttachmentsBtn">Salvar anexos</button></div>
     </div>
 
     <div class="admin-section">
