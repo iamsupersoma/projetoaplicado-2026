@@ -169,8 +169,8 @@
     border-radius:var(--radius); font-size:13.5px; color:var(--ink);
   }
   .admin-notif-banner .notif-icon{font-size:16px; flex-shrink:0; color:#EF4444;}
-  .admin-notif-banner a{color:#EF4444; font-weight:700; text-decoration:none; cursor:pointer;}
-  .admin-notif-banner a:hover{text-decoration:underline;}
+  .notif-link{background:none; border:none; padding:0; font:inherit; font-weight:700; color:#EF4444; cursor:pointer; text-decoration:underline; text-underline-offset:2px;}
+  .notif-link:hover{opacity:.8;}
   .admin-content{flex:1; min-width:0;}
   @media(max-width:760px){
     .admin-layout{flex-direction:column; gap:16px;}
@@ -1804,6 +1804,7 @@ function renderAdminPanel(){
   root().innerHTML = `
     <div class="main">
       <div class="session-label">Logado como <strong>${esc(session?.user?.email || '')}</strong></div>
+      <div id="adminNotifArea"></div>
       <div class="admin-layout">
         <div class="admin-sidebar" id="adminTabNav"></div>
         <div class="admin-content" id="adminTabBody"></div>
@@ -1824,18 +1825,20 @@ function renderAdminPanel(){
 
   const body = $('adminTabBody');
 
-  // Banner de notificações pendentes
+  // Banner de notificações pendentes (container separado, não sobrescrito pelas tabs)
+  const notifArea = $('adminNotifArea');
   const items = [];
-  if(pendingStudents) items.push(`<a data-tab="alunos">${pendingStudents} aluno${pendingStudents > 1 ? 's' : ''} aguardando atribuição</a>`);
-  if(groupsSemSenha) items.push(`<a data-tab="grupos">${groupsSemSenha} grupo${groupsSemSenha > 1 ? 's' : ''} sem senha definida</a>`);
+  if(pendingStudents) items.push(`<button class="notif-link" data-tab="alunos">${pendingStudents} aluno${pendingStudents > 1 ? 's' : ''} aguardando atribuição</button>`);
+  if(groupsSemSenha) items.push(`<button class="notif-link" data-tab="grupos">${groupsSemSenha} grupo${groupsSemSenha > 1 ? 's' : ''} sem senha definida</button>`);
   if(items.length){
-    const banner = document.createElement('div');
-    banner.className = 'admin-notif-banner';
-    banner.innerHTML = `<span class="notif-icon">${phIcon('bell-ringing', {weight:'fill'})}</span><span>Atenção: ${items.join(' · ')}</span>`;
-    banner.querySelectorAll('a[data-tab]').forEach(a => {
-      a.onclick = (e) => { e.preventDefault(); adminTab = a.dataset.tab; openGroupId = null; renderAdminPanel(); };
+    notifArea.innerHTML = `
+      <div class="admin-notif-banner">
+        <span class="notif-icon">${phIcon('bell-ringing', {weight:'fill'})}</span>
+        <span>Atenção: ${items.join(' · ')}</span>
+      </div>`;
+    notifArea.querySelectorAll('.notif-link').forEach(btn => {
+      btn.onclick = () => { adminTab = btn.dataset.tab; openGroupId = null; renderAdminPanel(); };
     });
-    body.appendChild(banner);
   }
 
   if(adminTab === 'links') renderAdminLinksTab(body);
