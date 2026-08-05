@@ -491,21 +491,25 @@
   .wizard-steps{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:44px;}
   .wizard-dot{
     width:32px; height:32px; border-radius:50%; border:1px solid var(--line); background:var(--card);
-    font-size:12.5px; font-weight:700; color:var(--ink-soft); cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;
-    box-shadow:var(--shadow);
+    font-size:12.5px; font-weight:700; font-family:inherit; color:var(--ink-soft); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:var(--shadow);
   }
   .wizard-dot:hover{border-color:var(--accent-a);}
   .wizard-dot.current{border-color:var(--accent-a); color:var(--accent-a);}
   .wizard-dot.done{background:var(--ink); border-color:var(--ink); color:#fff;}
   .wizard-body{flex:1; display:flex; flex-direction:column; justify-content:center;}
-  .wizard-eyebrow{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--warn); margin-bottom:10px; text-align:center;}
-  .wizard-question{font-size:26px; font-weight:800; color:var(--ink); text-align:center; margin-bottom:32px; line-height:1.32;}
+  .wizard-eyebrow{font-size:12px; font-weight:700; font-family:inherit; text-transform:uppercase; letter-spacing:.05em; color:var(--warn); margin-bottom:10px; text-align:center;}
+  .wizard-question{font-size:26px; font-weight:800; font-family:inherit; color:var(--ink); text-align:center; margin-bottom:32px; line-height:1.32;}
   .wizard-options{display:flex; flex-direction:column; gap:10px; margin-bottom:24px;}
   .wizard-option{
     padding:16px 20px; border:1px solid var(--line); border-radius:var(--radius); background:var(--card);
-    font-size:15px; font-weight:600; color:var(--ink); cursor:pointer; text-align:left; transition:.15s;
+    font-size:15px; font-weight:600; font-family:inherit; color:var(--ink); cursor:pointer; text-align:left; transition:.15s;
     box-shadow:var(--shadow);
   }
+  .wizard-thanks{display:flex;flex-direction:column;align-items:center;text-align:center;padding:40px 0;gap:0;}
+  .wizard-thanks-icon{font-size:56px;color:var(--good);margin-bottom:20px;line-height:1;}
+  .wizard-thanks-title{font-size:26px;font-weight:800;color:var(--ink);margin-bottom:10px;line-height:1.3;}
+  .wizard-thanks-text{font-size:15px;color:var(--ink-mid);max-width:380px;line-height:1.6;margin-bottom:28px;}
   .wizard-option:hover{border-color:var(--accent-a); background:color-mix(in srgb, var(--accent-a) 6%, var(--card));}
   .wizard-option.selected{border-color:var(--accent-a); background:color-mix(in srgb, var(--accent-a) 12%, var(--card)); color:var(--accent-a);}
   .wizard-nav{display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:20px;}
@@ -2497,16 +2501,33 @@ function openNotesWizard(rubricData, banca, evaluator, onClose){
       overlay.querySelector('#wizComment').value = commentValue;
       overlay.querySelector('#wizBack').onclick = () => { stepIndex--; renderStep(); };
       overlay.querySelector('#wizFinish').onclick = async () => {
+        const btn = overlay.querySelector('#wizFinish');
+        btn.disabled = true; btn.textContent = 'Salvando…';
         commentValue = overlay.querySelector('#wizComment').value;
         const { data: ok } = await sb.rpc('reader_submit_comment', {
           p_password: readerPassword, p_evaluator_id: evaluator.id, p_comment: commentValue.trim() || null,
         });
-        if(!ok){ showAlert('Não foi possível salvar agora. Tente novamente.'); return; }
+        if(!ok){ btn.disabled = false; btn.textContent = 'Concluir'; showAlert('Não foi possível salvar agora. Tente novamente.'); return; }
         evaluator.comment = commentValue.trim() || null;
-        close();
+        renderThanksScreen();
       };
     }
   }
+  function renderThanksScreen(){
+    const allDone = steps.every((_, i) => isStepComplete(i));
+    steps.forEach((_, i) => { if(i < steps.length - 1) answers[steps[i].question?.id || ''] = answers[steps[i].question?.id || '']; });
+    renderStepsIndicator();
+    const body = overlay.querySelector('#wizBody');
+    body.innerHTML = `
+      <div class="wizard-thanks">
+        <div class="wizard-thanks-icon">${phIcon('check-circle', {weight:'fill'})}</div>
+        <h2 class="wizard-thanks-title">Avaliação concluída!</h2>
+        <p class="wizard-thanks-text">Obrigado pela sua participação. Suas notas e considerações foram registradas com sucesso.</p>
+        <button type="button" class="btn-primary auto" id="wizDone">Fechar</button>
+      </div>`;
+    overlay.querySelector('#wizDone').onclick = close;
+  }
+
   renderStep();
 }
 
