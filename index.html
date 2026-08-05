@@ -2228,13 +2228,96 @@ function renderAdminAlunosTab(body){
 }
 
 /* ======================= ADMIN: GRUPOS TAB (lista) ======================= */
+async function generateAllGroupPasswords(){
+  if(!adminGroups.length){ showAlert('Nenhum grupo cadastrado.'); return; }
+
+  const semSenha = adminGroups.filter(g => !g.password_hash);
+  const comSenha = adminGroups.filter(g => !!g.password_hash);
+
+  let targets = adminGroups;
+  if(semSenha.length && comSenha.length){
+    const soSemSenha = await showConfirm(
+      `${semSenha.length} grupo(s) ainda não têm senha e ${comSenha.length} já têm.\n\nGerar apenas para os sem senha? (Cancelar gera para todos)`
+    );
+    targets = soSemSenha ? semSenha : adminGroups;
+  }
+
+  const btn = $('genAllPasswordsBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Gerando…'; }
+
+  const results = [];
+  for(const g of targets){
+    const pw = generateRandomPassword();
+    const { error } = await sb.rpc('admin_set_group_password', { p_group_id: g.id, p_password: pw });
+    results.push({ group: g, pw, ok: !error });
+    if(!error) g.password_hash = pw;
+  }
+
+  if(btn){ btn.disabled = false; btn.innerHTML = phIcon('key') + ' Gerar senhas'; }
+
+  // Modal com resultado
+  showModal((box) => {
+    const rows = results.map(r => `
+      <tr>
+        <td style="padding:8px 10px;font-weight:600;">${esc(r.group.group_name)}</td>
+        <td style="padding:8px 10px;">
+          <code style="background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:13px;letter-spacing:.04em;">${esc(r.pw)}</code>
+        </td>
+        <td style="padding:8px 10px;color:${r.ok ? 'var(--good)' : '#EF4444'};font-size:12px;">
+          ${r.ok ? phIcon('check-circle') : phIcon('x-circle')} ${r.ok ? 'Salvo' : 'Erro'}
+        </td>
+      </tr>`).join('');
+
+    box.innerHTML = `
+      <h3 style="margin-bottom:4px;">Senhas geradas</h3>
+      <p style="font-size:13px;color:var(--ink-soft);margin-bottom:16px;">Anote ou imprima — as senhas não serão exibidas novamente.</p>
+      <div style="overflow-x:auto;margin-bottom:16px;">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+          <thead>
+            <tr style="border-bottom:1.5px solid var(--line);">
+              <th style="padding:6px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);">Grupo</th>
+              <th style="padding:6px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);">Senha</th>
+              <th style="padding:6px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);">Status</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-sm" id="modalPrintPasswords">${phIcon('printer')} Imprimir</button>
+        <button class="btn-primary auto" id="modalClosePasswords">Fechar</button>
+      </div>`;
+
+    box.querySelector('#modalClosePasswords').onclick = () => { document.querySelector('.modal-overlay')?.remove(); renderAdminPanel(); };
+    box.querySelector('#modalPrintPasswords').onclick = () => {
+      const w = window.open('', '_blank');
+      w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Senhas dos grupos</title>
+        <style>body{font-family:sans-serif;padding:24px;}h1{font-size:18px;margin-bottom:16px;}
+        table{width:100%;border-collapse:collapse;}th,td{text-align:left;padding:8px 12px;border-bottom:1px solid #e0e0e0;}
+        th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#666;}
+        code{background:#f5f5f5;border:1px solid #ddd;border-radius:4px;padding:2px 8px;font-size:14px;letter-spacing:.04em;}
+        @media print{body{padding:0;}}</style></head><body>
+        <h1>Senhas de acesso — Projeto Interdisciplinar</h1>
+        <table><thead><tr><th>Grupo</th><th>Senha</th></tr></thead><tbody>
+        ${results.filter(r=>r.ok).map(r=>`<tr><td>${esc(r.group.group_name)}</td><td><code>${esc(r.pw)}</code></td></tr>`).join('')}
+        </tbody></table>
+        <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400));<\/script></body></html>`);
+      w.document.close();
+    };
+  });
+}
+
 function renderAdminGruposTab(body){
   body.innerHTML = `
     <div class="admin-bar">
       <div class="admin-bar-left">Cadastre grupos, defina a senha de acesso e registre as avaliações da banca.</div>
-      <button class="btn-sm primary-outline" id="newGroupBtn">+ Novo grupo</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-sm primary-outline" id="genAllPasswordsBtn">${phIcon('key')} Gerar senhas</button>
+        <button class="btn-sm primary-outline" id="newGroupBtn">+ Novo grupo</button>
+      </div>
     </div>
     <div class="group-cards-grid" id="groupCardsGrid"></div>`;
+  $('genAllPasswordsBtn').onclick = generateAllGroupPasswords;
   $('newGroupBtn').onclick = async () => {
     const result = await showPrompt('Novo grupo', [
       { key: 'name', label: 'Nome do grupo', placeholder: 'ex: MechFinder' },
@@ -2362,7 +2445,8 @@ function renderBancaStageBody(){
     return;
   }
   const _reportUrl = getPublicFileUrl(banca.report_file_path);
-  const _reportInfo = banca.report_file_name
+  const _hasReport = !!banca.report_file_name;
+  const _reportInfo = _hasReport
     ? (_reportUrl
         ? `<a href="${_reportUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:var(--accent-a);font-weight:600;text-decoration:none;">${phIcon('file-text')} ${esc(banca.report_file_name)} ${phIcon('arrow-square-out')}</a>`
         : `<span>${esc(banca.report_file_name)}</span>`)
@@ -2384,7 +2468,10 @@ function renderBancaStageBody(){
       <div class="form-grid">
         <div>
           <label>Relatório</label>
-          <div id="reportFileInfo" style="font-size:13px;margin-bottom:8px;">${_reportInfo}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <div id="reportFileInfo" style="font-size:13px;flex:1;">${_reportInfo}</div>
+            ${_hasReport ? `<button class="btn-sm danger" id="removeReportBtn" title="Remover anexo">${phIcon('trash')}</button>` : ''}
+          </div>
           <input id="bReportFile" type="file" accept=".pdf,.doc,.docx">
         </div>
         <div>
@@ -2392,6 +2479,7 @@ function renderBancaStageBody(){
           <div style="display:flex;gap:6px;align-items:center;">
             <input id="bPresentation" class="field" style="margin-bottom:0;flex:1;" value="${esc(_presLink)}" placeholder="https://docs.google.com/presentation/...">
             ${_presLink ? `<a href="${esc(_presLink)}" target="_blank" rel="noopener" class="btn-sm" title="Abrir link" style="flex-shrink:0;">${phIcon('arrow-square-out')}</a>` : ''}
+            ${_presLink ? `<button class="btn-sm danger" id="removePresBtn" title="Remover link">${phIcon('trash')}</button>` : ''}
           </div>
         </div>
       </div>
@@ -2419,6 +2507,23 @@ function renderBancaStageBody(){
     banca.scheduled_date = dateVal;
     showToast('Data salva.');
   };
+
+  if($('removeReportBtn')) $('removeReportBtn').onclick = async () => {
+    if(!(await showConfirm('Remover o arquivo de relatório desta banca?'))) return;
+    const { error } = await sb.from('bancas').update({ report_file_path: null, report_file_name: null }).eq('id', banca.id);
+    if(error){ showAlert(error.message); return; }
+    banca.report_file_path = null; banca.report_file_name = null;
+    renderBancaStageBody();
+  };
+
+  if($('removePresBtn')) $('removePresBtn').onclick = async () => {
+    if(!(await showConfirm('Remover o link da apresentação desta banca?'))) return;
+    const { error } = await sb.from('bancas').update({ presentation_link: null }).eq('id', banca.id);
+    if(error){ showAlert(error.message); return; }
+    banca.presentation_link = null;
+    renderBancaStageBody();
+  };
+
   $('saveBancaAttachmentsBtn').onclick = async () => {
     const file = $('bReportFile').files[0];
     const payload = { presentation_link: $('bPresentation').value.trim() || null };
