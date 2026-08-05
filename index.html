@@ -1802,14 +1802,113 @@ function renderAdminLinksTab(body){
   body.innerHTML = `
     <div class="admin-bar">
       <div class="admin-bar-left">Cadastre e organize os links do repositório.</div>
-      <button class="btn-sm primary-outline" id="newLinkBtn">+ Novo link</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <label class="btn-sm primary-outline" id="csvImportLabel" style="cursor:pointer;" title="CSV com colunas: titulo, url, descricao (opcional)">
+          ${phIcon('upload-simple')} Importar CSV
+          <input type="file" id="csvImportInput" accept=".csv,text/csv" style="display:none;">
+        </label>
+        <button class="btn-sm primary-outline" id="newLinkBtn">+ Novo link</button>
+      </div>
     </div>
     <div class="admin-section">
       <h3 style="margin-bottom:14px;">Links cadastrados</h3>
+      <div id="csvImportStatus" style="display:none;margin-bottom:12px;padding:10px 14px;border-radius:10px;font-size:13px;"></div>
       <div class="admin-link-list" id="adminLinkList"></div>
     </div>`;
   $('newLinkBtn').onclick = () => openLinkModal(null, body);
+  $('csvImportInput').onchange = (e) => importLinksFromCSV(e.target.files[0], body);
   renderLinkList(body);
+}
+
+async function importLinksFromCSV(file, body){
+  if(!file) return;
+  const status = $('csvImportStatus');
+  status.style.display = 'block';
+  status.style.background = '#FEF9C3';
+  status.style.color = '#713F12';
+  status.textContent = 'Lendo arquivo…';
+
+  const text = await file.text();
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if(!lines.length){ status.textContent = 'Arquivo vazio.'; return; }
+
+  const sep = (lines[0].match(/;/g)||[]).length > (lines[0].match(/,/g)||[]).length ? ';' : ',';
+
+  function parseCSVLine(line){
+    const cols=[]; let cur=''; let inQ=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(c==='"'&&!inQ){inQ=true;continue;}
+      if(c==='"'&&inQ&&line[i+1]==='"'){cur+='"';i++;continue;}
+      if(c==='"'&&inQ){inQ=false;continue;}
+      if(c===sep&&!inQ){cols.push(cur.trim());cur='';continue;}
+      cur+=c;
+    }
+    cols.push(cur.trim());
+    return cols;
+  }
+
+  const header = parseCSVLine(lines[0]).map(h => h.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z]/g,''));
+  const iTitle = header.findIndex(h => h.includes('tit') || h.includes('nom') || h.includes('name'));
+  const iUrl   = header.findIndex(h => h.includes('url') || h.includes('link') || h.includes('end'));
+  const iDesc  = header.findIndex(h => h.includes('desc') || h.includes('obs'));
+  const iCat   = header.findIndex(h => h.includes('cat') || h.includes('tipo') || h.includes('tag'));
+
+  if(iUrl === -1){
+    status.style.background='#FEE2E2'; status.style.color='#991B1B';
+    status.textContent='Coluna de URL não encontrada. Nomeie-a "url" ou "link".';
+    return;
+  }
+
+  const rows = lines.slice(1).map(l => parseCSVLine(l)).filter(r => r[iUrl]?.startsWith('http'));
+
+  if(!rows.length){
+    status.style.background='#FEE2E2'; status.style.color='#991B1B';
+    status.textContent='Nenhuma URL válida encontrada (precisam começar com http).';
+    return;
+  }
+
+  status.textContent = `Importando ${rows.length} links…`;
+
+  // Garante categorias: busca existente ou cria nova
+  const catCache = {};
+  async function getOrCreateCategory(name){
+    if(!name) return null;
+    if(catCache[name]) return catCache[name];
+    const existing = categories.find(c => c.name.toLowerCase() === name.toLowerCase());
+    if(existing){ catCache[name] = existing.id; return existing.id; }
+    const { data, error } = await sb.from('categories').insert({ name, color: nextColor() }).select().single();
+    if(error || !data) return null;
+    categories.push(data);
+    catCache[name] = data.id;
+    return data.id;
+  }
+
+  let ok=0; let fail=0;
+  for(const r of rows){
+    const payload = {
+      title: (iTitle >= 0 ? r[iTitle] : '') || r[iUrl],
+      url: r[iUrl],
+      description: (iDesc >= 0 && r[iDesc]) ? r[iDesc] : null,
+    };
+    const { data: linkData, error } = await sb.from('links').insert(payload).select().single();
+    if(error || !linkData){ fail++; continue; }
+    if(iCat >= 0 && r[iCat]){
+      const catId = await getOrCreateCategory(r[iCat]);
+      if(catId) await sb.from('link_categories').insert({ link_id: linkData.id, category_id: catId });
+    }
+    ok++;
+  }
+
+  await loadLinksData();
+  renderLinkList(body);
+
+  status.style.background = fail===0 ? '#DCFCE7' : '#FEF9C3';
+  status.style.color = fail===0 ? '#166534' : '#713F12';
+  status.textContent = fail===0
+    ? `${ok} link${ok>1?'s':''} importado${ok>1?'s':''} com sucesso.`
+    : `${ok} importados, ${fail} falharam (URLs duplicadas ou erro de rede).`;
+  $('csvImportInput').value='';
 }
 
 /* Modal única para criar/editar link (título, URL, descrição, categoria,
