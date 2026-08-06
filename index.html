@@ -385,6 +385,10 @@
   .group-card .code{font-size:11px; font-weight:800; letter-spacing:.05em; color:var(--warn); text-transform:uppercase;}
   .group-card .proj-title{font-size:15px; font-weight:700; color:var(--ink); line-height:1.3;}
   .group-card .authors{font-size:12px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .group-card .pw-row{display:flex;align-items:center;gap:6px;margin-top:6px;padding-top:6px;border-top:1px solid var(--line);}
+  .group-card .pw-val{font-family:monospace;font-size:12px;font-weight:700;color:var(--ink);letter-spacing:.03em;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .group-card .pw-none{font-size:12px;color:var(--ink-soft);font-style:italic;flex:1;}
+  .group-card .pw-edit{padding:2px 7px !important;font-size:11px !important;flex-shrink:0;line-height:1.6;}
 
   /* ---- EVALUATORS ---- */
   .evaluator-row{
@@ -609,7 +613,7 @@ function createMockClient(){
     const c1 = muid(), c2 = muid(), c3 = muid(), c4 = muid(), c5 = muid();
     return {
       categories: [], links: [], link_categories: [], groups: [], bancas: [], students: [], evaluators: [], scores: [],
-      app_settings: [], banca_readers: [],
+      app_settings: [], banca_readers: [], banca_stage_readers: [],
       rubric_categories: [
         { id: c1, order_index: 1, title: 'Relevância e Inovação do Produto/Serviço' },
         { id: c2, order_index: 2, title: 'Qualidade da Pesquisa e Fundamentação Teórica' },
@@ -798,24 +802,39 @@ function createMockClient(){
     if(name === 'banca_reader_login'){
       const reader = (db.banca_readers || []).find(r => r.password_hash === params.p_password);
       if(!reader) return { data: { error: 'senha incorreta' }, error: null };
-      return { data: { reader_id: reader.id, reader_name: reader.name, ...buildGroupsOverview() }, error: null };
+      const stages = (db.banca_stage_readers || []).filter(a => a.reader_id === reader.id).map(a => a.stage);
+      return { data: { reader_id: reader.id, reader_name: reader.name, reader_stages: stages, ...buildGroupsOverview() }, error: null };
     }
     if(name === 'reader_submit_score'){
-      const ev = db.evaluators.find(e => e.id === params.p_evaluator_id);
-      if(!ev || !ev.reader_id) return { data: false, error: null };
-      const owner = (db.banca_readers || []).find(r => r.id === ev.reader_id);
-      if(!owner || owner.password_hash !== params.p_password) return { data: false, error: null };
-      const idx = db.scores.findIndex(s => s.evaluator_id === params.p_evaluator_id && s.question_id === params.p_question_id);
-      const row = { id: idx >= 0 ? db.scores[idx].id : muid(), banca_id: ev.banca_id, evaluator_id: params.p_evaluator_id, question_id: params.p_question_id, rating: params.p_rating };
+      const owner = (db.banca_readers || []).find(r => r.password_hash === params.p_password);
+      if(!owner) return { data: null, error: null };
+      const g = db.groups.find(x => x.slug === params.p_group_slug);
+      if(!g) return { data: null, error: null };
+      const banca = db.bancas.find(b => b.group_id === g.id && b.stage === params.p_stage);
+      if(!banca) return { data: null, error: null };
+      let ev = db.evaluators.find(e => e.banca_id === banca.id && e.reader_id === owner.id);
+      if(!ev){
+        ev = { id: muid(), banca_id: banca.id, reader_id: owner.id, name: owner.name, role: owner.role || '', comment: null, order_index: 0 };
+        db.evaluators.push(ev);
+      }
+      const idx = db.scores.findIndex(s => s.evaluator_id === ev.id && s.question_id === params.p_question_id);
+      const row = { id: idx >= 0 ? db.scores[idx].id : muid(), banca_id: banca.id, evaluator_id: ev.id, question_id: params.p_question_id, rating: params.p_rating };
       if(idx >= 0) db.scores[idx] = row; else db.scores.push(row);
       await saveDb();
-      return { data: true, error: null };
+      return { data: ev.id, error: null };
     }
     if(name === 'reader_submit_comment'){
-      const ev = db.evaluators.find(e => e.id === params.p_evaluator_id);
-      if(!ev || !ev.reader_id) return { data: false, error: null };
-      const owner = (db.banca_readers || []).find(r => r.id === ev.reader_id);
-      if(!owner || owner.password_hash !== params.p_password) return { data: false, error: null };
+      const owner = (db.banca_readers || []).find(r => r.password_hash === params.p_password);
+      if(!owner) return { data: false, error: null };
+      const g = db.groups.find(x => x.slug === params.p_group_slug);
+      if(!g) return { data: false, error: null };
+      const banca = db.bancas.find(b => b.group_id === g.id && b.stage === params.p_stage);
+      if(!banca) return { data: false, error: null };
+      let ev = db.evaluators.find(e => e.banca_id === banca.id && e.reader_id === owner.id);
+      if(!ev){
+        ev = { id: muid(), banca_id: banca.id, reader_id: owner.id, name: owner.name, role: owner.role || '', comment: null, order_index: 0 };
+        db.evaluators.push(ev);
+      }
       ev.comment = params.p_comment;
       await saveDb();
       return { data: true, error: null };
@@ -1065,10 +1084,10 @@ let session = null;
 let activeFilter = null;
 let groupSession = { slug: null, password: null };
 let readerPassword = '';
+let readerStages = [];
 let adminTab = 'links';
 let adminGroups = [], adminStudents = [];
 let openGroupId = null;
-let openBancaStage = 1;
 let publicBancaStage = 1;
 
 /* ======================= ROUTING ======================= */
@@ -1529,22 +1548,27 @@ async function tryLeituraLogin(){
   readerPassword = pw;
   renderLeituraPanel(data);
 }
-let leituraData = null; // { reader_id, reader_name, rubric, groups }
+let leituraData = null; // { reader_id, reader_name, reader_stages, rubric, groups }
 
 function myAssignments(g){
-  const readerId = leituraData.reader_id;
+  if(!readerStages.length) return [];
   return (g.bancas || [])
-    .map(b => ({ banca: b, evaluator: (b.evaluators || []).find(e => e.reader_id === readerId) }))
-    .filter(x => x.evaluator);
+    .filter(b => readerStages.includes(b.stage))
+    .map(b => ({
+      banca: b,
+      evaluator: (b.evaluators || []).find(e => e.reader_id === leituraData.reader_id) || null,
+    }));
 }
 function myProgress(banca, evaluatorId){
   const total = (leituraData.rubric || []).reduce((sum, cat) => sum + (cat.questions || []).length, 0);
+  if(!evaluatorId) return { answered: 0, total };
   const answered = (banca.scores || []).filter(s => s.evaluator_id === evaluatorId && s.rating).length;
   return { answered, total };
 }
 
 function renderLeituraPanel(data){
   leituraData = data;
+  readerStages = data.reader_stages || [];
   renderLeituraGroupList();
 }
 function renderLeituraGroupList(){
@@ -1558,7 +1582,10 @@ function renderLeituraGroupList(){
     </div>`;
   const grid = $('leituraGroupsGrid');
   if(!myGroups.length){
-    grid.innerHTML = '<div class="empty small"><strong>Você ainda não foi incluído em nenhuma banca</strong>Fale com o professor para ser adicionado a um grupo.</div>';
+    const msg = readerStages.length
+      ? '<div class="empty small"><strong>Nenhum grupo cadastrado para as suas etapas ainda</strong>Aguarde o professor finalizar a configuração dos grupos.</div>'
+      : '<div class="empty small"><strong>Você ainda não foi atribuído a nenhuma etapa</strong>Fale com o professor para ser adicionado a uma banca.</div>';
+    grid.innerHTML = msg;
     return;
   }
   myGroups.forEach(g => {
@@ -1566,7 +1593,7 @@ function renderLeituraGroupList(){
     const card = document.createElement('div'); card.className = 'group-card';
     let subtitle;
     if(assignments.length === 1){
-      const { answered, total } = myProgress(assignments[0].banca, assignments[0].evaluator.id);
+      const { answered, total } = myProgress(assignments[0].banca, assignments[0].evaluator?.id);
       subtitle = `${esc(BANCA_LABELS[assignments[0].banca.stage])} · ${answered}/${total} respondidas`;
     } else {
       subtitle = `${assignments.length} etapas atribuídas a você`;
@@ -1580,23 +1607,23 @@ function openGroupAssignment(g){
   const assignments = myAssignments(g);
   if(assignments.length === 1){
     const { banca, evaluator } = assignments[0];
-    openNotesWizard(leituraData.rubric || [], banca, evaluator, () => renderLeituraGroupList());
+    openNotesWizard(leituraData.rubric || [], g, banca, evaluator, () => renderLeituraGroupList());
     return;
   }
   root().innerHTML = `
     <div class="main">
       <button type="button" class="back-link" id="leituraBack" style="margin-bottom:16px; display:inline-flex;">${phIcon('arrow-left')}Voltar aos grupos</button>
       <div class="section-title" style="margin-bottom:2px;">${esc(g.project_title || g.group_name)}</div>
-      <div class="section-sub">Você foi incluído em mais de uma etapa deste grupo — escolha qual.</div>
+      <div class="section-sub">Você está em mais de uma etapa deste grupo — escolha qual avaliar.</div>
       <div class="group-cards-grid" id="leituraStageGrid"></div>
     </div>`;
   $('leituraBack').onclick = () => renderLeituraGroupList();
   const grid = $('leituraStageGrid');
   assignments.forEach(({ banca, evaluator }) => {
-    const { answered, total } = myProgress(banca, evaluator.id);
+    const { answered, total } = myProgress(banca, evaluator?.id);
     const card = document.createElement('div'); card.className = 'group-card';
     card.innerHTML = `<span class="proj-title">${esc(BANCA_LABELS[banca.stage])}</span><span class="authors">${answered}/${total} respondidas${banca.scheduled_date ? ' · ' + fmtDate(banca.scheduled_date) : ''}</span>`;
-    card.onclick = () => openNotesWizard(leituraData.rubric || [], banca, evaluator, () => renderLeituraGroupList());
+    card.onclick = () => openNotesWizard(leituraData.rubric || [], g, banca, evaluator, () => renderLeituraGroupList());
     grid.appendChild(card);
   });
 }
@@ -2342,21 +2369,57 @@ function renderAdminGruposTab(body){
   }
   adminGroups.forEach(g => {
     const students = adminStudents.filter(s => s.group_id === g.id);
+    const hasPw = !!g.password_hash;
     const card = document.createElement('div'); card.className = 'group-card';
-    card.innerHTML = `<span class="code">${esc(g.slug)}</span><span class="proj-title">${esc(g.project_title || g.group_name)}</span><span class="authors">${students.map(s=>esc(s.full_name)).join(' · ') || 'sem alunos atribuídos'}</span>`;
+    card.innerHTML = `
+      <span class="code">${esc(g.slug)}</span>
+      <span class="proj-title">${esc(g.project_title || g.group_name)}</span>
+      <span class="authors">${students.map(s=>esc(s.full_name)).join(' · ') || 'sem alunos atribuídos'}</span>
+      <span class="pw-row">
+        ${hasPw ? `<span class="pw-val">${esc(g.password_hash)}</span>` : `<span class="pw-none">sem senha</span>`}
+        <button class="btn-sm pw-edit" title="Editar senha">${phIcon('lock-key')} Senha</button>
+      </span>`;
+    card.querySelector('.pw-edit').onclick = e => { e.stopPropagation(); openGroupPasswordModal(g); };
     card.onclick = () => { openGroupId = g.id; renderAdminPanel(); };
     grid.appendChild(card);
   });
 }
 
+function openGroupPasswordModal(g){
+  showModal((box, close) => {
+    box.innerHTML = `
+      <h3>Senha de acesso</h3>
+      <p style="font-size:13px;color:var(--ink-soft);margin-bottom:14px;">${esc(g.group_name)}<span style="margin-left:6px;font-weight:600;color:var(--warn);">${esc(g.slug)}</span></p>
+      <div style="margin-bottom:16px;">
+        <span class="modal-field-label">Senha</span>
+        <input class="field" id="modalGroupPw" type="text" value="${esc(g.password_hash || '')}" placeholder="Digite a senha do grupo" autocomplete="off">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-sm" id="modalGroupPwCancel">Cancelar</button>
+        <button class="btn-primary auto" id="modalGroupPwSave">Salvar</button>
+      </div>`;
+    const input = box.querySelector('#modalGroupPw');
+    box.querySelector('#modalGroupPwCancel').onclick = () => close(null);
+    box.querySelector('#modalGroupPwSave').onclick = async () => {
+      const pw = input.value.trim();
+      if(!pw){ showAlert('Preencha a senha.'); return; }
+      const btn = box.querySelector('#modalGroupPwSave');
+      btn.disabled = true; btn.textContent = 'Salvando…';
+      const { error } = await sb.rpc('admin_set_group_password', { p_group_id: g.id, p_password: pw });
+      if(error){ btn.disabled = false; btn.textContent = 'Salvar'; showAlert(error.message); return; }
+      g.password_hash = pw;
+      close(true);
+      renderAdminGruposTab($('adminTabBody'));
+    };
+    setTimeout(() => input.focus(), 50);
+  });
+}
+
 /* ======================= ADMIN: GRUPO DETALHE ======================= */
-let adminBancas = [];
 async function renderAdminGroupDetail(body, groupId){
   const g = adminGroups.find(x => x.id === groupId);
   if(!g){ openGroupId = null; renderAdminGruposTab(body); return; }
   const students = adminStudents.filter(s => s.group_id === g.id);
-  const { data: bancasData } = await sb.from('bancas').select('*').eq('group_id', g.id).order('stage');
-  adminBancas = bancasData || [];
 
   body.innerHTML = `
     <button type="button" class="back-link" id="backToGroups" style="margin-bottom:16px; display:inline-flex;">${phIcon('arrow-left')}Voltar aos grupos</button>
@@ -2376,23 +2439,9 @@ async function renderAdminGroupDetail(body, groupId){
       </div>
     </div>
 
-    <div class="admin-section">
-      <h3>Senha de acesso do grupo</h3>
-      <div class="hint">Esta senha é exigida na página pública do grupo (/?grupo=${esc(g.slug)}) e vale para as 3 bancas.</div>
-      <div class="form-row">
-        <input id="gPassword" type="text" placeholder="Nova senha">
-        <button class="btn-primary auto" id="setPasswordBtn">Atualizar senha</button>
-      </div>
-      <div class="success-msg" id="passwordMsg"></div>
-    </div>
-
-    <div class="section-sub" style="margin-top:8px;">Cada grupo passa por 3 bancas — cada uma com data, anexos, avaliadores e notas próprios.</div>
-    <div class="tab-nav" id="bancaTabs"></div>
-    <div id="bancaBody"></div>
-
     <div class="danger-zone">
       <h3>Zona de risco</h3>
-      <p>Excluir o grupo remove permanentemente seus dados, senha, anexos, banca avaliadora e notas das 3 etapas. Os alunos atribuídos ficam sem grupo. Esta ação não pode ser desfeita.</p>
+      <p>Excluir o grupo remove permanentemente seus dados, senha, anexos e notas das 3 etapas. Os alunos atribuídos ficam sem grupo. Esta ação não pode ser desfeita.</p>
       <button class="btn-sm danger" id="deleteGroupBtn">Excluir grupo</button>
     </div>`;
 
@@ -2415,140 +2464,12 @@ async function renderAdminGroupDetail(body, groupId){
     await Promise.all([loadAdminGroups(), loadAdminStudents()]);
     openGroupId = null; renderAdminPanel();
   };
-  $('setPasswordBtn').onclick = async () => {
-    const pw = $('gPassword').value;
-    if(!pw){ return; }
-    const { error } = await sb.rpc('admin_set_group_password', { p_group_id: g.id, p_password: pw });
-    if(error){ showAlert(error.message); return; }
-    $('gPassword').value = '';
-    $('passwordMsg').textContent = 'Senha atualizada.';
-    setTimeout(() => { $('passwordMsg').textContent = ''; }, 2000);
-  };
-
-  const tabsWrap = $('bancaTabs');
-  [1,2,3].forEach(stage => {
-    const b = document.createElement('button');
-    b.className = 'tab-btn' + (openBancaStage === stage ? ' active' : '');
-    b.textContent = BANCA_LABELS[stage];
-    b.onclick = () => { openBancaStage = stage; renderBancaStageBody(); };
-    tabsWrap.appendChild(b);
-  });
-  renderBancaStageBody();
 }
 
-function renderBancaStageBody(){
-  document.querySelectorAll('#bancaTabs .tab-btn').forEach((btn, i) => btn.classList.toggle('active', i + 1 === openBancaStage));
-  const banca = adminBancas.find(b => b.stage === openBancaStage);
-  const wrap = $('bancaBody');
-  if(!banca){
-    wrap.innerHTML = '<div class="empty small"><strong>Esta banca ainda não foi inicializada.</strong>Recarregue a página — ela é criada automaticamente ao salvar o grupo.</div>';
-    return;
-  }
-  const _reportUrl = getPublicFileUrl(banca.report_file_path);
-  const _hasReport = !!banca.report_file_name;
-  const _reportInfo = _hasReport
-    ? (_reportUrl
-        ? `<a href="${_reportUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:var(--accent-a);font-weight:600;text-decoration:none;">${phIcon('file-text')} ${esc(banca.report_file_name)} ${phIcon('arrow-square-out')}</a>`
-        : `<span>${esc(banca.report_file_name)}</span>`)
-    : '<span style="color:var(--ink-soft)">Nenhum arquivo enviado.</span>';
-  const _presLink = banca.presentation_link || '';
-
-  wrap.innerHTML = `
-    <div class="admin-section">
-      <h3>Data desta banca</h3>
-      <div class="form-row">
-        <input id="bDate" type="date" value="${fmtDateInput(banca.scheduled_date)}">
-        <button class="btn-primary auto" id="saveBancaDateBtn">Salvar data</button>
-      </div>
-    </div>
-
-    <div class="admin-section">
-      <h3>Anexos</h3>
-      <div class="hint">Envie o relatório (PDF ou DOCX) e cole o link da apresentação desta etapa.</div>
-      <div class="form-grid">
-        <div>
-          <label>Relatório</label>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-            <div id="reportFileInfo" style="font-size:13px;flex:1;">${_reportInfo}</div>
-            ${_hasReport ? `<button class="btn-sm danger" id="removeReportBtn" title="Remover anexo">${phIcon('trash')}</button>` : ''}
-          </div>
-          <input id="bReportFile" type="file" accept=".pdf,.doc,.docx">
-        </div>
-        <div>
-          <label>Link da apresentação</label>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <input id="bPresentation" class="field" style="margin-bottom:0;flex:1;" value="${esc(_presLink)}" placeholder="https://docs.google.com/presentation/...">
-            ${_presLink ? `<a href="${esc(_presLink)}" target="_blank" rel="noopener" class="btn-sm" title="Abrir link" style="flex-shrink:0;">${phIcon('arrow-square-out')}</a>` : ''}
-            ${_presLink ? `<button class="btn-sm danger" id="removePresBtn" title="Remover link">${phIcon('trash')}</button>` : ''}
-          </div>
-        </div>
-      </div>
-      <div style="display:flex; justify-content:flex-end;margin-top:12px;"><button class="btn-primary auto" id="saveBancaAttachmentsBtn">Salvar anexos</button></div>
-    </div>
-
-    <div class="admin-section">
-      <h3>Banca avaliadora</h3>
-      <div class="simple-list" id="evaluatorList"></div>
-      <div class="form-row" style="margin-top:12px;">
-        <button class="btn-primary auto" id="addEvalBtn">+ Adicionar avaliador</button>
-      </div>
-    </div>
-
-    <div class="admin-section">
-      <h3>Notas</h3>
-      <div class="hint">Selecione o conceito atribuído por cada avaliador para cada pergunta.</div>
-      <div id="adminScoreGrid"></div>
-    </div>`;
-
-  $('saveBancaDateBtn').onclick = async () => {
-    const dateVal = $('bDate').value || null;
-    const { error } = await sb.from('bancas').update({ scheduled_date: dateVal }).eq('id', banca.id);
-    if(error){ showAlert(error.message); return; }
-    banca.scheduled_date = dateVal;
-    showToast('Data salva.');
-  };
-
-  if($('removeReportBtn')) $('removeReportBtn').onclick = async () => {
-    if(!(await showConfirm('Remover o arquivo de relatório desta banca?'))) return;
-    const { error } = await sb.from('bancas').update({ report_file_path: null, report_file_name: null }).eq('id', banca.id);
-    if(error){ showAlert(error.message); return; }
-    banca.report_file_path = null; banca.report_file_name = null;
-    renderBancaStageBody();
-  };
-
-  if($('removePresBtn')) $('removePresBtn').onclick = async () => {
-    if(!(await showConfirm('Remover o link da apresentação desta banca?'))) return;
-    const { error } = await sb.from('bancas').update({ presentation_link: null }).eq('id', banca.id);
-    if(error){ showAlert(error.message); return; }
-    banca.presentation_link = null;
-    renderBancaStageBody();
-  };
-
-  $('saveBancaAttachmentsBtn').onclick = async () => {
-    const file = $('bReportFile').files[0];
-    const payload = { presentation_link: $('bPresentation').value.trim() || null };
-    if(file){
-      const safeName = sanitizeFileName(file.name);
-      const path = `${banca.id}/${Date.now()}-${safeName}`;
-      const { error: upErr } = await sb.storage.from('group-attachments').upload(path, file, { upsert: true });
-      if(upErr){ showAlert(upErr.message); return; }
-      payload.report_file_path = path;
-      payload.report_file_name = file.name;
-    }
-    const { error } = await sb.from('bancas').update(payload).eq('id', banca.id);
-    if(error){ showAlert(error.message); return; }
-    Object.assign(banca, payload);
-    renderBancaStageBody();
-  };
-
-  renderEvaluatorList(banca);
-  $('addEvalBtn').onclick = () => openEvaluatorModal(banca, () => { renderEvaluatorList(banca); loadGroupScoreGrid(banca); });
-  loadGroupScoreGrid(banca);
-}
 /* Assistente de notas — uma pergunta por vez, estilo Typeform, com
    indicador de passos (check nos já respondidos) e etapa final de
    Considerações. Aberto por avaliador, dentro de uma banca específica. */
-function openNotesWizard(rubricData, banca, evaluator, onClose){
+function openNotesWizard(rubricData, group, banca, evaluator, onClose){
   const steps = [];
   rubricData.forEach(cat => {
     (cat.questions || []).forEach(q => {
@@ -2557,9 +2478,13 @@ function openNotesWizard(rubricData, banca, evaluator, onClose){
   });
   steps.push({ type: 'considerations' });
 
+  // evaluator pode ser null (ainda não criado — auto-criado no primeiro submit)
+  let myEvaluatorId = evaluator?.id || null;
   const answers = {};
-  (banca.scores || []).forEach(s => { if(s.evaluator_id === evaluator.id && s.rating) answers[s.question_id] = s.rating; });
-  let commentValue = evaluator.comment || '';
+  if(myEvaluatorId){
+    (banca.scores || []).forEach(s => { if(s.evaluator_id === myEvaluatorId && s.rating) answers[s.question_id] = s.rating; });
+  }
+  let commentValue = evaluator?.comment || '';
   let stepIndex = steps.findIndex(st => st.type === 'question' && !answers[st.question.id]);
   if(stepIndex === -1) stepIndex = 0;
 
@@ -2621,12 +2546,19 @@ function openNotesWizard(rubricData, banca, evaluator, onClose){
         btn.textContent = RATING_LABELS[r];
         btn.onclick = async () => {
           answers[st.question.id] = r;
-          const { data: ok } = await sb.rpc('reader_submit_score', {
-            p_password: readerPassword, p_evaluator_id: evaluator.id, p_question_id: st.question.id, p_rating: r,
+          const { data: evId } = await sb.rpc('reader_submit_score', {
+            p_password: readerPassword, p_group_slug: group.slug, p_stage: banca.stage, p_question_id: st.question.id, p_rating: r,
           });
-          if(!ok){ showAlert('Não foi possível salvar a nota agora. Tente novamente.'); return; }
-          const existing = banca.scores.find(s => s.evaluator_id === evaluator.id && s.question_id === st.question.id);
-          if(existing) existing.rating = r; else banca.scores.push({ evaluator_id: evaluator.id, question_id: st.question.id, rating: r });
+          if(!evId){ showAlert('Não foi possível salvar a nota agora. Tente novamente.'); return; }
+          if(!myEvaluatorId){
+            myEvaluatorId = evId;
+            banca.evaluators = banca.evaluators || [];
+            if(!banca.evaluators.find(e => e.id === evId)){
+              banca.evaluators.push({ id: evId, reader_id: leituraData.reader_id, comment: null });
+            }
+          }
+          const existing = banca.scores.find(s => s.evaluator_id === myEvaluatorId && s.question_id === st.question.id);
+          if(existing) existing.rating = r; else banca.scores.push({ evaluator_id: myEvaluatorId, question_id: st.question.id, rating: r });
           if(stepIndex < steps.length - 1){
             setTimeout(() => { stepIndex++; renderStep(); }, 200);
           } else {
@@ -2652,10 +2584,11 @@ function openNotesWizard(rubricData, banca, evaluator, onClose){
         btn.disabled = true; btn.textContent = 'Salvando…';
         commentValue = overlay.querySelector('#wizComment').value;
         const { data: ok } = await sb.rpc('reader_submit_comment', {
-          p_password: readerPassword, p_evaluator_id: evaluator.id, p_comment: commentValue.trim() || null,
+          p_password: readerPassword, p_group_slug: group.slug, p_stage: banca.stage, p_comment: commentValue.trim() || null,
         });
         if(!ok){ btn.disabled = false; btn.textContent = 'Concluir'; showAlert('Não foi possível salvar agora. Tente novamente.'); return; }
-        evaluator.comment = commentValue.trim() || null;
+        const ev = banca.evaluators?.find(e => e.id === myEvaluatorId);
+        if(ev) ev.comment = commentValue.trim() || null;
         renderThanksScreen();
       };
     }
@@ -2678,103 +2611,6 @@ function openNotesWizard(rubricData, banca, evaluator, onClose){
   renderStep();
 }
 
-/* Modal para adicionar avaliador a uma banca: escolhe um membro já
-   cadastrado (liga o login dele ao registro) ou entra como convidado
-   (sem acesso ao formulário, só informativo). */
-async function openEvaluatorModal(banca, onDone){
-  const { data: readers } = await sb.from('banca_readers').select('*').order('name');
-  showModal((box, close) => {
-    box.innerHTML = `
-      <h3>Adicionar avaliador</h3>
-      <div style="margin-bottom:10px;">
-        <span class="modal-field-label">Membro da banca</span>
-        <select class="field" id="modalEvalReader" style="margin-bottom:0;">
-          <option value="">Convidado (sem login, só informativo)</option>
-          ${(readers || []).map(r => `<option value="${r.id}">${esc(r.name)}${r.role ? ' — ' + esc(r.role) : ''}</option>`).join('')}
-        </select>
-      </div>
-      <div id="modalEvalGuestFields">
-        <div style="margin-bottom:10px;">
-          <span class="modal-field-label">Nome</span>
-          <input class="field" id="modalEvalName" style="margin-bottom:0;" placeholder="Nome">
-        </div>
-        <div style="margin-bottom:10px;">
-          <span class="modal-field-label">Cargo</span>
-          <input class="field" id="modalEvalRole" style="margin-bottom:0;" placeholder="ex: Presidente da Banca">
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-sm" id="modalCancel">Cancelar</button>
-        <button class="btn-primary auto" id="modalSave">Adicionar</button>
-      </div>`;
-    const select = box.querySelector('#modalEvalReader');
-    const guestFields = box.querySelector('#modalEvalGuestFields');
-    const syncVisibility = () => { guestFields.style.display = select.value ? 'none' : ''; };
-    select.onchange = syncVisibility;
-    syncVisibility();
-    box.querySelector('#modalCancel').onclick = () => close(null);
-    box.querySelector('#modalSave').onclick = async () => {
-      let payload;
-      if(select.value){
-        const reader = (readers || []).find(r => r.id === select.value);
-        payload = { banca_id: banca.id, reader_id: reader.id, name: reader.name, role: reader.role || null, order_index: 0 };
-      } else {
-        const name = box.querySelector('#modalEvalName').value.trim();
-        const role = box.querySelector('#modalEvalRole').value.trim();
-        if(!name){ showAlert('Preencha o nome.'); return; }
-        payload = { banca_id: banca.id, reader_id: null, name, role: role || null, order_index: 0 };
-      }
-      const { error } = await sb.from('evaluators').insert(payload);
-      if(error){ showAlert(error.message); return; }
-      close(true);
-      if(onDone) onDone();
-    };
-  });
-}
-
-async function renderEvaluatorList(banca){
-  const wrap = $('evaluatorList');
-  const { data: evaluators } = await sb.from('evaluators').select('*').eq('banca_id', banca.id).order('order_index');
-  wrap.innerHTML = '';
-  if(!evaluators || !evaluators.length){ wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Nenhum avaliador ainda.</p>'; return; }
-  evaluators.forEach(ev => {
-    const row = document.createElement('div'); row.className = 'evaluator-row';
-    row.innerHTML = `<div class="meta"><strong>${esc(ev.name)}</strong><span>${esc(ev.role||'')}</span>${ev.comment ? `<div class="comment">${esc(ev.comment)}</div>` : ''}</div>`;
-    const acts = document.createElement('div'); acts.className = 'row-acts';
-    const edit = document.createElement('button'); edit.className = 'btn-sm'; edit.textContent = 'Editar';
-    edit.onclick = async () => {
-      const result = await showPrompt('Editar avaliador', [
-        { key: 'name', label: 'Nome', value: ev.name },
-        { key: 'role', label: 'Cargo', value: ev.role || '' },
-        { key: 'comment', label: 'Comentário/observação (opcional)', value: ev.comment || '' },
-      ]);
-      if(!result) return;
-      await sb.from('evaluators').update({ name: result.name || ev.name, role: result.role, comment: result.comment || null }).eq('id', ev.id);
-      renderEvaluatorList(banca);
-    };
-    const del = document.createElement('button'); del.className = 'btn-sm danger'; del.textContent = 'Excluir';
-    del.onclick = async () => {
-      if(!(await showConfirm('Excluir este avaliador? As notas dele nesta banca também serão apagadas.'))) return;
-      await sb.from('evaluators').delete().eq('id', ev.id);
-      renderEvaluatorList(banca);
-      loadGroupScoreGrid(banca);
-    };
-    acts.append(edit, del); row.appendChild(acts); wrap.appendChild(row);
-  });
-}
-async function loadGroupScoreGrid(banca){
-  const gridWrap = $('adminScoreGrid');
-  const { data: evaluators } = await sb.from('evaluators').select('*').eq('banca_id', banca.id).order('order_index');
-  const { data: scores } = await sb.from('scores').select('*').eq('banca_id', banca.id);
-  const bancaForGrid = { evaluators: evaluators || [], scores: (scores||[]).map(s => ({ evaluator_id: s.evaluator_id, question_id: s.question_id, rating: s.rating })) };
-  gridWrap.innerHTML = '';
-  gridWrap.appendChild(renderRubricGrid(rubric, bancaForGrid, {
-    canEdit: true,
-    onScoreChange: async (evaluatorId, questionId, rating) => {
-      await sb.from('scores').upsert({ banca_id: banca.id, evaluator_id: evaluatorId, question_id: questionId, rating, updated_at: new Date().toISOString() }, { onConflict: 'evaluator_id,question_id' });
-    }
-  }));
-}
 
 /* ======================= ADMIN: CONFIG TAB ======================= */
 function renderAdminConfigTab(body){
@@ -2801,13 +2637,73 @@ function renderAdminUsuariosTab(body){
     </div>
     <div class="admin-section">
       <h3>Membros da banca (acesso de leitura)</h3>
-      <div class="hint">Cada um tem nome + cargo + senha próprios, sem precisar de conta — na página de acesso da banca, escolhem a aba "Banca" pra entrar com a senha própria e ver todos os grupos, sem editar nada.</div>
+      <div class="hint">Cada um tem nome + cargo + senha próprios. Na tela de acesso, escolhem "Banca" e entram com a senha própria para lançar as notas.</div>
       <div class="simple-list" id="bancaReadersList" style="margin-bottom:14px;"></div>
       <button class="btn-primary auto" id="addReaderBtn">+ Adicionar membro</button>
+    </div>
+    <div class="admin-section">
+      <h3>Atribuição por etapa</h3>
+      <div class="hint">Defina quais avaliadores participam de cada etapa. Cada avaliador atribuído avaliará <strong>todos os grupos</strong> daquele período.</div>
+      <div id="stageAssignmentsWrap"></div>
     </div>`;
   renderBancaReadersList(body);
+  renderStageAssignments();
   $('addReaderBtn').onclick = () => openReaderModal(null, body);
   $('printQRBtn').onclick = () => printReaderQRCodes();
+}
+
+async function renderStageAssignments(){
+  const wrap = $('stageAssignmentsWrap');
+  if(!wrap) return;
+  const [{ data: readers }, { data: assignments }] = await Promise.all([
+    sb.from('banca_readers').select('id,name,role').order('name'),
+    sb.from('banca_stage_readers').select('stage,reader_id'),
+  ]);
+  if(!readers){ wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Erro ao carregar avaliadores.</p>'; return; }
+  const assignedSet = new Set((assignments || []).map(a => `${a.stage}:${a.reader_id}`));
+  const stageLabels = { 1: '1ª Banca', 2: '2ª Banca', 3: 'Banca Final' };
+  wrap.innerHTML = '';
+  [1, 2, 3].forEach(stage => {
+    const section = document.createElement('div');
+    section.style.cssText = 'margin-bottom:20px;';
+    section.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;letter-spacing:.01em;">${stageLabels[stage]}</div>`;
+    if(!readers.length){
+      section.innerHTML += '<p style="font-size:13px;color:var(--ink-soft)">Nenhum avaliador cadastrado ainda.</p>';
+    } else {
+      readers.forEach(r => {
+        const key = `${stage}:${r.id}`;
+        const active = assignedSet.has(key);
+        const row = document.createElement('div');
+        row.className = 'simple-row';
+        row.style.cssText = 'cursor:pointer;user-select:none;';
+        row.innerHTML = `
+          <div class="meta" style="flex:1;">
+            <strong>${esc(r.name)}</strong>
+            ${r.role ? `<span>${esc(r.role)}</span>` : ''}
+          </div>
+          <div class="row-acts">
+            <button class="btn-sm ${active ? 'danger' : 'primary-outline'}" style="min-width:90px;">
+              ${active ? phIcon('check') + ' Atribuído' : '+ Atribuir'}
+            </button>
+          </div>`;
+        row.querySelector('button').onclick = async (e) => {
+          e.stopPropagation();
+          await toggleStageReader(stage, r.id, active);
+          renderStageAssignments();
+        };
+        section.appendChild(row);
+      });
+    }
+    wrap.appendChild(section);
+  });
+}
+
+async function toggleStageReader(stage, readerId, currentlyActive){
+  if(currentlyActive){
+    await sb.from('banca_stage_readers').delete().eq('stage', stage).eq('reader_id', readerId);
+  } else {
+    await sb.from('banca_stage_readers').insert({ stage, reader_id: readerId });
+  }
 }
 
 async function printReaderQRCodes(){
