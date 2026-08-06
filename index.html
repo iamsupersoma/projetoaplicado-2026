@@ -390,15 +390,15 @@
   .group-card{
     background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px;
     box-shadow:var(--shadow); cursor:pointer; transition:.15s; display:flex; flex-direction:column; gap:6px;
+    position:relative;
   }
   .group-card:hover{transform:translateY(-2px); box-shadow:0 4px 8px rgba(0,0,0,.07), 0 12px 28px rgba(0,0,0,.09);}
+  .group-card.is-done{border-color:var(--good);}
+  .card-done-badge{position:absolute;top:14px;right:16px;color:var(--good);font-size:20px;line-height:1;}
   .group-card .code{font-size:11px; font-weight:800; letter-spacing:.05em; color:var(--warn); text-transform:uppercase;}
   .group-card .proj-title{font-size:15px; font-weight:700; color:var(--ink); line-height:1.3;}
   .group-card .authors{font-size:12px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .stage-pill-row{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
-  .stage-pill{padding:6px 16px;border-radius:20px;border:1px solid var(--line);background:transparent;font-size:13px;font-weight:500;color:var(--ink-soft);cursor:pointer;transition:all .15s;}
-  .stage-pill:hover{border-color:var(--accent-a);color:var(--accent-a);}
-  .stage-pill.active{background:var(--accent-a);border-color:var(--accent-a);color:#fff;font-weight:600;}
+
   .group-card .pw-row{display:flex;align-items:center;gap:6px;margin-top:6px;padding-top:6px;border-top:1px solid var(--line);}
   .group-card .pw-status{font-size:12px;display:inline-flex;align-items:center;gap:4px;flex:1;}
   .group-card .pw-status.has-pw{color:var(--good);}
@@ -516,14 +516,17 @@
   /* ---- Assistente de notas (estilo Typeform) ---- */
   .wizard-overlay{
     position:fixed; inset:0; z-index:2000; background:var(--bg);
-    display:flex; flex-direction:column; padding:24px; overflow-y:auto;
+    display:flex; flex-direction:column;
+  }
+  .wizard-scroll{
+    flex:1; overflow-y:auto; padding:24px; position:relative;
   }
   .wizard-close{
     position:absolute; top:20px; right:24px; width:36px; height:36px; border-radius:50%;
     border:1px solid var(--line); background:var(--card); font-size:18px; line-height:1; cursor:pointer; color:var(--ink-mid);
   }
   .wizard-close:hover{background:var(--line);}
-  .wizard-inner{max-width:600px; margin:0 auto; width:100%; display:flex; flex-direction:column; flex:1; padding-top:36px; min-height:calc(100vh - 48px);}
+  .wizard-inner{max-width:600px; margin:0 auto; width:100%; padding-top:36px;}
   .wizard-steps{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:44px;}
   .wizard-dot{
     width:32px; height:32px; border-radius:50%; border:1px solid var(--line); background:var(--card);
@@ -548,7 +551,12 @@
   .wizard-thanks-text{font-size:15px;color:var(--ink-mid);max-width:380px;line-height:1.6;margin-bottom:28px;}
   .wizard-option:hover{border-color:var(--accent-a); background:color-mix(in srgb, var(--accent-a) 6%, var(--card));}
   .wizard-option.selected{border-color:var(--accent-a); background:color-mix(in srgb, var(--accent-a) 12%, var(--card)); color:var(--accent-a);}
-  .wizard-nav{display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:20px;}
+  .wizard-footer{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 24px; padding-bottom:max(12px, env(safe-area-inset-bottom));
+    background:var(--bg); border-top:1px solid var(--line); flex-shrink:0;
+  }
+  .wizard-footer:empty{display:none;}
   .wizard-progress{font-size:12.5px; color:var(--ink-soft);}
   .wizard-textarea{
     width:100%; min-height:140px; padding:14px 16px; border:1px solid var(--line); border-radius:var(--radius);
@@ -557,7 +565,9 @@
   }
   @media(max-width:640px){
     .wizard-question{font-size:21px;}
-    .wizard-inner{padding-top:56px;}
+    .wizard-scroll{padding:16px;}
+    .wizard-inner{padding-top:48px;}
+    .wizard-footer{padding:10px 16px; padding-bottom:max(10px, env(safe-area-inset-bottom));}
   }
   .score-cell .eval-name{font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:5px;}
   .score-cell .eval-name .check{color:var(--good); font-size:13px;}
@@ -1113,6 +1123,7 @@ function parseRouteFromLocation(){
     const p = new URLSearchParams(location.search);
     if(p.get('admin') === '1') return { name: 'admin', slug: null };
     if(p.get('aluno') === '1') return { name: 'aluno', slug: null };
+    if(p.get('banca') === '1') return { name: 'banca', slug: null };
     if(p.get('grupo')) return { name: 'grupo', slug: p.get('grupo') };
   } catch { /* about:srcdoc and similar sandboxed contexts */ }
   return { name: 'home', slug: null };
@@ -1122,6 +1133,7 @@ function getRoute(){ return currentRoute.name; }
 function goHome(){ navigateTo({ name: 'home', slug: null }, location.pathname); }
 function goAdmin(){ navigateTo({ name: 'admin', slug: null }, '?admin=1'); }
 function goAluno(){ alunoMode = 'register'; navigateTo({ name: 'aluno', slug: null }, '?aluno=1'); }
+function goBanca(){ navigateTo({ name: 'banca', slug: null }, '?banca=1'); }
 function goGrupo(slug){ navigateTo({ name: 'grupo', slug }, '?grupo=' + encodeURIComponent(slug)); }
 function navigateTo(routeObj, search){
   currentRoute = routeObj;
@@ -1137,6 +1149,16 @@ function renderHeaderNav(){
   const nav = $('headerNav');
   const route = getRoute();
   nav.innerHTML = '';
+
+  if(route === 'banca'){
+    if(leituraData){
+      const sair = document.createElement('button');
+      sair.className = 'nav-btn'; sair.textContent = 'Sair';
+      sair.onclick = () => { leituraData = null; readerPassword = ''; readerStages = []; renderBancaLoginPage(); };
+      nav.appendChild(sair);
+    }
+    return;
+  }
 
   if(route !== 'home'){
     const back = document.createElement('button');
@@ -1585,6 +1607,7 @@ function myProgress(banca, evaluatorId){
 function renderLeituraPanel(data){
   leituraData = data;
   readerStages = data.reader_stages || [];
+  renderHeaderNav();
   renderLeituraGroupList();
 }
 function renderLeituraGroupList(){
@@ -1608,13 +1631,23 @@ function renderLeituraGroupList(){
     const assignments = myAssignments(g);
     const card = document.createElement('div'); card.className = 'group-card';
     let subtitle;
+    let isDone = false;
     if(assignments.length === 1){
       const { answered, total } = myProgress(assignments[0].banca, assignments[0].evaluator?.id);
+      isDone = total > 0 && answered === total;
       subtitle = `${esc(BANCA_LABELS[assignments[0].banca.stage])} · ${answered}/${total} respondidas`;
     } else {
+      isDone = assignments.every(({ banca, evaluator }) => {
+        const { answered, total } = myProgress(banca, evaluator?.id);
+        return total > 0 && answered === total;
+      });
       subtitle = `${assignments.length} etapas atribuídas a você`;
     }
-    card.innerHTML = `<span class="proj-title">${esc(g.project_title || g.group_name)}</span><span class="authors">${subtitle}</span>`;
+    if(isDone) card.classList.add('is-done');
+    card.innerHTML = `
+      ${isDone ? `<span class="card-done-badge">${phIcon('check-circle')}</span>` : ''}
+      <span class="proj-title">${esc(g.project_title || g.group_name)}</span>
+      <span class="authors">${subtitle}</span>`;
     card.onclick = () => openGroupAssignment(g);
     grid.appendChild(card);
   });
@@ -1763,50 +1796,42 @@ function renderPublicBancaBody(bancas){
   };
 }
 
+/* ======================= BANCA: LOGIN (rota ?banca=1) ======================= */
+
+function renderBancaLoginPage(){
+  root().innerHTML = `
+    <div class="main narrow" style="display:flex;align-items:center;justify-content:center;min-height:80vh;">
+      <div class="gate-box" style="width:100%;max-width:360px;">
+        <div style="text-align:center;margin-bottom:24px;">
+          <div style="font-size:32px;line-height:1;margin-bottom:10px;">${phIcon('seal-check')}</div>
+          <h2 style="font-size:20px;font-weight:700;margin-bottom:4px;">Acesso da Banca</h2>
+          <p style="font-size:13px;color:var(--ink-soft);">Digite sua senha pessoal de avaliador.</p>
+        </div>
+        <input id="leituraPassword" class="field" type="password" placeholder="Senha de acesso" autocomplete="current-password">
+        <div class="error-msg" id="leituraError"></div>
+        <button class="btn-primary" id="leituraEnterBtn" style="width:100%;margin-top:4px;">Entrar</button>
+      </div>
+    </div>`;
+  $('leituraEnterBtn').onclick = tryLeituraLogin;
+  $('leituraPassword').addEventListener('keydown', e => { if(e.key === 'Enter') tryLeituraLogin(); });
+  setTimeout(() => $('leituraPassword')?.focus(), 50);
+}
+
 /* ======================= ADMIN: LOGIN ======================= */
-let adminLoginMode = 'professor'; // 'professor' | 'banca'
 function renderAdminLogin(){
   root().innerHTML = `
     <div class="main narrow">
       <div class="gate-box" style="margin-top:20px;">
         <h2>Entrar</h2>
-        <div class="tab-nav" id="adminLoginTabs" style="justify-content:center; border-bottom:none; padding-bottom:0; margin-top:20px; margin-bottom:8px;"></div>
-        <div id="adminLoginBody"></div>
+        <p>Entre com seu e-mail e senha de administrador.</p>
+        <input type="email" id="loginEmail" class="field" placeholder="E-mail" autocomplete="username">
+        <input type="password" id="loginPassword" class="field" placeholder="Senha" autocomplete="current-password">
+        <div class="error-msg" id="loginError"></div>
+        <button class="btn-primary" id="loginBtn">Entrar</button>
       </div>
     </div>`;
-  const tabsWrap = $('adminLoginTabs');
-  [['professor', 'Professor'], ['banca', 'Banca']].forEach(([id, label]) => {
-    const b = document.createElement('button');
-    b.className = 'tab-btn' + (adminLoginMode === id ? ' active' : '');
-    b.textContent = label;
-    b.onclick = () => { adminLoginMode = id; renderAdminLoginBody(); };
-    tabsWrap.appendChild(b);
-  });
-  renderAdminLoginBody();
-}
-function renderAdminLoginBody(){
-  document.querySelectorAll('#adminLoginTabs .tab-btn').forEach(btn => {
-    btn.classList.toggle('active', (btn.textContent === 'Professor') === (adminLoginMode === 'professor'));
-  });
-  const body = $('adminLoginBody');
-  if(adminLoginMode === 'professor'){
-    body.innerHTML = `
-      <p>Entre com seu e-mail e senha de administrador.</p>
-      <input type="email" id="loginEmail" class="field" placeholder="E-mail">
-      <input type="password" id="loginPassword" class="field" placeholder="Senha">
-      <div class="error-msg" id="loginError"></div>
-      <button class="btn-primary" id="loginBtn">Entrar</button>`;
-    $('loginBtn').onclick = doAdminLogin;
-    $('loginPassword').addEventListener('keydown', e => { if(e.key==='Enter') doAdminLogin(); });
-  } else {
-    body.innerHTML = `
-      <p>Digite sua senha pessoal para ver todos os grupos (somente leitura).</p>
-      <input id="leituraPassword" class="field" type="password" placeholder="Senha">
-      <div class="error-msg" id="leituraError"></div>
-      <button class="btn-primary" id="leituraEnterBtn">Entrar</button>`;
-    $('leituraEnterBtn').onclick = tryLeituraLogin;
-    $('leituraPassword').addEventListener('keydown', e => { if(e.key==='Enter') tryLeituraLogin(); });
-  }
+  $('loginBtn').onclick = doAdminLogin;
+  $('loginPassword').addEventListener('keydown', e => { if(e.key==='Enter') doAdminLogin(); });
 }
 async function doAdminLogin(){
   if(!sb){ $('loginError').textContent = 'Supabase não configurado.'; return; }
@@ -2467,6 +2492,8 @@ async function renderAdminGroupDetail(body, groupId){
       </div>
     </div>
 
+    <div id="groupBancasSection"><div class="loading-state" style="margin:8px 0;">Carregando avaliações…</div></div>
+
     <div class="danger-zone">
       <h3>Zona de risco</h3>
       <p>Excluir o grupo remove permanentemente seus dados, senha, anexos e notas das 3 etapas. Os alunos atribuídos ficam sem grupo. Esta ação não pode ser desfeita.</p>
@@ -2492,6 +2519,81 @@ async function renderAdminGroupDetail(body, groupId){
     await Promise.all([loadAdminGroups(), loadAdminStudents()]);
     openGroupId = null; renderAdminPanel();
   };
+
+  // load banca scores async so the page appears immediately
+  (async () => {
+    const section = $('groupBancasSection');
+    const [
+      { data: bancasData },
+      { data: evaluatorsData },
+      { data: scoresData },
+      { data: readersData },
+    ] = await Promise.all([
+      sb.from('bancas').select('id,stage,scheduled_date,report_file_path,report_file_name,presentation_link').eq('group_id', g.id),
+      sb.from('evaluators').select('id,banca_id,reader_id,comment'),
+      sb.from('scores').select('evaluator_id,question_id,rating,banca_id'),
+      sb.from('banca_readers').select('id,name,role'),
+    ]);
+    const readerMap = Object.fromEntries((readersData || []).map(r => [r.id, r]));
+    section.innerHTML = '';
+
+    [1, 2, 3].forEach(stage => {
+      const bancaRecord = (bancasData || []).find(b => b.stage === stage);
+      const evaluators = bancaRecord
+        ? (evaluatorsData || []).filter(e => e.banca_id === bancaRecord.id)
+            .map(e => { const r = readerMap[e.reader_id]; return { ...e, name: r?.name || 'Avaliador', role: r?.role || null }; })
+        : [];
+      const bancaScores = bancaRecord
+        ? (scoresData || []).filter(s => s.banca_id === bancaRecord.id)
+        : [];
+      const bancaObj = { evaluators, scores: bancaScores };
+
+      const wrap = document.createElement('div');
+      wrap.className = 'admin-section';
+      wrap.style.marginBottom = '16px';
+
+      const stageHeader = document.createElement('div');
+      stageHeader.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;';
+      stageHeader.innerHTML = `
+        <h3 style="margin:0;">${esc(BANCA_LABELS[stage])}</h3>
+        ${bancaRecord?.scheduled_date ? `<span style="font-size:12px;color:var(--ink-soft);">${fmtDate(bancaRecord.scheduled_date)}</span>` : ''}`;
+      wrap.appendChild(stageHeader);
+
+      // entregáveis
+      const hasFile = bancaRecord?.report_file_path;
+      const hasLink = bancaRecord?.presentation_link;
+      if(hasFile || hasLink){
+        const deliverWrap = document.createElement('div');
+        deliverWrap.style.cssText = 'background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;';
+        if(hasFile){
+          const fileUrl = getPublicFileUrl(bancaRecord.report_file_path);
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+          row.innerHTML = `
+            <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;flex:1;min-width:0;color:var(--ink);">
+              ${phIcon('file-pdf')} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(bancaRecord.report_file_name || bancaRecord.report_file_path)}</span>
+            </span>
+            ${fileUrl ? `<a href="${esc(fileUrl)}" target="_blank" rel="noopener" class="btn-sm" style="flex-shrink:0;">${phIcon('download-simple')} Baixar</a>` : ''}`;
+          deliverWrap.appendChild(row);
+        }
+        if(hasLink){
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+          row.innerHTML = `
+            <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;flex:1;min-width:0;color:var(--ink);">
+              ${phIcon('presentation')} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(bancaRecord.presentation_link)}</span>
+            </span>
+            <a href="${esc(bancaRecord.presentation_link)}" target="_blank" rel="noopener" class="btn-sm" style="flex-shrink:0;">${phIcon('arrow-square-out')} Abrir</a>`;
+          deliverWrap.appendChild(row);
+        }
+        wrap.appendChild(deliverWrap);
+      }
+
+      wrap.appendChild(renderResultsDashboard(rubric || [], bancaObj));
+      wrap.appendChild(renderRubricResultsView(rubric || [], bancaObj));
+      section.appendChild(wrap);
+    });
+  })();
 }
 
 /* Assistente de notas — uma pergunta por vez, estilo Typeform, com
@@ -2519,11 +2621,14 @@ function openNotesWizard(rubricData, group, banca, evaluator, onClose){
   const overlay = document.createElement('div');
   overlay.className = 'wizard-overlay';
   overlay.innerHTML = `
-    <button type="button" class="wizard-close" id="wizClose">${phIcon('x')}</button>
-    <div class="wizard-inner">
-      <div class="wizard-steps" id="wizSteps"></div>
-      <div class="wizard-body" id="wizBody"></div>
-    </div>`;
+    <div class="wizard-scroll">
+      <button type="button" class="wizard-close" id="wizClose">${phIcon('x')}</button>
+      <div class="wizard-inner">
+        <div class="wizard-steps" id="wizSteps"></div>
+        <div class="wizard-body" id="wizBody"></div>
+      </div>
+    </div>
+    <div class="wizard-footer" id="wizFooter"></div>`;
   document.body.appendChild(overlay);
 
   function isStepComplete(i){
@@ -2557,15 +2662,15 @@ function openNotesWizard(rubricData, group, banca, evaluator, onClose){
     renderStepsIndicator();
     const body = overlay.querySelector('#wizBody');
     const st = steps[stepIndex];
+    const footer = overlay.querySelector('#wizFooter');
     if(st.type === 'question'){
       body.innerHTML = `
         <div class="wizard-eyebrow">${esc(st.category)}</div>
         <h2 class="wizard-question">${esc(st.question.question)}</h2>
-        <div class="wizard-options" id="wizOptions"></div>
-        <div class="wizard-nav">
-          <button type="button" class="btn-sm" id="wizBack" ${stepIndex === 0 ? 'disabled' : ''}>${phIcon('arrow-left')} Voltar</button>
-          <span class="wizard-progress">${stepIndex + 1} de ${steps.length}</span>
-        </div>`;
+        <div class="wizard-options" id="wizOptions"></div>`;
+      footer.innerHTML = `
+        <button type="button" class="btn-sm" id="wizBack" ${stepIndex === 0 ? 'disabled' : ''}>${phIcon('arrow-left')} Voltar</button>
+        <span class="wizard-progress">${stepIndex + 1} de ${steps.length}</span>`;
       const optsWrap = overlay.querySelector('#wizOptions');
       RATING_ORDER.forEach(r => {
         const btn = document.createElement('button');
@@ -2595,20 +2700,19 @@ function openNotesWizard(rubricData, group, banca, evaluator, onClose){
         };
         optsWrap.appendChild(btn);
       });
-      overlay.querySelector('#wizBack').onclick = () => { if(stepIndex > 0){ stepIndex--; renderStep(); } };
+      footer.querySelector('#wizBack').onclick = () => { if(stepIndex > 0){ stepIndex--; renderStep(); } };
     } else {
       body.innerHTML = `
         <div class="wizard-eyebrow">Última etapa</div>
         <h2 class="wizard-question">Considerações</h2>
-        <textarea id="wizComment" class="wizard-textarea" placeholder="Comentário/observação (opcional)"></textarea>
-        <div class="wizard-nav">
-          <button type="button" class="btn-sm" id="wizBack">${phIcon('arrow-left')} Voltar</button>
-          <button type="button" class="btn-primary auto" id="wizFinish">Concluir</button>
-        </div>`;
+        <textarea id="wizComment" class="wizard-textarea" placeholder="Comentário/observação (opcional)"></textarea>`;
+      footer.innerHTML = `
+        <button type="button" class="btn-sm" id="wizBack">${phIcon('arrow-left')} Voltar</button>
+        <button type="button" class="btn-primary auto" id="wizFinish">Concluir</button>`;
       overlay.querySelector('#wizComment').value = commentValue;
-      overlay.querySelector('#wizBack').onclick = () => { stepIndex--; renderStep(); };
-      overlay.querySelector('#wizFinish').onclick = async () => {
-        const btn = overlay.querySelector('#wizFinish');
+      footer.querySelector('#wizBack').onclick = () => { stepIndex--; renderStep(); };
+      footer.querySelector('#wizFinish').onclick = async () => {
+        const btn = footer.querySelector('#wizFinish');
         btn.disabled = true; btn.textContent = 'Salvando…';
         commentValue = overlay.querySelector('#wizComment').value;
         const { data: ok } = await sb.rpc('reader_submit_comment', {
@@ -2625,6 +2729,7 @@ function openNotesWizard(rubricData, group, banca, evaluator, onClose){
     const allDone = steps.every((_, i) => isStepComplete(i));
     steps.forEach((_, i) => { if(i < steps.length - 1) answers[steps[i].question?.id || ''] = answers[steps[i].question?.id || '']; });
     renderStepsIndicator();
+    overlay.querySelector('#wizFooter').innerHTML = '';
     const body = overlay.querySelector('#wizBody');
     body.innerHTML = `
       <div class="wizard-thanks">
@@ -2672,148 +2777,136 @@ async function renderAdminBancasTab(body){
     sb.from('banca_readers').select('id,name,role'),
   ]);
 
-  const stageLabels = { 1: '1ª Banca', 2: '2ª Banca', 3: 'Banca Final' };
   const readerMap = Object.fromEntries((readersData || []).map(r => [r.id, r]));
 
   body.innerHTML = `
     <div class="admin-bar">
       <div class="admin-bar-left">Notas por etapa, arquivos enviados e links de apresentação dos grupos.</div>
     </div>
-    <div class="stage-pill-row" id="bancasStagePills"></div>
+    <div class="tab-nav" id="bancasStageTabs"></div>
     <div id="bancasContent"></div>`;
 
-  const pillRow = $('bancasStagePills');
+  const tabNav = $('bancasStageTabs');
   [1, 2, 3].forEach(s => {
     const btn = document.createElement('button');
-    btn.className = 'stage-pill' + (adminBancaStage === s ? ' active' : '');
-    btn.textContent = stageLabels[s];
+    btn.className = 'tab-btn' + (adminBancaStage === s ? ' active' : '');
+    btn.textContent = BANCA_LABELS[s];
     btn.onclick = () => { adminBancaStage = s; renderAdminBancasTab(body); };
-    pillRow.appendChild(btn);
+    tabNav.appendChild(btn);
   });
 
   const content = $('bancasContent');
-  const groupsInStage = adminGroups.map(g => {
-    const banca = (bancasData || []).find(b => b.group_id === g.id && b.stage === adminBancaStage);
-    return { g, banca };
-  });
-
-  if(!groupsInStage.length){
+  if(!adminGroups.length){
     content.innerHTML = '<p style="padding:24px 0;font-size:14px;color:var(--ink-soft);">Nenhum grupo cadastrado.</p>';
     return;
   }
 
-  groupsInStage.forEach(({ g, banca }) => {
+  adminGroups.forEach(g => {
+    const bancaRecord = (bancasData || []).find(b => b.group_id === g.id && b.stage === adminBancaStage);
     const students = adminStudents.filter(s => s.group_id === g.id);
+
+    // build banca object in the same shape renderResultsDashboard / renderRubricResultsView expect
+    const evaluators = bancaRecord
+      ? (evaluatorsData || []).filter(e => e.banca_id === bancaRecord.id)
+          .map(e => { const r = readerMap[e.reader_id]; return { ...e, name: r?.name || 'Avaliador', role: r?.role || null }; })
+      : [];
+    const bancaScores = bancaRecord
+      ? (scoresData || []).filter(s => s.banca_id === bancaRecord.id)
+      : [];
+    const bancaObj = { evaluators, scores: bancaScores };
+
     const card = document.createElement('div');
     card.className = 'admin-section';
     card.style.marginBottom = '16px';
 
-    // header
+    // ── header ──
     const header = document.createElement('div');
-    header.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:14px;';
+    header.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:16px;';
     header.innerHTML = `
       <div>
-        <div style="font-size:15px;font-weight:700;color:var(--ink);">${esc(g.project_title || g.group_name)}</div>
-        <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">${esc(g.slug)}${students.length ? ' · ' + students.map(s=>esc(s.full_name)).join(', ') : ''}</div>
+        <div class="section-title" style="font-size:16px;margin-bottom:2px;">${esc(g.project_title || g.group_name)}</div>
+        <div class="section-sub" style="margin-top:0;">${esc(g.slug)}${students.length ? ' · ' + students.map(s => esc(s.full_name)).join(', ') : ''}</div>
       </div>
-      ${banca?.scheduled_date ? `<span style="font-size:11px;color:var(--ink-soft);white-space:nowrap;padding-top:2px;">${new Date(banca.scheduled_date).toLocaleDateString('pt-BR')}</span>` : ''}`;
+      ${bancaRecord?.scheduled_date ? `<span style="font-size:12px;color:var(--ink-soft);white-space:nowrap;padding-top:4px;">${fmtDate(bancaRecord.scheduled_date)}</span>` : ''}`;
     card.appendChild(header);
 
-    // files & links
-    const hasFile = banca?.report_file_path;
-    const hasLink = banca?.presentation_link;
+    // ── entregáveis ──
+    const hasFile = bancaRecord?.report_file_path;
+    const hasLink = bancaRecord?.presentation_link;
     if(hasFile || hasLink){
-      const section = document.createElement('div');
-      section.style.cssText = 'background:color-mix(in srgb,var(--accent-a) 5%,var(--card));border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;';
+      const deliverSection = document.createElement('div');
+      deliverSection.className = 'admin-section';
+      deliverSection.style.cssText = 'margin-bottom:16px;padding:12px 16px;display:flex;flex-direction:column;gap:10px;';
+      const label = document.createElement('div');
+      label.style.cssText = 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin-bottom:2px;';
+      label.textContent = 'Entregáveis';
+      deliverSection.appendChild(label);
       if(hasFile){
-        const fileRow = document.createElement('div');
-        fileRow.style.cssText = 'display:flex;align-items:center;gap:8px;';
-        const fileUrl = getPublicFileUrl(banca.report_file_path);
-        fileRow.innerHTML = `
-          <span style="display:inline-flex;align-items:center;gap:5px;font-size:13px;flex:1;min-width:0;">
-            ${phIcon('file-pdf')} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(banca.report_file_name || banca.report_file_path)}</span>
+        const fileUrl = getPublicFileUrl(bancaRecord.report_file_path);
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+        row.innerHTML = `
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;flex:1;min-width:0;color:var(--ink);">
+            ${phIcon('file-pdf')} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(bancaRecord.report_file_name || bancaRecord.report_file_path)}</span>
           </span>
-          ${fileUrl ? `<a href="${esc(fileUrl)}" target="_blank" rel="noopener" class="btn-sm" style="flex-shrink:0;">${phIcon('download-simple')} Baixar</a>` : '<span style="font-size:12px;color:var(--ink-soft);">URL indisponível</span>'}`;
-        section.appendChild(fileRow);
+          ${fileUrl ? `<a href="${esc(fileUrl)}" target="_blank" rel="noopener" class="btn-sm" style="flex-shrink:0;">${phIcon('download-simple')} Baixar</a>` : ''}`;
+        deliverSection.appendChild(row);
       }
       if(hasLink){
-        const linkRow = document.createElement('div');
-        linkRow.style.cssText = 'display:flex;align-items:center;gap:8px;';
-        linkRow.innerHTML = `
-          <span style="display:inline-flex;align-items:center;gap:5px;font-size:13px;flex:1;min-width:0;">
-            ${phIcon('link')} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(banca.presentation_link)}</span>
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+        row.innerHTML = `
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;flex:1;min-width:0;color:var(--ink);">
+            ${phIcon('presentation')} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(bancaRecord.presentation_link)}</span>
           </span>
-          <a href="${esc(banca.presentation_link)}" target="_blank" rel="noopener" class="btn-sm" style="flex-shrink:0;">${phIcon('arrow-square-out')} Abrir</a>`;
-        section.appendChild(linkRow);
+          <a href="${esc(bancaRecord.presentation_link)}" target="_blank" rel="noopener" class="btn-sm" style="flex-shrink:0;">${phIcon('arrow-square-out')} Abrir</a>`;
+        deliverSection.appendChild(row);
       }
-      card.appendChild(section);
-    } else {
-      const noFiles = document.createElement('p');
-      noFiles.style.cssText = 'font-size:13px;color:var(--ink-soft);margin-bottom:14px;';
-      noFiles.textContent = 'Nenhum arquivo ou link enviado para esta etapa.';
-      card.appendChild(noFiles);
+      card.appendChild(deliverSection);
     }
 
-    // scores
-    if(banca){
-      const evaluators = (evaluatorsData || [])
-        .filter(e => e.banca_id === banca.id)
-        .map(e => { const r = readerMap[e.reader_id]; return { ...e, name: r?.name || 'Avaliador', role: r?.role || null }; });
-      const bancaScores = (scoresData || []).filter(s => s.banca_id === banca.id);
+    // ── notas simplificadas ──
+    const allVals = bancaScores.filter(s => s.rating && RATING_VALUES[s.rating]).map(s => RATING_VALUES[s.rating]);
+    const overallAvg = allVals.length ? allVals.reduce((a, b) => a + b, 0) / allVals.length : null;
 
-      if(!evaluators.length){
-        const noEv = document.createElement('p');
-        noEv.style.cssText = 'font-size:13px;color:var(--ink-soft);';
-        noEv.textContent = 'Nenhuma avaliação registrada ainda.';
-        card.appendChild(noEv);
-      } else {
-        const scoreSection = document.createElement('div');
-        // overall avg
-        const allScoreVals = bancaScores.filter(s => s.rating && RATING_VALUES[s.rating]).map(s => RATING_VALUES[s.rating]);
-        const overallAvg = allScoreVals.length ? allScoreVals.reduce((a, b) => a + b, 0) / allScoreVals.length : null;
-        const headerLine = document.createElement('div');
-        headerLine.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;';
-        headerLine.innerHTML = `
-          <span style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;">Avaliações (${evaluators.length})</span>
-          ${overallAvg != null ? `<span style="font-size:13px;font-weight:700;color:${RATING_BAR_COLORS[nearestRatingKey(overallAvg)]};">Média geral: ${overallAvg.toFixed(2)}/5</span>` : ''}`;
-        scoreSection.appendChild(headerLine);
+    const scoresWrap = document.createElement('div');
+    scoresWrap.style.cssText = 'display:flex;align-items:center;gap:12px;flex-wrap:wrap;';
 
-        evaluators.forEach(ev => {
-          const evScores = bancaScores.filter(s => s.evaluator_id === ev.id && s.rating && RATING_VALUES[s.rating]);
-          const evAvg = evScores.length ? evScores.reduce((sum, s) => sum + RATING_VALUES[s.rating], 0) / evScores.length : null;
-          const evRow = document.createElement('div');
-          evRow.style.cssText = 'border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;';
+    if(overallAvg != null){
+      const avgColor = RATING_BAR_COLORS[nearestRatingKey(overallAvg)];
+      const avgChip = document.createElement('span');
+      avgChip.style.cssText = `font-size:22px;font-weight:800;color:${avgColor};line-height:1;`;
+      avgChip.textContent = overallAvg.toFixed(2);
+      const avgSub = document.createElement('span');
+      avgSub.style.cssText = 'font-size:12px;color:var(--ink-soft);margin-left:2px;';
+      avgSub.textContent = '/5';
+      scoresWrap.appendChild(avgChip);
+      scoresWrap.appendChild(avgSub);
 
-          let catHtml = '';
-          if(rubric && rubric.length){
-            catHtml = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">' +
-              rubric.map(cat => {
-                const qIds = new Set((cat.questions||[]).map(q => q.id));
-                const catVals = evScores.filter(s => qIds.has(s.question_id)).map(s => RATING_VALUES[s.rating]);
-                const catAvg = catVals.length ? catVals.reduce((a,b)=>a+b,0)/catVals.length : null;
-                const color = catAvg != null ? RATING_BAR_COLORS[nearestRatingKey(catAvg)] : 'var(--ink-soft)';
-                const shortTitle = esc(cat.title.split(/\s/)[0]);
-                return `<span style="font-size:11px;padding:3px 8px;border-radius:20px;border:1px solid ${color};color:${color};white-space:nowrap;">${shortTitle}: ${catAvg != null ? catAvg.toFixed(1) : '—'}</span>`;
-              }).join('') +
-            '</div>';
-          }
-
-          evRow.innerHTML = `
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-              <div>
-                <span style="font-size:14px;font-weight:600;color:var(--ink);">${esc(ev.name || 'Avaliador')}</span>
-                ${ev.role ? `<span style="font-size:12px;color:var(--ink-soft);margin-left:6px;">${esc(ev.role)}</span>` : ''}
-              </div>
-              ${evAvg != null ? `<span style="font-size:13px;font-weight:700;color:${RATING_BAR_COLORS[nearestRatingKey(evAvg)]};">${evAvg.toFixed(2)}/5</span>` : '<span style="font-size:12px;color:var(--ink-soft);">Sem notas</span>'}
-            </div>
-            ${catHtml}
-            ${ev.comment ? `<div style="font-size:12.5px;color:var(--ink-mid);border-left:2px solid var(--warn);padding-left:10px;margin-top:10px;line-height:1.5;">${esc(ev.comment)}</div>` : ''}`;
-          scoreSection.appendChild(evRow);
-        });
-        card.appendChild(scoreSection);
+      if(evaluators.length){
+        const sep = document.createElement('span');
+        sep.style.cssText = 'width:1px;height:28px;background:var(--line);flex-shrink:0;';
+        scoresWrap.appendChild(sep);
       }
     }
 
+    evaluators.forEach(ev => {
+      const evVals = bancaScores.filter(s => s.evaluator_id === ev.id && s.rating && RATING_VALUES[s.rating]).map(s => RATING_VALUES[s.rating]);
+      const evAvg = evVals.length ? evVals.reduce((a, b) => a + b, 0) / evVals.length : null;
+      const evColor = evAvg != null ? RATING_BAR_COLORS[nearestRatingKey(evAvg)] : 'var(--ink-soft)';
+      const evChip = document.createElement('div');
+      evChip.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;';
+      evChip.innerHTML = `
+        <span style="font-size:13px;font-weight:700;color:${evColor};">${evAvg != null ? evAvg.toFixed(1) : '—'}</span>
+        <span style="font-size:11px;color:var(--ink-soft);max-width:72px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(ev.name)}</span>`;
+      scoresWrap.appendChild(evChip);
+    });
+
+    if(!overallAvg && !evaluators.length){
+      scoresWrap.innerHTML = `<span style="font-size:13px;color:var(--ink-soft);">Sem avaliações registradas.</span>`;
+    }
+
+    card.appendChild(scoresWrap);
     content.appendChild(card);
   });
 }
@@ -2971,10 +3064,11 @@ async function printReaderQRCodes(){
   if(error || !readers || !readers.length){ showAlert('Nenhum membro cadastrado.'); return; }
 
   const baseUrl = window.location.href.split('?')[0].split('#')[0];
+  const bancaUrl = baseUrl + '?banca=1';
   const qrSize = 220;
 
   const cards = readers.map(r => {
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(baseUrl)}&bgcolor=ffffff&color=0f0f0f&margin=8`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(bancaUrl)}&bgcolor=ffffff&color=0f0f0f&margin=8`;
     return `
       <div class="qr-card">
         <div class="qr-img-wrap">
@@ -2984,7 +3078,7 @@ async function printReaderQRCodes(){
         ${r.role ? `<div class="qr-role">${esc(r.role)}</div>` : ''}
         <div class="qr-pw-label">Senha de acesso</div>
         <div class="qr-pw">${esc(r.password_hash || '—')}</div>
-        <div class="qr-site">${esc(baseUrl)}</div>
+        <div class="qr-site">${esc(bancaUrl)}</div>
       </div>`;
   }).join('');
 
@@ -3123,6 +3217,7 @@ async function renderRoute(){
 
   if(!sb){
     if(route === 'admin') renderAdminLogin();
+    else if(route === 'banca') renderBancaLoginPage();
     else if(route === 'aluno') renderAlunoPage();
     else if(route === 'grupo') renderGrupoGate(currentRoute.slug);
     else renderHomePage();
@@ -3133,6 +3228,8 @@ async function renderRoute(){
     const { data: { session: s } } = await sb.auth.getSession();
     if(s){ session = s; await bootAdminPanel(); }
     else renderAdminLogin();
+  } else if(route === 'banca'){
+    renderBancaLoginPage();
   } else if(route === 'aluno'){
     renderAlunoPage();
   } else if(route === 'grupo'){
