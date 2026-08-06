@@ -386,8 +386,9 @@
   .group-card .proj-title{font-size:15px; font-weight:700; color:var(--ink); line-height:1.3;}
   .group-card .authors{font-size:12px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .group-card .pw-row{display:flex;align-items:center;gap:6px;margin-top:6px;padding-top:6px;border-top:1px solid var(--line);}
-  .group-card .pw-val{font-family:monospace;font-size:12px;font-weight:700;color:var(--ink);letter-spacing:.03em;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .group-card .pw-none{font-size:12px;color:var(--ink-soft);font-style:italic;flex:1;}
+  .group-card .pw-status{font-size:12px;display:inline-flex;align-items:center;gap:4px;flex:1;}
+  .group-card .pw-status.has-pw{color:var(--good);}
+  .group-card .pw-status.no-pw{color:var(--ink-soft);font-style:italic;}
   .group-card .pw-edit{padding:2px 7px !important;font-size:11px !important;flex-shrink:0;line-height:1.6;}
 
   /* ---- EVALUATORS ---- */
@@ -2376,8 +2377,10 @@ function renderAdminGruposTab(body){
       <span class="proj-title">${esc(g.project_title || g.group_name)}</span>
       <span class="authors">${students.map(s=>esc(s.full_name)).join(' · ') || 'sem alunos atribuídos'}</span>
       <span class="pw-row">
-        ${hasPw ? `<span class="pw-val">${esc(g.password_hash)}</span>` : `<span class="pw-none">sem senha</span>`}
-        <button class="btn-sm pw-edit" title="Editar senha">${phIcon('lock-key')} Senha</button>
+        ${hasPw
+          ? `<span class="pw-status has-pw">${phIcon('lock-key')} Com senha</span>`
+          : `<span class="pw-status no-pw">${phIcon('lock-simple-open')} Sem senha</span>`}
+        <button class="btn-sm pw-edit" title="Editar senha">Editar senha</button>
       </span>`;
     card.querySelector('.pw-edit').onclick = e => { e.stopPropagation(); openGroupPasswordModal(g); };
     card.onclick = () => { openGroupId = g.id; renderAdminPanel(); };
@@ -2392,13 +2395,22 @@ function openGroupPasswordModal(g){
       <p style="font-size:13px;color:var(--ink-soft);margin-bottom:14px;">${esc(g.group_name)}<span style="margin-left:6px;font-weight:600;color:var(--warn);">${esc(g.slug)}</span></p>
       <div style="margin-bottom:16px;">
         <span class="modal-field-label">Senha</span>
-        <input class="field" id="modalGroupPw" type="text" value="${esc(g.password_hash || '')}" placeholder="Digite a senha do grupo" autocomplete="off">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <input class="field" id="modalGroupPw" type="password" value="${esc(g.password_hash || '')}" placeholder="Digite a senha do grupo" autocomplete="off" style="margin-bottom:0;flex:1;">
+          <button type="button" class="btn-sm" id="modalGroupPwEye" title="Mostrar senha" style="flex-shrink:0;padding:0 8px;height:38px;">${phIcon('eye')}</button>
+        </div>
       </div>
       <div class="modal-actions">
         <button class="btn-sm" id="modalGroupPwCancel">Cancelar</button>
         <button class="btn-primary auto" id="modalGroupPwSave">Salvar</button>
       </div>`;
     const input = box.querySelector('#modalGroupPw');
+    const eyeBtn = box.querySelector('#modalGroupPwEye');
+    eyeBtn.onclick = () => {
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      eyeBtn.innerHTML = showing ? phIcon('eye') : phIcon('eye-slash');
+    };
     box.querySelector('#modalGroupPwCancel').onclick = () => close(null);
     box.querySelector('#modalGroupPwSave').onclick = async () => {
       const pw = input.value.trim();
@@ -2660,35 +2672,47 @@ async function renderStageAssignments(){
     sb.from('banca_stage_readers').select('stage,reader_id'),
   ]);
   if(!readers){ wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Erro ao carregar avaliadores.</p>'; return; }
-  const assignedSet = new Set((assignments || []).map(a => `${a.stage}:${a.reader_id}`));
+  const assignedMap = {};
+  (assignments || []).forEach(a => {
+    if(!assignedMap[a.stage]) assignedMap[a.stage] = [];
+    assignedMap[a.stage].push(a.reader_id);
+  });
   const stageLabels = { 1: '1ª Banca', 2: '2ª Banca', 3: 'Banca Final' };
   wrap.innerHTML = '';
   [1, 2, 3].forEach(stage => {
+    const assignedIds = assignedMap[stage] || [];
+    const assignedReaders = readers.filter(r => assignedIds.includes(r.id));
     const section = document.createElement('div');
     section.style.cssText = 'margin-bottom:20px;';
-    section.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;letter-spacing:.01em;">${stageLabels[stage]}</div>`;
-    if(!readers.length){
-      section.innerHTML += '<p style="font-size:13px;color:var(--ink-soft)">Nenhum avaliador cadastrado ainda.</p>';
+
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;';
+    header.innerHTML = `
+      <span style="font-size:13px;font-weight:700;color:var(--ink);letter-spacing:.01em;">${stageLabels[stage]}</span>
+      <button class="btn-sm primary-outline addStageBtn" style="font-size:12px;">+ Adicionar</button>`;
+    header.querySelector('.addStageBtn').onclick = () =>
+      openStageReaderPicker(stage, readers, assignedReaders, stageLabels[stage]);
+    section.appendChild(header);
+
+    if(!assignedReaders.length){
+      const empty = document.createElement('p');
+      empty.style.cssText = 'font-size:13px;color:var(--ink-soft);padding:6px 0;';
+      empty.textContent = 'Nenhum avaliador atribuído.';
+      section.appendChild(empty);
     } else {
-      readers.forEach(r => {
-        const key = `${stage}:${r.id}`;
-        const active = assignedSet.has(key);
+      assignedReaders.forEach(r => {
         const row = document.createElement('div');
         row.className = 'simple-row';
-        row.style.cssText = 'cursor:pointer;user-select:none;';
         row.innerHTML = `
           <div class="meta" style="flex:1;">
             <strong>${esc(r.name)}</strong>
             ${r.role ? `<span>${esc(r.role)}</span>` : ''}
           </div>
           <div class="row-acts">
-            <button class="btn-sm ${active ? 'danger' : 'primary-outline'}" style="min-width:90px;">
-              ${active ? phIcon('check') + ' Atribuído' : '+ Atribuir'}
-            </button>
+            <button class="btn-sm danger" title="Remover da etapa">${phIcon('x')}</button>
           </div>`;
-        row.querySelector('button').onclick = async (e) => {
-          e.stopPropagation();
-          await toggleStageReader(stage, r.id, active);
+        row.querySelector('button').onclick = async () => {
+          await sb.from('banca_stage_readers').delete().eq('stage', stage).eq('reader_id', r.id);
           renderStageAssignments();
         };
         section.appendChild(row);
@@ -2698,12 +2722,55 @@ async function renderStageAssignments(){
   });
 }
 
-async function toggleStageReader(stage, readerId, currentlyActive){
-  if(currentlyActive){
-    await sb.from('banca_stage_readers').delete().eq('stage', stage).eq('reader_id', readerId);
-  } else {
-    await sb.from('banca_stage_readers').insert({ stage, reader_id: readerId });
-  }
+function openStageReaderPicker(stage, allReaders, assignedReaders, stageLabel){
+  const assignedIds = new Set(assignedReaders.map(r => r.id));
+  const available = allReaders.filter(r => !assignedIds.has(r.id));
+  if(!available.length){ showAlert('Todos os avaliadores já estão atribuídos a esta etapa.'); return; }
+  showModal((box, close) => {
+    box.innerHTML = `
+      <h3>Adicionar avaliadores</h3>
+      <p style="font-size:13px;color:var(--ink-soft);margin-bottom:14px;">${esc(stageLabel)}</p>
+      <div class="simple-list" id="pickerList" style="max-height:280px;overflow-y:auto;margin-bottom:16px;border:1px solid var(--line);border-radius:var(--radius);"></div>
+      <div class="modal-actions">
+        <button class="btn-sm" id="pickerCancel">Cancelar</button>
+        <button class="btn-primary auto" id="pickerConfirm">Adicionar</button>
+      </div>`;
+    const list = box.querySelector('#pickerList');
+    const selected = new Set();
+    available.forEach(r => {
+      const row = document.createElement('div');
+      row.className = 'simple-row';
+      row.style.cssText = 'cursor:pointer;user-select:none;padding:10px 14px;';
+      row.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;flex:1;">
+          <input type="checkbox" id="pick_${r.id}" style="width:16px;height:16px;flex-shrink:0;cursor:pointer;">
+          <label for="pick_${r.id}" style="cursor:pointer;flex:1;">
+            <div class="meta" style="pointer-events:none;">
+              <strong>${esc(r.name)}</strong>
+              ${r.role ? `<span>${esc(r.role)}</span>` : ''}
+            </div>
+          </label>
+        </div>`;
+      const cb = row.querySelector('input');
+      cb.addEventListener('change', () => { if(cb.checked) selected.add(r.id); else selected.delete(r.id); });
+      row.addEventListener('click', e => {
+        if(e.target === cb) return;
+        cb.checked = !cb.checked; cb.dispatchEvent(new Event('change'));
+      });
+      list.appendChild(row);
+    });
+    box.querySelector('#pickerCancel').onclick = () => close(null);
+    box.querySelector('#pickerConfirm').onclick = async () => {
+      if(!selected.size){ showAlert('Selecione pelo menos um avaliador.'); return; }
+      const btn = box.querySelector('#pickerConfirm');
+      btn.disabled = true; btn.textContent = 'Salvando…';
+      await Promise.all([...selected].map(rid =>
+        sb.from('banca_stage_readers').insert({ stage, reader_id: rid })
+      ));
+      close(true);
+      renderStageAssignments();
+    };
+  });
 }
 
 async function printReaderQRCodes(){
