@@ -87,7 +87,8 @@
     font-size:13px;
     font-weight:700;
     font-family:inherit;
-    padding:9px 16px;
+    height:38px;
+    padding:0 16px;
     border-radius:999px;
     border:1.5px solid var(--line);
     background:var(--card);
@@ -97,6 +98,7 @@
     text-decoration:none;
     display:inline-flex;
     align-items:center;
+    justify-content:center;
     gap:6px;
   }
   .nav-btn:hover{border-color:#A8A8A0; color:var(--ink);}
@@ -279,6 +281,16 @@
     outline:none; transition:.15s;
   }
   .field:focus{border-color:var(--accent-a); box-shadow:0 0 0 3px rgba(255,95,160,.14);}
+  .field-icon-wrap{position:relative; display:block;}
+  .field-icon-wrap .field{margin-bottom:0; padding-right:44px;}
+  .field-icon-wrap.two-icons .field{padding-right:80px;}
+  .field-icons{position:absolute; right:10px; top:50%; transform:translateY(-50%); display:flex; gap:2px; align-items:center;}
+  .field-icon-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:30px; height:30px; border:none; background:transparent; cursor:pointer;
+    color:var(--ink-soft); border-radius:8px; transition:.15s; font-size:16px; padding:0;
+  }
+  .field-icon-btn:hover{background:var(--line); color:var(--ink);}
   .btn-primary{
     display:block; width:100%; padding:12px; background:var(--ink); color:#fff; border:none;
     border-radius:999px; font-family:inherit; font-size:14.5px; font-weight:700; cursor:pointer;
@@ -303,8 +315,12 @@
   .session-label strong{color:var(--ink-mid); font-weight:600;}
   .admin-bar-left strong{color:var(--ink);}
   .btn-sm{
-    font-size:13px; font-weight:600; font-family:inherit; padding:8px 16px; border-radius:999px;
-    border:1.5px solid var(--line); background:var(--card); color:var(--ink-mid); cursor:pointer; transition:.15s;
+    font-size:13px; font-weight:600; font-family:inherit;
+    height:36px; padding:0 14px;
+    border-radius:999px; border:1.5px solid var(--line);
+    background:var(--card); color:var(--ink-mid); cursor:pointer; transition:.15s;
+    display:inline-flex; align-items:center; justify-content:center; gap:5px;
+    white-space:nowrap; flex-shrink:0;
   }
   .btn-sm:hover{border-color:#A8A8A0; color:var(--ink);}
   .btn-sm.danger:hover{border-color:#DC2626; color:#DC2626;}
@@ -638,7 +654,7 @@ function createMockClient(){
     const c1 = muid(), c2 = muid(), c3 = muid(), c4 = muid(), c5 = muid();
     return {
       categories: [], links: [], link_categories: [], groups: [], bancas: [], students: [], evaluators: [], scores: [],
-      app_settings: [], banca_readers: [], banca_stage_readers: [],
+      app_settings: [], banca_readers: [], banca_stage_readers: [], gestores: [],
       rubric_categories: [
         { id: c1, order_index: 1, title: 'Relevância e Inovação do Produto/Serviço' },
         { id: c2, order_index: 2, title: 'Qualidade da Pesquisa e Fundamentação Teórica' },
@@ -790,6 +806,23 @@ function createMockClient(){
     }
     if(name === 'admin_set_professors_password'){
       settingsSet('professors_password_hash', params.p_password);
+      await saveDb();
+      return { data: null, error: null };
+    }
+    if(name === 'gestor_login'){
+      const g = (db.gestores || []).find(g => g.password_hash === params.p_password);
+      return { data: g ? { id: g.id, name: g.name } : null, error: null };
+    }
+    if(name === 'admin_add_gestor'){
+      db.gestores = db.gestores || [];
+      const id = muid();
+      db.gestores.push({ id, name: params.p_name, password_hash: params.p_password, created_at: new Date().toISOString() });
+      await saveDb();
+      return { data: id, error: null };
+    }
+    if(name === 'admin_set_gestor_password'){
+      const g = (db.gestores || []).find(g => g.id === params.p_gestor_id);
+      if(g) g.password_hash = params.p_password;
       await saveDb();
       return { data: null, error: null };
     }
@@ -1114,6 +1147,8 @@ let adminTab = 'links';
 let adminGroups = [], adminStudents = [];
 let openGroupId = null;
 let adminBancaStage = 1;
+let gestorSession = false;
+let usuariosSubTab = 'banca';
 let publicBancaStage = 1;
 
 /* ======================= ROUTING ======================= */
@@ -1122,6 +1157,7 @@ function parseRouteFromLocation(){
   try {
     const p = new URLSearchParams(location.search);
     if(p.get('admin') === '1') return { name: 'admin', slug: null };
+    if(p.get('gestor') === '1') return { name: 'gestor', slug: null };
     if(p.get('aluno') === '1') return { name: 'aluno', slug: null };
     if(p.get('banca') === '1') return { name: 'banca', slug: null };
     if(p.get('grupo')) return { name: 'grupo', slug: p.get('grupo') };
@@ -1160,17 +1196,18 @@ function renderHeaderNav(){
     return;
   }
 
-  if(route !== 'home'){
-    const back = document.createElement('button');
-    back.type = 'button';
-    back.className = 'back-link'; back.innerHTML = phIcon('arrow-left') + 'Início';
-    back.onclick = goHome;
-    nav.appendChild(back);
+  if(route === 'gestor'){
+    if(gestorSession){
+      const label = document.createElement('span');
+      label.style.cssText = 'font-size:12px;color:var(--ink-soft);';
+      label.textContent = 'Gestor';
+      const sair = document.createElement('button');
+      sair.className = 'nav-btn'; sair.textContent = 'Sair';
+      sair.onclick = () => { gestorSession = false; adminTab = 'links'; renderGestorLoginPage(); };
+      nav.append(label, sair);
+    }
+    return;
   }
-
-  const alunoBtn = document.createElement('button');
-  alunoBtn.className = 'nav-btn'; alunoBtn.textContent = 'Sou aluno'; alunoBtn.onclick = goAluno;
-  nav.appendChild(alunoBtn);
 
   if(route === 'admin' && session){
     const logout = document.createElement('button');
@@ -1178,9 +1215,13 @@ function renderHeaderNav(){
     nav.appendChild(logout);
   } else {
     const profBtn = document.createElement('button');
-    profBtn.className = 'nav-btn dark'; profBtn.textContent = 'Professor'; profBtn.onclick = goAdmin;
+    profBtn.className = 'nav-btn'; profBtn.innerHTML = phIcon('lock'); profBtn.title = 'Professor'; profBtn.onclick = goAdmin;
     nav.appendChild(profBtn);
   }
+
+  const alunoBtn = document.createElement('button');
+  alunoBtn.className = 'nav-btn dark'; alunoBtn.textContent = 'Sou aluno'; alunoBtn.onclick = goAluno;
+  nav.appendChild(alunoBtn);
 }
 
 /* ======================= DATA LOADING (public) ======================= */
@@ -1871,7 +1912,7 @@ function renderAdminPanel(){
 
   root().innerHTML = `
     <div class="main">
-      <div class="session-label">Logado como <strong>${esc(session?.user?.email || '')}</strong></div>
+      <div class="session-label">${gestorSession ? 'Modo leitura · <strong>Gestor</strong>' : `Logado como <strong>${esc(session?.user?.email || '')}</strong>`}</div>
       <div id="adminNotifArea"></div>
       <div class="admin-layout">
         <div class="admin-sidebar" id="adminTabNav"></div>
@@ -1879,7 +1920,9 @@ function renderAdminPanel(){
       </div>
     </div>`;
 
-  const tabs = [ ['links','Links'], ['alunos','Alunos'], ['grupos','Grupos'], ['bancas','Bancas'], ['usuarios','Usuários'], ['config','Configurações'] ];
+  const tabs = gestorSession
+    ? [ ['links','Links'], ['alunos','Alunos'], ['grupos','Grupos'], ['bancas','Bancas'], ['usuarios','Usuários'] ]
+    : [ ['links','Links'], ['alunos','Alunos'], ['grupos','Grupos'], ['bancas','Bancas'], ['usuarios','Usuários'], ['config','Configurações'] ];
   const badges = { alunos: pendingStudents, grupos: groupsSemSenha };
   const nav = $('adminTabNav');
   tabs.forEach(([id,label]) => {
@@ -1929,21 +1972,23 @@ function renderAdminLinksTab(body){
   body.innerHTML = `
     <div class="admin-bar">
       <div class="admin-bar-left">Cadastre e organize os links do repositório.</div>
-      <div style="display:flex;gap:8px;align-items:center;">
+      ${!gestorSession ? `<div style="display:flex;gap:8px;align-items:center;">
         <label class="btn-sm primary-outline" id="csvImportLabel" style="cursor:pointer;" title="CSV com colunas: titulo, url, descricao (opcional)">
           ${phIcon('upload-simple')} Importar CSV
           <input type="file" id="csvImportInput" accept=".csv,text/csv" style="display:none;">
         </label>
         <button class="btn-sm primary-outline" id="newLinkBtn">+ Novo link</button>
-      </div>
+      </div>` : ''}
     </div>
     <div class="admin-section">
       <h3 style="margin-bottom:14px;">Links cadastrados</h3>
       <div id="csvImportStatus" style="display:none;margin-bottom:12px;padding:10px 14px;border-radius:10px;font-size:13px;"></div>
       <div class="admin-link-list" id="adminLinkList"></div>
     </div>`;
-  $('newLinkBtn').onclick = () => openLinkModal(null, body);
-  $('csvImportInput').onchange = (e) => importLinksFromCSV(e.target.files[0], body);
+  if(!gestorSession){
+    $('newLinkBtn').onclick = () => openLinkModal(null, body);
+    $('csvImportInput').onchange = (e) => importLinksFromCSV(e.target.files[0], body);
+  }
   renderLinkList(body);
 }
 
@@ -2123,17 +2168,20 @@ function buildLinkDisplayRow(link, body){
   textWrap.innerHTML = `<strong>${esc(link.title)}</strong><span>${cats.length ? esc(cats.map(c=>c.name).join(', ')) : 'Sem categoria'}</span>`;
   meta.appendChild(textWrap);
   const acts = document.createElement('div'); acts.className = 'row-acts';
-  const eb = document.createElement('button'); eb.className = 'btn-sm'; eb.textContent = 'Editar';
-  eb.onclick = () => openLinkModal(link, body);
-  const db = document.createElement('button'); db.className = 'btn-sm danger'; db.textContent = 'Excluir';
-  db.onclick = async () => {
-    if(!(await showConfirm('Excluir este link?'))) return;
-    const { error } = await sb.from('links').delete().eq('id', link.id);
-    if(error){ showAlert(error.message); return; }
-    links = links.filter(l => l.id !== link.id);
-    renderLinkList(body);
-  };
-  acts.append(eb, db); row.append(meta, acts);
+  if(!gestorSession){
+    const eb = document.createElement('button'); eb.className = 'btn-sm'; eb.textContent = 'Editar';
+    eb.onclick = () => openLinkModal(link, body);
+    const db = document.createElement('button'); db.className = 'btn-sm danger'; db.textContent = 'Excluir';
+    db.onclick = async () => {
+      if(!(await showConfirm('Excluir este link?'))) return;
+      const { error } = await sb.from('links').delete().eq('id', link.id);
+      if(error){ showAlert(error.message); return; }
+      links = links.filter(l => l.id !== link.id);
+      renderLinkList(body);
+    };
+    acts.append(eb, db);
+  }
+  row.append(meta, acts);
   return row;
 }
 
@@ -2261,22 +2309,24 @@ function renderAdminAlunosTab(body){
     const row = document.createElement('div'); row.className = 'simple-row';
     const meta = document.createElement('div'); meta.className = 'meta';
     meta.innerHTML = `<strong>${esc(s.full_name)}</strong><span>${esc(s.email)}</span>`;
-    const sel = document.createElement('select'); sel.className = 'btn-sm'; sel.style.cssText='padding:8px 10px;';
-    sel.innerHTML = '<option value="">Atribuir a um grupo…</option>' + adminGroups.map(g => `<option value="${g.id}">${esc(g.group_name)}</option>`).join('');
-    sel.onchange = async () => {
-      if(!sel.value) return;
-      const { error } = await sb.from('students').update({ status: 'assigned', group_id: sel.value }).eq('id', s.id);
-      if(error){ showAlert(error.message); return; }
-      await loadAdminStudents();
-      renderAdminAlunosTab(body);
-    };
-    const del = document.createElement('button'); del.className = 'btn-sm danger'; del.textContent = 'Remover';
-    del.onclick = async () => {
-      if(!(await showConfirm('Remover este registro?'))) return;
-      await sb.from('students').delete().eq('id', s.id);
-      await loadAdminStudents(); renderAdminAlunosTab(body);
-    };
-    const acts = document.createElement('div'); acts.className = 'row-acts'; acts.append(sel, del);
+    const acts = document.createElement('div'); acts.className = 'row-acts';
+    if(!gestorSession){
+      const sel = document.createElement('select'); sel.className = 'btn-sm'; sel.style.cssText='padding:8px 10px;';
+      sel.innerHTML = '<option value="">Atribuir a um grupo…</option>' + adminGroups.map(g => `<option value="${g.id}">${esc(g.group_name)}</option>`).join('');
+      sel.onchange = async () => {
+        if(!sel.value) return;
+        const { error } = await sb.from('students').update({ status: 'assigned', group_id: sel.value }).eq('id', s.id);
+        if(error){ showAlert(error.message); return; }
+await loadAdminStudents(); renderAdminAlunosTab(body);
+      };
+      const del = document.createElement('button'); del.className = 'btn-sm danger'; del.textContent = 'Remover';
+      del.onclick = async () => {
+        if(!(await showConfirm('Remover este registro?'))) return;
+        await sb.from('students').delete().eq('id', s.id);
+        await loadAdminStudents(); renderAdminAlunosTab(body);
+      };
+      acts.append(sel, del);
+    }
     row.append(meta, acts); pendingWrap.appendChild(row);
   });
   const assignedWrap = $('assignedList');
@@ -2286,124 +2336,47 @@ function renderAdminAlunosTab(body){
     const row = document.createElement('div'); row.className = 'simple-row';
     const meta = document.createElement('div'); meta.className = 'meta';
     meta.innerHTML = `<strong>${esc(s.full_name)}</strong><span>${esc(s.email)} · ${esc(g?.group_name || 'grupo removido')}</span>`;
-    const unassign = document.createElement('button'); unassign.className = 'btn-sm'; unassign.textContent = 'Remover do grupo';
-    unassign.onclick = async () => {
-      await sb.from('students').update({ status: 'pending', group_id: null }).eq('id', s.id);
-      await loadAdminStudents(); renderAdminAlunosTab(body);
-    };
-    const acts = document.createElement('div'); acts.className = 'row-acts'; acts.appendChild(unassign);
+    const acts = document.createElement('div'); acts.className = 'row-acts';
+    if(!gestorSession){
+      const unassign = document.createElement('button'); unassign.className = 'btn-sm'; unassign.textContent = 'Remover do grupo';
+      unassign.onclick = async () => {
+        await sb.from('students').update({ status: 'pending', group_id: null }).eq('id', s.id);
+        await loadAdminStudents(); renderAdminAlunosTab(body);
+      };
+      acts.appendChild(unassign);
+    }
     row.append(meta, acts); assignedWrap.appendChild(row);
   });
 }
 
 /* ======================= ADMIN: GRUPOS TAB (lista) ======================= */
-async function generateAllGroupPasswords(){
-  if(!adminGroups.length){ showAlert('Nenhum grupo cadastrado.'); return; }
-
-  const semSenha = adminGroups.filter(g => !g.password_hash);
-  const comSenha = adminGroups.filter(g => !!g.password_hash);
-
-  let targets = adminGroups;
-  if(semSenha.length && comSenha.length){
-    const soSemSenha = await showConfirm(
-      `${semSenha.length} grupo(s) ainda não têm senha e ${comSenha.length} já têm.\n\nGerar apenas para os sem senha? (Cancelar gera para todos)`
-    );
-    targets = soSemSenha ? semSenha : adminGroups;
-  }
-
-  const btn = $('genAllPasswordsBtn');
-  if(btn){ btn.disabled = true; btn.textContent = 'Gerando…'; }
-
-  const results = [];
-  for(const g of targets){
-    const pw = generateRandomPassword();
-    const { error } = await sb.rpc('admin_set_group_password', { p_group_id: g.id, p_password: pw });
-    results.push({ group: g, pw, ok: !error });
-    if(!error) g.password_hash = pw;
-  }
-
-  if(btn){ btn.disabled = false; btn.innerHTML = phIcon('key') + ' Gerar senhas'; }
-
-  // Modal com resultado
-  showModal((box) => {
-    const rows = results.map(r => `
-      <tr>
-        <td style="padding:8px 10px;font-weight:600;">${esc(r.group.group_name)}</td>
-        <td style="padding:8px 10px;">
-          <code style="background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:13px;letter-spacing:.04em;">${esc(r.pw)}</code>
-        </td>
-        <td style="padding:8px 10px;color:${r.ok ? 'var(--good)' : '#EF4444'};font-size:12px;">
-          ${r.ok ? phIcon('check-circle') : phIcon('x-circle')} ${r.ok ? 'Salvo' : 'Erro'}
-        </td>
-      </tr>`).join('');
-
-    box.innerHTML = `
-      <h3 style="margin-bottom:4px;">Senhas geradas</h3>
-      <p style="font-size:13px;color:var(--ink-soft);margin-bottom:16px;">Anote ou imprima — as senhas não serão exibidas novamente.</p>
-      <div style="overflow-x:auto;margin-bottom:16px;">
-        <table style="width:100%;border-collapse:collapse;font-size:14px;">
-          <thead>
-            <tr style="border-bottom:1.5px solid var(--line);">
-              <th style="padding:6px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);">Grupo</th>
-              <th style="padding:6px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);">Senha</th>
-              <th style="padding:6px 10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);">Status</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-sm" id="modalPrintPasswords">${phIcon('printer')} Imprimir</button>
-        <button class="btn-primary auto" id="modalClosePasswords">Fechar</button>
-      </div>`;
-
-    box.querySelector('#modalClosePasswords').onclick = () => { document.querySelector('.modal-overlay')?.remove(); renderAdminPanel(); };
-    box.querySelector('#modalPrintPasswords').onclick = () => {
-      const w = window.open('', '_blank');
-      w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Senhas dos grupos</title>
-        <style>body{font-family:sans-serif;padding:24px;}h1{font-size:18px;margin-bottom:16px;}
-        table{width:100%;border-collapse:collapse;}th,td{text-align:left;padding:8px 12px;border-bottom:1px solid #e0e0e0;}
-        th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#666;}
-        code{background:#f5f5f5;border:1px solid #ddd;border-radius:4px;padding:2px 8px;font-size:14px;letter-spacing:.04em;}
-        @media print{body{padding:0;}}</style></head><body>
-        <h1>Senhas de acesso — Projeto Interdisciplinar</h1>
-        <table><thead><tr><th>Grupo</th><th>Senha</th></tr></thead><tbody>
-        ${results.filter(r=>r.ok).map(r=>`<tr><td>${esc(r.group.group_name)}</td><td><code>${esc(r.pw)}</code></td></tr>`).join('')}
-        </tbody></table>
-        <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),400));<\/script></body></html>`);
-      w.document.close();
-    };
-  });
-}
 
 function renderAdminGruposTab(body){
   body.innerHTML = `
     <div class="admin-bar">
       <div class="admin-bar-left">Cadastre grupos, defina a senha de acesso e registre as avaliações da banca.</div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-sm primary-outline" id="genAllPasswordsBtn">${phIcon('key')} Gerar senhas</button>
-        <button class="btn-sm primary-outline" id="newGroupBtn">+ Novo grupo</button>
-      </div>
+      ${!gestorSession ? `<button class="btn-sm primary-outline" id="newGroupBtn">+ Novo grupo</button>` : ''}
     </div>
     <div class="group-cards-grid" id="groupCardsGrid"></div>`;
-  $('genAllPasswordsBtn').onclick = generateAllGroupPasswords;
-  $('newGroupBtn').onclick = async () => {
-    const result = await showPrompt('Novo grupo', [
-      { key: 'name', label: 'Nome do grupo', placeholder: 'ex: MechFinder' },
-    ]);
-    if(!result || !result.name) return;
-    const name = result.name;
-    const base = slugify(name);
-    let slug = base, n = 1;
-    while(adminGroups.some(g => g.slug === slug)) { slug = base + (++n); }
-    const { data, error } = await sb.from('groups').insert({
-      slug, group_name: name.trim(), order_index: adminGroups.length
-    }).select().single();
-    if(error){ showAlert(error.message); return; }
-    adminGroups.push(data);
-    openGroupId = data.id;
-    renderAdminPanel();
-  };
+  if(!gestorSession){
+    $('newGroupBtn').onclick = async () => {
+      const result = await showPrompt('Novo grupo', [
+        { key: 'name', label: 'Nome do grupo', placeholder: 'ex: MechFinder' },
+      ]);
+      if(!result || !result.name) return;
+      const name = result.name;
+      const base = slugify(name);
+      let slug = base, n = 1;
+      while(adminGroups.some(g => g.slug === slug)) { slug = base + (++n); }
+      const { data, error } = await sb.from('groups').insert({
+        slug, group_name: name.trim(), order_index: adminGroups.length
+      }).select().single();
+      if(error){ showAlert(error.message); return; }
+      adminGroups.push(data);
+      openGroupId = data.id;
+      renderAdminPanel();
+    };
+  }
   const grid = $('groupCardsGrid');
   if(!adminGroups.length){
     grid.innerHTML = '<div class="empty small"><strong>Nenhum grupo criado ainda</strong>Clique em "+ Novo grupo" para começar.</div>';
@@ -2421,9 +2394,9 @@ function renderAdminGruposTab(body){
         ${hasPw
           ? `<span class="pw-status has-pw">${phIcon('lock-key')} Com senha</span>`
           : `<span class="pw-status no-pw">${phIcon('lock-simple-open')} Sem senha</span>`}
-        <button class="btn-sm pw-edit" title="Editar senha">Editar senha</button>
+        ${!gestorSession ? `<button class="btn-sm pw-edit" title="Editar senha">Editar senha</button>` : ''}
       </span>`;
-    card.querySelector('.pw-edit').onclick = e => { e.stopPropagation(); openGroupPasswordModal(g); };
+    if(!gestorSession) card.querySelector('.pw-edit').onclick = e => { e.stopPropagation(); openGroupPasswordModal(g); };
     card.onclick = () => { openGroupId = g.id; renderAdminPanel(); };
     grid.appendChild(card);
   });
@@ -2436,9 +2409,12 @@ function openGroupPasswordModal(g){
       <p style="font-size:13px;color:var(--ink-soft);margin-bottom:14px;">${esc(g.group_name)}<span style="margin-left:6px;font-weight:600;color:var(--warn);">${esc(g.slug)}</span></p>
       <div style="margin-bottom:16px;">
         <span class="modal-field-label">Senha</span>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <input class="field" id="modalGroupPw" type="password" value="${esc(g.password_hash || '')}" placeholder="Digite a senha do grupo" autocomplete="off" style="margin-bottom:0;flex:1;">
-          <button type="button" class="btn-sm" id="modalGroupPwEye" title="Mostrar senha" style="flex-shrink:0;padding:0 8px;height:38px;">${phIcon('eye')}</button>
+        <div class="field-icon-wrap two-icons">
+          <input class="field" id="modalGroupPw" type="password" value="${esc(g.password_hash || '')}" placeholder="Digite a senha do grupo" autocomplete="off">
+          <div class="field-icons">
+            <button type="button" class="field-icon-btn" id="modalGroupPwEye" title="Mostrar senha">${phIcon('eye')}</button>
+            <button type="button" class="field-icon-btn" id="modalGroupPwGen" title="Gerar senha aleatória">${phIcon('dice-five')}</button>
+          </div>
         </div>
       </div>
       <div class="modal-actions">
@@ -2451,6 +2427,11 @@ function openGroupPasswordModal(g){
       const showing = input.type === 'text';
       input.type = showing ? 'password' : 'text';
       eyeBtn.innerHTML = showing ? phIcon('eye') : phIcon('eye-slash');
+    };
+    box.querySelector('#modalGroupPwGen').onclick = () => {
+      input.value = generateRandomPassword();
+      input.type = 'text';
+      eyeBtn.innerHTML = phIcon('eye-slash');
     };
     box.querySelector('#modalGroupPwCancel').onclick = () => close(null);
     box.querySelector('#modalGroupPwSave').onclick = async () => {
@@ -2479,6 +2460,15 @@ async function renderAdminGroupDetail(body, groupId){
     <div class="section-title" style="margin-bottom:2px;">${esc(g.project_title || g.group_name)}</div>
     <div class="section-sub">${esc(g.slug)}</div>
 
+    ${gestorSession ? `
+    <div class="admin-section">
+      <h3>Dados do grupo</h3>
+      <div class="form-grid">
+        <div><label>Nome do grupo</label><input class="field" value="${esc(g.group_name)}" disabled></div>
+        <div><label>Título do projeto</label><input class="field" value="${esc(g.project_title||'')}" disabled></div>
+        <div class="full"><label>Autores</label><input class="field" value="${students.map(s=>esc(s.full_name)).join(', ') || '—'}" disabled></div>
+      </div>
+    </div>` : `
     <div class="admin-section">
       <h3>Dados do grupo</h3>
       <div class="hint">Edite as informações cadastrais do grupo.</div>
@@ -2490,35 +2480,37 @@ async function renderAdminGroupDetail(body, groupId){
       <div style="display:flex; justify-content:flex-end;">
         <button class="btn-primary auto" id="saveGroupBtn">Salvar dados</button>
       </div>
-    </div>
+    </div>`}
 
     <div id="groupBancasSection"><div class="loading-state" style="margin:8px 0;">Carregando avaliações…</div></div>
 
-    <div class="danger-zone">
+    ${!gestorSession ? `<div class="danger-zone">
       <h3>Zona de risco</h3>
       <p>Excluir o grupo remove permanentemente seus dados, senha, anexos e notas das 3 etapas. Os alunos atribuídos ficam sem grupo. Esta ação não pode ser desfeita.</p>
       <button class="btn-sm danger" id="deleteGroupBtn">Excluir grupo</button>
-    </div>`;
+    </div>` : ''}`;
 
   $('backToGroups').onclick = () => { openGroupId = null; renderAdminPanel(); };
 
-  $('saveGroupBtn').onclick = async () => {
-    const payload = {
-      group_name: $('gName').value.trim() || g.group_name,
-      project_title: $('gTitle').value.trim() || null,
+  if(!gestorSession){
+    $('saveGroupBtn').onclick = async () => {
+      const payload = {
+        group_name: $('gName').value.trim() || g.group_name,
+        project_title: $('gTitle').value.trim() || null,
+      };
+      const { error } = await sb.from('groups').update(payload).eq('id', g.id);
+      if(error){ showAlert(error.message); return; }
+      await loadAdminGroups();
+      renderAdminPanel();
     };
-    const { error } = await sb.from('groups').update(payload).eq('id', g.id);
-    if(error){ showAlert(error.message); return; }
-    await loadAdminGroups();
-    renderAdminPanel();
-  };
-  $('deleteGroupBtn').onclick = async () => {
-    if(!(await showConfirm('Excluir este grupo? Os alunos atribuídos ficam sem grupo. Esta ação não pode ser desfeita.'))) return;
-    const { error } = await sb.from('groups').delete().eq('id', g.id);
-    if(error){ showAlert(error.message); return; }
-    await Promise.all([loadAdminGroups(), loadAdminStudents()]);
-    openGroupId = null; renderAdminPanel();
-  };
+    $('deleteGroupBtn').onclick = async () => {
+      if(!(await showConfirm('Excluir este grupo? Os alunos atribuídos ficam sem grupo. Esta ação não pode ser desfeita.'))) return;
+      const { error } = await sb.from('groups').delete().eq('id', g.id);
+      if(error){ showAlert(error.message); return; }
+      await Promise.all([loadAdminGroups(), loadAdminStudents()]);
+      openGroupId = null; renderAdminPanel();
+    };
+  }
 
   // load banca scores async so the page appears immediately
   (async () => {
@@ -2915,24 +2907,144 @@ async function renderAdminBancasTab(body){
 function renderAdminUsuariosTab(body){
   body.innerHTML = `
     <div class="admin-bar">
-      <div class="admin-bar-left">Membros com acesso de leitura à plataforma da banca.</div>
-      <button class="btn-sm primary-outline" id="printQRBtn">${phIcon('printer')} Imprimir QR codes</button>
+      <div class="admin-bar-left">Usuários com acesso à plataforma.</div>
     </div>
-    <div class="admin-section">
-      <h3>Membros da banca (acesso de leitura)</h3>
-      <div class="hint">Cada um tem nome + cargo + senha próprios. Na tela de acesso, escolhem "Banca" e entram com a senha própria para lançar as notas.</div>
-      <div class="simple-list" id="bancaReadersList" style="margin-bottom:14px;"></div>
-      <button class="btn-primary auto" id="addReaderBtn">+ Adicionar membro</button>
-    </div>
-    <div class="admin-section">
-      <h3>Atribuição por etapa</h3>
-      <div class="hint">Defina quais avaliadores participam de cada etapa. Cada avaliador atribuído avaliará <strong>todos os grupos</strong> daquele período.</div>
-      <div id="stageAssignmentsWrap"></div>
-    </div>`;
-  renderBancaReadersList(body);
-  renderStageAssignments();
-  $('addReaderBtn').onclick = () => openReaderModal(null, body);
-  $('printQRBtn').onclick = () => printReaderQRCodes();
+    <div class="tab-nav" id="usuariosSubNav"></div>
+    <div id="usuariosSubBody"></div>`;
+
+  const subNav = $('usuariosSubNav');
+  [['banca','Banca'],['gestores','Gestores']].forEach(([id, label]) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (usuariosSubTab === id ? ' active' : '');
+    btn.textContent = label;
+    btn.onclick = () => {
+      usuariosSubTab = id;
+      $('usuariosSubNav').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderUsuariosSubTab();
+    };
+    subNav.appendChild(btn);
+  });
+
+  renderUsuariosSubTab();
+}
+
+function renderUsuariosSubTab(){
+  const sub = $('usuariosSubBody');
+  if(!sub) return;
+
+  if(usuariosSubTab === 'banca'){
+    sub.innerHTML = `
+      <div class="admin-section">
+        <h3>Membros da banca</h3>
+        <div class="hint">Cada um tem nome + cargo + senha próprios. Entram com a senha própria para lançar as notas.</div>
+        <div class="simple-list" id="bancaReadersList" style="margin-bottom:14px;"></div>
+        ${!gestorSession ? `<button class="btn-primary auto" id="addReaderBtn">+ Adicionar membro</button>` : ''}
+      </div>
+      <div class="admin-section">
+        <h3>Atribuição por etapa</h3>
+        <div class="hint">Defina quais avaliadores participam de cada etapa. Cada avaliador atribuído avaliará <strong>todos os grupos</strong> daquele período.</div>
+        <div id="stageAssignmentsWrap"></div>
+      </div>`;
+    renderBancaReadersList(sub);
+    renderStageAssignments();
+    if(!gestorSession) $('addReaderBtn').onclick = () => openReaderModal(null, sub);
+  } else {
+    sub.innerHTML = `
+      <div class="admin-section">
+        <h3>Gestores</h3>
+        <div class="hint">Gestores veem todas as informações do painel — links, alunos, grupos, notas e membros — mas não podem editar nada.</div>
+        <div class="simple-list" id="gestoresList" style="margin-bottom:14px;"></div>
+        ${!gestorSession ? `<button class="btn-primary auto" id="addGestorBtn">+ Adicionar gestor</button>` : ''}
+      </div>`;
+    renderGestoresList(sub);
+    if(!gestorSession) $('addGestorBtn').onclick = () => openGestorModal(null, sub);
+  }
+}
+
+async function renderGestoresList(body){
+  const wrap = $('gestoresList');
+  if(!wrap) return;
+  wrap.innerHTML = '<div class="loading-state">Carregando gestores…</div>';
+  const { data: gestores } = await sb.from('gestores').select('*').order('created_at');
+  wrap.innerHTML = '';
+  if(!gestores || !gestores.length){
+    wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Nenhum gestor cadastrado ainda.</p>';
+    return;
+  }
+  gestores.forEach(g => wrap.appendChild(buildGestorRow(g, body)));
+}
+function buildGestorRow(g, body){
+  const row = document.createElement('div'); row.className = 'simple-row';
+  row.innerHTML = `<div class="meta"><strong>${esc(g.name)}</strong></div>`;
+  const acts = document.createElement('div'); acts.className = 'row-acts';
+  if(!gestorSession){
+    const edit = document.createElement('button'); edit.className = 'btn-sm'; edit.textContent = 'Editar';
+    edit.onclick = () => openGestorModal(g, body);
+    const del = document.createElement('button'); del.className = 'btn-sm danger'; del.textContent = 'Remover';
+    del.onclick = async () => {
+      if(!(await showConfirm(`Remover o acesso de "${g.name}"?`))) return;
+      await sb.from('gestores').delete().eq('id', g.id);
+      renderGestoresList(body);
+    };
+    acts.append(edit, del);
+  }
+  row.appendChild(acts);
+  return row;
+}
+function openGestorModal(g, body){
+  const isEdit = !!g;
+  showModal((box, close) => {
+    box.innerHTML = `
+      <h3>${isEdit ? 'Editar gestor' : 'Adicionar gestor'}</h3>
+      <div style="margin-bottom:10px;">
+        <span class="modal-field-label">Nome</span>
+        <input class="field" id="modalGestorName" style="margin-bottom:0;" placeholder="Nome do gestor">
+      </div>
+      <div style="margin-bottom:10px;">
+        <span class="modal-field-label">${isEdit ? 'Nova senha (deixe em branco para manter)' : 'Senha'}</span>
+        <div class="field-icon-wrap two-icons">
+          <input class="field" id="modalGestorPassword" type="password" placeholder="Senha" autocomplete="off">
+          <div class="field-icons">
+            <button type="button" class="field-icon-btn" id="modalGestorPwEye" title="Mostrar senha">${phIcon('eye')}</button>
+            <button type="button" class="field-icon-btn" id="modalGestorGenBtn" title="Gerar senha aleatória">${phIcon('dice-five')}</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-sm" id="modalGestorCancel">Cancelar</button>
+        <button class="btn-primary auto" id="modalGestorSave">Salvar</button>
+      </div>`;
+    box.querySelector('#modalGestorName').value = isEdit ? g.name : '';
+    const pwInput = box.querySelector('#modalGestorPassword');
+    const eyeBtn = box.querySelector('#modalGestorPwEye');
+    eyeBtn.onclick = () => {
+      const showing = pwInput.type === 'text';
+      pwInput.type = showing ? 'password' : 'text';
+      eyeBtn.innerHTML = showing ? phIcon('eye') : phIcon('eye-slash');
+    };
+    box.querySelector('#modalGestorGenBtn').onclick = () => { pwInput.value = generateRandomPassword(); };
+    box.querySelector('#modalGestorCancel').onclick = () => close(null);
+    box.querySelector('#modalGestorSave').onclick = async () => {
+      const name = box.querySelector('#modalGestorName').value.trim();
+      const pw = pwInput.value;
+      if(!name){ showAlert('O nome não pode ficar em branco.'); return; }
+      if(isEdit){
+        const { error } = await sb.from('gestores').update({ name }).eq('id', g.id);
+        if(error){ showAlert(error.message); return; }
+        if(pw){
+          const { error: pwErr } = await sb.rpc('admin_set_gestor_password', { p_gestor_id: g.id, p_password: pw });
+          if(pwErr){ showAlert(pwErr.message); return; }
+        }
+      } else {
+        if(!pw){ showAlert('Defina uma senha.'); return; }
+        const { error } = await sb.rpc('admin_add_gestor', { p_name: name, p_password: pw });
+        if(error){ showAlert(error.message); return; }
+      }
+      close(true);
+      renderGestoresList(body);
+    };
+  });
 }
 
 async function renderStageAssignments(){
@@ -2940,7 +3052,7 @@ async function renderStageAssignments(){
   if(!wrap) return;
   wrap.innerHTML = '<div class="loading-state">Carregando atribuições…</div>';
   const [{ data: readers }, { data: assignments }] = await Promise.all([
-    sb.from('banca_readers').select('id,name,role').order('name'),
+    sb.from('banca_readers').select('id,name,role,password_hash').order('name'),
     sb.from('banca_stage_readers').select('stage,reader_id'),
   ]);
   if(!readers){ wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Erro ao carregar avaliadores.</p>'; return; }
@@ -2959,11 +3071,28 @@ async function renderStageAssignments(){
 
     const header = document.createElement('div');
     header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;';
-    header.innerHTML = `
-      <span style="font-size:13px;font-weight:700;color:var(--ink);letter-spacing:.01em;">${stageLabels[stage]}</span>
-      <button class="btn-sm primary-outline addStageBtn" style="font-size:12px;">+ Adicionar</button>`;
-    header.querySelector('.addStageBtn').onclick = () =>
-      openStageReaderPicker(stage, assignedIds, stageLabels[stage]);
+    const label = document.createElement('span');
+    label.style.cssText = 'font-size:13px;font-weight:700;color:var(--ink);letter-spacing:.01em;';
+    label.textContent = stageLabels[stage];
+    const acts = document.createElement('div');
+    acts.style.cssText = 'display:flex;gap:6px;align-items:center;';
+    if(assignedReaders.length){
+      const printBtn = document.createElement('button');
+      printBtn.className = 'btn-sm';
+      printBtn.innerHTML = `${phIcon('printer')} Imprimir QR`;
+      printBtn.style.cssText = 'font-size:12px;';
+      printBtn.onclick = () => printReaderQRCodes(assignedReaders, stageLabels[stage]);
+      acts.appendChild(printBtn);
+    }
+    if(!gestorSession){
+      const addBtn = document.createElement('button');
+      addBtn.className = 'btn-sm primary-outline';
+      addBtn.style.cssText = 'font-size:12px;';
+      addBtn.textContent = '+ Adicionar';
+      addBtn.onclick = () => openStageReaderPicker(stage, assignedIds, stageLabels[stage]);
+      acts.appendChild(addBtn);
+    }
+    header.append(label, acts);
     section.appendChild(header);
 
     if(!assignedReaders.length){
@@ -2981,10 +3110,10 @@ async function renderStageAssignments(){
             <strong>${esc(r.name)}</strong>
             ${r.role ? `<span>${esc(r.role)}</span>` : ''}
           </div>
-          <div class="row-acts">
+          ${!gestorSession ? `<div class="row-acts">
             <button class="btn-sm danger" title="Remover da etapa">${phIcon('x')}</button>
-          </div>`;
-        row.querySelector('button').onclick = async () => {
+          </div>` : ''}`;
+        if(!gestorSession) row.querySelector('button').onclick = async () => {
           await sb.from('banca_stage_readers').delete().eq('stage', stage).eq('reader_id', r.id);
           renderStageAssignments();
         };
@@ -3059,9 +3188,13 @@ function openStageReaderPicker(stage, currentAssignedIds, stageLabel){
   });
 }
 
-async function printReaderQRCodes(){
-  const { data: readers, error } = await sb.from('banca_readers').select('*').order('created_at');
-  if(error || !readers || !readers.length){ showAlert('Nenhum membro cadastrado.'); return; }
+async function printReaderQRCodes(readers = null, stageLabel = null){
+  if(!readers){
+    const { data, error } = await sb.from('banca_readers').select('*').order('created_at');
+    if(error || !data || !data.length){ showAlert('Nenhum membro cadastrado.'); return; }
+    readers = data;
+  }
+  if(!readers.length){ showAlert('Nenhum avaliador atribuído a esta etapa.'); return; }
 
   const baseUrl = window.location.href.split('?')[0].split('#')[0];
   const bancaUrl = baseUrl + '?banca=1';
@@ -3119,7 +3252,7 @@ async function printReaderQRCodes(){
 </head>
 <body>
   <div class="page-header">
-    <h1>Acessos da Banca — Projeto Interdisciplinar</h1>
+    <h1>Acessos da Banca${stageLabel ? ` — ${stageLabel}` : ''} — Projeto Interdisciplinar</h1>
     <p>Escaneie o QR code com o celular para abrir a plataforma, depois informe a senha de acesso abaixo.</p>
   </div>
   <div class="cards-grid">${cards}</div>
@@ -3145,15 +3278,18 @@ function buildReaderDisplayRow(r, body){
   const row = document.createElement('div'); row.className = 'simple-row';
   row.innerHTML = `<div class="meta"><strong>${esc(r.name)}</strong><span>${esc(r.role || '')}</span></div>`;
   const acts = document.createElement('div'); acts.className = 'row-acts';
-  const edit = document.createElement('button'); edit.className = 'btn-sm'; edit.textContent = 'Editar';
-  edit.onclick = () => openReaderModal(r, body);
-  const del = document.createElement('button'); del.className = 'btn-sm danger'; del.textContent = 'Remover';
-  del.onclick = async () => {
-    if(!(await showConfirm(`Remover o acesso de "${r.name}"?`))) return;
-    await sb.from('banca_readers').delete().eq('id', r.id);
-    renderBancaReadersList(body);
-  };
-  acts.append(edit, del); row.appendChild(acts);
+  if(!gestorSession){
+    const edit = document.createElement('button'); edit.className = 'btn-sm'; edit.textContent = 'Editar';
+    edit.onclick = () => openReaderModal(r, body);
+    const del = document.createElement('button'); del.className = 'btn-sm danger'; del.textContent = 'Remover';
+    del.onclick = async () => {
+      if(!(await showConfirm(`Remover o acesso de "${r.name}"?`))) return;
+      await sb.from('banca_readers').delete().eq('id', r.id);
+      renderBancaReadersList(body);
+    };
+    acts.append(edit, del);
+  }
+  row.appendChild(acts);
   return row;
 }
 
@@ -3174,9 +3310,12 @@ function openReaderModal(r, body){
       </div>
       <div style="margin-bottom:10px;">
         <span class="modal-field-label">${isEdit ? 'Nova senha (deixe em branco para manter)' : 'Senha'}</span>
-        <div style="display:flex; gap:6px;">
-          <input class="field" id="modalReaderPassword" type="text" style="margin-bottom:0;" placeholder="Senha">
-          <button type="button" class="btn-sm" id="modalGenPasswordBtn" title="Gerar senha aleatória">${phIcon('dice-five')}</button>
+        <div class="field-icon-wrap two-icons">
+          <input class="field" id="modalReaderPassword" type="password" placeholder="Senha" autocomplete="off">
+          <div class="field-icons">
+            <button type="button" class="field-icon-btn" id="modalReaderPwEye" title="Mostrar senha">${phIcon('eye')}</button>
+            <button type="button" class="field-icon-btn" id="modalGenPasswordBtn" title="Gerar senha aleatória">${phIcon('dice-five')}</button>
+          </div>
         </div>
       </div>
       <div class="modal-actions">
@@ -3185,7 +3324,14 @@ function openReaderModal(r, body){
       </div>`;
     box.querySelector('#modalReaderName').value = isEdit ? r.name : '';
     box.querySelector('#modalReaderRole').value = isEdit ? (r.role || '') : '';
-    box.querySelector('#modalGenPasswordBtn').onclick = () => { box.querySelector('#modalReaderPassword').value = generateRandomPassword(); };
+    const pwInput = box.querySelector('#modalReaderPassword');
+    const eyeBtn = box.querySelector('#modalReaderPwEye');
+    eyeBtn.onclick = () => {
+      const showing = pwInput.type === 'text';
+      pwInput.type = showing ? 'password' : 'text';
+      eyeBtn.innerHTML = showing ? phIcon('eye') : phIcon('eye-slash');
+    };
+    box.querySelector('#modalGenPasswordBtn').onclick = () => { pwInput.value = generateRandomPassword(); };
     box.querySelector('#modalCancel').onclick = () => close(null);
     box.querySelector('#modalSave').onclick = async () => {
       const name = box.querySelector('#modalReaderName').value.trim();
@@ -3210,6 +3356,43 @@ function openReaderModal(r, body){
   });
 }
 
+/* ======================= GESTOR ======================= */
+function renderGestorLoginPage(){
+  renderHeaderNav();
+  root().innerHTML = `
+    <div class="main narrow" style="display:flex;align-items:center;justify-content:center;min-height:80vh;">
+      <div class="gate-box" style="width:100%;max-width:360px;">
+        <div style="text-align:center;margin-bottom:24px;">
+          <div style="font-size:32px;line-height:1;margin-bottom:10px;">${phIcon('binoculars')}</div>
+          <h2 style="font-size:20px;font-weight:700;margin-bottom:4px;">Acesso Gestor</h2>
+          <p style="font-size:13px;color:var(--ink-soft);">Visualização completa sem permissão de edição.</p>
+        </div>
+        <input id="gestorPassword" class="field" type="password" placeholder="Senha de acesso" autocomplete="current-password">
+        <div class="error-msg" id="gestorError"></div>
+        <button class="btn-primary" id="gestorEnterBtn" style="width:100%;margin-top:4px;">Entrar</button>
+      </div>
+    </div>`;
+  $('gestorEnterBtn').onclick = tryGestorLogin;
+  $('gestorPassword').addEventListener('keydown', e => { if(e.key === 'Enter') tryGestorLogin(); });
+  setTimeout(() => $('gestorPassword')?.focus(), 50);
+}
+async function tryGestorLogin(){
+  const pw = $('gestorPassword')?.value?.trim();
+  if(!pw) return;
+  $('gestorEnterBtn').disabled = true;
+  const { data } = await sb.rpc('gestor_login', { p_password: pw });
+  $('gestorEnterBtn').disabled = false;
+  if(!data){ $('gestorError').textContent = 'Senha incorreta.'; return; }
+  gestorSession = true;
+  await bootGestorPanel();
+}
+async function bootGestorPanel(){
+  renderHeaderNav();
+  await Promise.all([loadLinksData(), loadRubric(), loadAdminGroups(), loadAdminStudents()]);
+  openGroupId = null;
+  renderAdminPanel();
+}
+
 /* ======================= INIT ======================= */
 async function renderRoute(){
   renderHeaderNav();
@@ -3217,6 +3400,7 @@ async function renderRoute(){
 
   if(!sb){
     if(route === 'admin') renderAdminLogin();
+    else if(route === 'gestor') renderGestorLoginPage();
     else if(route === 'banca') renderBancaLoginPage();
     else if(route === 'aluno') renderAlunoPage();
     else if(route === 'grupo') renderGrupoGate(currentRoute.slug);
@@ -3228,6 +3412,9 @@ async function renderRoute(){
     const { data: { session: s } } = await sb.auth.getSession();
     if(s){ session = s; await bootAdminPanel(); }
     else renderAdminLogin();
+  } else if(route === 'gestor'){
+    if(gestorSession) await bootGestorPanel();
+    else renderGestorLoginPage();
   } else if(route === 'banca'){
     renderBancaLoginPage();
   } else if(route === 'aluno'){
