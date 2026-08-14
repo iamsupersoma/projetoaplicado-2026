@@ -2179,11 +2179,6 @@ function buildLinkDisplayRow(link, body){
   textWrap.innerHTML = `<strong><a href="${esc(link.url)}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${esc(link.title)}</a></strong><span>${cats.length ? esc(cats.map(c=>c.name).join(', ')) : 'Sem categoria'}</span>`;
   meta.appendChild(textWrap);
   const acts = document.createElement('div'); acts.className = 'row-acts';
-  const accessBtn = document.createElement('a'); accessBtn.className = 'btn-copy';
-  accessBtn.href = link.url; accessBtn.target = '_blank'; accessBtn.rel = 'noopener noreferrer';
-  accessBtn.title = 'Acessar'; accessBtn.setAttribute('aria-label', 'Acessar');
-  accessBtn.innerHTML = phIcon('arrow-square-out');
-  acts.append(accessBtn);
   if(!gestorSession){
     const eb = document.createElement('button'); eb.className = 'btn-sm'; eb.textContent = 'Editar';
     eb.onclick = () => openLinkModal(link, body);
