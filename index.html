@@ -1838,15 +1838,17 @@ function renderPublicBancaBody(bancas){
       <h3>Detalhamento por pergunta</h3>
       <div id="grupoScoreGrid"></div>
     </div>
-    <div class="admin-section" id="publicBancaComments"></div>`;
+    <div id="publicBancaComments"></div>`;
   $('resultsDashboard').appendChild(renderResultsDashboard(rubric, banca));
   $('grupoScoreGrid').appendChild(renderRubricResultsView(rubric, banca));
 
   // comentários (somente leitura para alunos)
   const commentsSection = $('publicBancaComments');
   const bancaComments = banca.comments || [];
+  commentsSection.innerHTML = '';
+  commentsSection.className = '';
   if(bancaComments.length > 0){
-    commentsSection.innerHTML = '';
+    commentsSection.className = 'admin-section';
     const h = document.createElement('h3'); h.textContent = 'Comentários'; commentsSection.appendChild(h);
     const list = document.createElement('div'); list.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
     bancaComments.forEach(c => {
@@ -1856,8 +1858,6 @@ function renderPublicBancaBody(bancas){
       list.appendChild(row);
     });
     commentsSection.appendChild(list);
-  } else {
-    commentsSection.innerHTML = '';
   }
 
   $('pubSaveAttachBtn').onclick = async () => {
