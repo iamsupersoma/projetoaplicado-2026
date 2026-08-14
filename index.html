@@ -1760,10 +1760,17 @@ function renderGrupoPublic(g){
   const bancas = g.bancas || [];
   const tabsWrap = $('publicBancaTabs');
   [1,2,3].forEach(stage => {
+    const bancaForStage = bancas.find(bx => bx.stage === stage);
+    const hasScores = bancaForStage?.scores?.length > 0;
     const b = document.createElement('button');
     b.className = 'tab-btn' + (publicBancaStage === stage ? ' active' : '');
     b.textContent = BANCA_LABELS[stage];
-    b.onclick = () => { publicBancaStage = stage; renderPublicBancaBody(bancas); };
+    if(hasScores){
+      b.onclick = () => { publicBancaStage = stage; renderPublicBancaBody(bancas); };
+    } else {
+      b.disabled = true;
+      b.style.cssText = 'opacity:.35;cursor:not-allowed;pointer-events:none;';
+    }
     tabsWrap.appendChild(b);
   });
   renderPublicBancaBody(bancas);
@@ -2169,9 +2176,14 @@ function buildLinkDisplayRow(link, body){
     meta.appendChild(img);
   }
   const textWrap = document.createElement('div'); textWrap.style.minWidth = '0';
-  textWrap.innerHTML = `<strong>${esc(link.title)}</strong><span>${cats.length ? esc(cats.map(c=>c.name).join(', ')) : 'Sem categoria'}</span>`;
+  textWrap.innerHTML = `<strong><a href="${esc(link.url)}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${esc(link.title)}</a></strong><span>${cats.length ? esc(cats.map(c=>c.name).join(', ')) : 'Sem categoria'}</span>`;
   meta.appendChild(textWrap);
   const acts = document.createElement('div'); acts.className = 'row-acts';
+  const accessBtn = document.createElement('a'); accessBtn.className = 'btn-copy';
+  accessBtn.href = link.url; accessBtn.target = '_blank'; accessBtn.rel = 'noopener noreferrer';
+  accessBtn.title = 'Acessar'; accessBtn.setAttribute('aria-label', 'Acessar');
+  accessBtn.innerHTML = phIcon('arrow-square-out');
+  acts.append(accessBtn);
   if(!gestorSession){
     const eb = document.createElement('button'); eb.className = 'btn-sm'; eb.textContent = 'Editar';
     eb.onclick = () => openLinkModal(link, body);
@@ -2909,7 +2921,11 @@ function renderAdminUsuariosTab(body){
     <div id="usuariosSubBody"></div>`;
 
   const subNav = $('usuariosSubNav');
-  [['alunos','Alunos'],['banca','Banca'],['gestores','Gestores']].forEach(([id, label]) => {
+  if(gestorSession && usuariosSubTab === 'gestores') usuariosSubTab = 'alunos';
+  const subTabList = gestorSession
+    ? [['alunos','Alunos'],['banca','Banca']]
+    : [['alunos','Alunos'],['banca','Banca'],['gestores','Gestores']];
+  subTabList.forEach(([id, label]) => {
     const btn = document.createElement('button');
     btn.className = 'tab-btn' + (usuariosSubTab === id ? ' active' : '');
     btn.textContent = label;
