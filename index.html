@@ -976,7 +976,7 @@ function createMockClient(){
   };
 }
 
-const sb = isMockMode ? createMockClient() : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = (isMockMode || !window.supabase) ? createMockClient() : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const $ = id => document.getElementById(id);
 const root = () => $('appRoot');
@@ -1148,7 +1148,7 @@ let adminGroups = [], adminStudents = [];
 let openGroupId = null;
 let adminBancaStage = 1;
 let gestorSession = false;
-let usuariosSubTab = 'banca';
+let usuariosSubTab = 'alunos';
 let publicBancaStage = 1;
 
 /* ======================= ROUTING ======================= */
@@ -1921,9 +1921,9 @@ function renderAdminPanel(){
     </div>`;
 
   const tabs = gestorSession
-    ? [ ['links','Links'], ['alunos','Alunos'], ['grupos','Grupos'], ['bancas','Bancas'], ['usuarios','Usuários'] ]
-    : [ ['links','Links'], ['alunos','Alunos'], ['grupos','Grupos'], ['bancas','Bancas'], ['usuarios','Usuários'], ['config','Configurações'] ];
-  const badges = { alunos: pendingStudents, grupos: groupsSemSenha };
+    ? [ ['links','Links'], ['grupos','Grupos'], ['bancas','Bancas'], ['usuarios','Usuários'] ]
+    : [ ['links','Links'], ['grupos','Grupos'], ['bancas','Bancas'], ['usuarios','Usuários'] ];
+  const badges = { usuarios: pendingStudents, grupos: groupsSemSenha };
   const nav = $('adminTabNav');
   tabs.forEach(([id,label]) => {
     const b = document.createElement('button');
@@ -1939,7 +1939,7 @@ function renderAdminPanel(){
   // Banner de notificações pendentes (container separado, não sobrescrito pelas tabs)
   const notifArea = $('adminNotifArea');
   const items = [];
-  if(pendingStudents) items.push(`<button class="notif-link" data-tab="alunos">${pendingStudents} aluno${pendingStudents > 1 ? 's' : ''} aguardando atribuição</button>`);
+  if(pendingStudents) items.push(`<button class="notif-link" data-tab="usuarios">${pendingStudents} aluno${pendingStudents > 1 ? 's' : ''} aguardando atribuição</button>`);
   if(groupsSemSenha) items.push(`<button class="notif-link" data-tab="grupos">${groupsSemSenha} grupo${groupsSemSenha > 1 ? 's' : ''} sem senha definida</button>`);
   if(items.length){
     notifArea.innerHTML = `
@@ -1948,12 +1948,16 @@ function renderAdminPanel(){
         <span>Atenção: ${items.join(' · ')}</span>
       </div>`;
     notifArea.querySelectorAll('.notif-link').forEach(btn => {
-      btn.onclick = () => { adminTab = btn.dataset.tab; openGroupId = null; renderAdminPanel(); };
+      btn.onclick = () => {
+        adminTab = btn.dataset.tab;
+        if(btn.dataset.tab === 'usuarios') usuariosSubTab = 'alunos';
+        openGroupId = null;
+        renderAdminPanel();
+      };
     });
   }
 
   if(adminTab === 'links') renderAdminLinksTab(body);
-  else if(adminTab === 'alunos') renderAdminAlunosTab(body);
   else if(adminTab === 'grupos') { openGroupId ? renderAdminGroupDetail(body, openGroupId) : renderAdminGruposTab(body); }
   else if(adminTab === 'bancas') renderAdminBancasTab(body);
   else if(adminTab === 'usuarios') renderAdminUsuariosTab(body);
@@ -2295,12 +2299,15 @@ function renderAdminAlunosTab(body){
   const assigned = adminStudents.filter(s => s.status === 'assigned');
   body.innerHTML = `
     <div class="admin-section">
-      <h3>Registros pendentes <span style="font-weight:400;color:var(--ink-soft);">(${pending.length})</span></h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <h3 style="margin-bottom:0;">Registros pendentes <span style="font-weight:400;color:var(--ink-soft);">(${pending.length})</span></h3>
+        <div id="alunosCopySlot"></div>
+      </div>
       <div class="hint">Alunos que se registraram e ainda não foram incluídos em um grupo.</div>
       <div class="simple-list" id="pendingList"></div>
     </div>
     <div class="admin-section">
-      <h3>Alunos atribuídos <span style="font-weight:400;color:var(--ink-soft);">(${assigned.length})</span></h3>
+      <h3 style="margin-bottom:10px;">Alunos atribuídos <span style="font-weight:400;color:var(--ink-soft);">(${assigned.length})</span></h3>
       <div class="simple-list" id="assignedList"></div>
     </div>`;
   const pendingWrap = $('pendingList');
@@ -2739,18 +2746,7 @@ function openNotesWizard(rubricData, group, banca, evaluator, onClose){
 
 /* ======================= ADMIN: CONFIG TAB ======================= */
 function renderAdminConfigTab(body){
-  const alunoUrl = location.origin + location.pathname + '?aluno=1';
-  const profUrl = location.origin + location.pathname + '?professores=1';
-  body.innerHTML = `
-    <div class="admin-section">
-      <h3 style="margin-bottom:14px;">Links úteis para compartilhar</h3>
-      <div class="simple-list">
-        <div class="simple-row"><div class="meta"><strong>Registro de alunos</strong><span>${esc(alunoUrl)}</span></div><button class="btn-sm" id="copyAlunoUrl">Copiar</button></div>
-        <div class="simple-row"><div class="meta"><strong>Acesso da banca (Professores/Banca)</strong><span>${esc(profUrl)}</span></div><button class="btn-sm" id="copyProfUrl">Copiar</button></div>
-      </div>
-    </div>`;
-  $('copyAlunoUrl').onclick = () => { navigator.clipboard.writeText(alunoUrl).catch(()=>{}); showToast('Copiado!'); };
-  $('copyProfUrl').onclick = () => { navigator.clipboard.writeText(profUrl).catch(()=>{}); showToast('Copiado!'); };
+  body.innerHTML = '';
 }
 
 /* ======================= ADMIN: BANCAS TAB ======================= */
@@ -2913,7 +2909,7 @@ function renderAdminUsuariosTab(body){
     <div id="usuariosSubBody"></div>`;
 
   const subNav = $('usuariosSubNav');
-  [['banca','Banca'],['gestores','Gestores']].forEach(([id, label]) => {
+  [['alunos','Alunos'],['banca','Banca'],['gestores','Gestores']].forEach(([id, label]) => {
     const btn = document.createElement('button');
     btn.className = 'tab-btn' + (usuariosSubTab === id ? ' active' : '');
     btn.textContent = label;
@@ -2933,10 +2929,25 @@ function renderUsuariosSubTab(){
   const sub = $('usuariosSubBody');
   if(!sub) return;
 
-  if(usuariosSubTab === 'banca'){
+  const baseUrl = location.origin + location.pathname;
+
+  if(usuariosSubTab === 'alunos'){
+    const alunoUrl = baseUrl + '?aluno=1';
+    renderAdminAlunosTab(sub);
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn-copy'; copyBtn.type = 'button';
+    copyBtn.title = 'Copiar link'; copyBtn.setAttribute('aria-label', 'Copiar link');
+    copyBtn.innerHTML = phIcon('link');
+    copyBtn.onclick = () => { navigator.clipboard.writeText(alunoUrl).catch(()=>{}); showToast('Link copiado!'); };
+    $('alunosCopySlot').appendChild(copyBtn);
+  } else if(usuariosSubTab === 'banca'){
+    const bancaUrl = baseUrl + '?banca=1';
     sub.innerHTML = `
       <div class="admin-section">
-        <h3>Membros da banca</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <h3 style="margin-bottom:0;">Membros da banca</h3>
+          <button class="btn-copy" type="button" id="copyBancaUrl" title="Copiar link" aria-label="Copiar link">${phIcon('link')}</button>
+        </div>
         <div class="hint">Cada um tem nome + cargo + senha próprios. Entram com a senha própria para lançar as notas.</div>
         <div class="simple-list" id="bancaReadersList" style="margin-bottom:14px;"></div>
         ${!gestorSession ? `<button class="btn-primary auto" id="addReaderBtn">+ Adicionar membro</button>` : ''}
@@ -2946,17 +2957,23 @@ function renderUsuariosSubTab(){
         <div class="hint">Defina quais avaliadores participam de cada etapa. Cada avaliador atribuído avaliará <strong>todos os grupos</strong> daquele período.</div>
         <div id="stageAssignmentsWrap"></div>
       </div>`;
+    $('copyBancaUrl').onclick = () => { navigator.clipboard.writeText(bancaUrl).catch(()=>{}); showToast('Link copiado!'); };
     renderBancaReadersList(sub);
     renderStageAssignments();
     if(!gestorSession) $('addReaderBtn').onclick = () => openReaderModal(null, sub);
   } else {
+    const gestorUrl = baseUrl + '?gestor=1';
     sub.innerHTML = `
       <div class="admin-section">
-        <h3>Gestores</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <h3 style="margin-bottom:0;">Gestores</h3>
+          <button class="btn-copy" type="button" id="copyGestorUrl" title="Copiar link" aria-label="Copiar link">${phIcon('link')}</button>
+        </div>
         <div class="hint">Gestores veem todas as informações do painel — links, alunos, grupos, notas e membros — mas não podem editar nada.</div>
         <div class="simple-list" id="gestoresList" style="margin-bottom:14px;"></div>
         ${!gestorSession ? `<button class="btn-primary auto" id="addGestorBtn">+ Adicionar gestor</button>` : ''}
       </div>`;
+    $('copyGestorUrl').onclick = () => { navigator.clipboard.writeText(gestorUrl).catch(()=>{}); showToast('Link copiado!'); };
     renderGestoresList(sub);
     if(!gestorSession) $('addGestorBtn').onclick = () => openGestorModal(null, sub);
   }
@@ -2984,7 +3001,8 @@ function buildGestorRow(g, body){
     const del = document.createElement('button'); del.className = 'btn-sm danger'; del.textContent = 'Remover';
     del.onclick = async () => {
       if(!(await showConfirm(`Remover o acesso de "${g.name}"?`))) return;
-      await sb.from('gestores').delete().eq('id', g.id);
+      const { error } = await sb.rpc('admin_delete_gestor', { p_gestor_id: g.id });
+      if(error){ showAlert(error.message); return; }
       renderGestoresList(body);
     };
     acts.append(edit, del);
@@ -3017,11 +3035,13 @@ function openGestorModal(g, body){
       </div>`;
     box.querySelector('#modalGestorName').value = isEdit ? g.name : '';
     const pwInput = box.querySelector('#modalGestorPassword');
+    if(isEdit && g.password) pwInput.value = g.password;
     const eyeBtn = box.querySelector('#modalGestorPwEye');
     eyeBtn.onclick = () => {
       const showing = pwInput.type === 'text';
       pwInput.type = showing ? 'password' : 'text';
-      eyeBtn.innerHTML = showing ? phIcon('eye') : phIcon('eye-slash');
+      const ic = eyeBtn.querySelector('i');
+      if(ic) ic.className = showing ? 'ph ph-eye' : 'ph ph-eye-slash';
     };
     box.querySelector('#modalGestorGenBtn').onclick = () => { pwInput.value = generateRandomPassword(); };
     box.querySelector('#modalGestorCancel').onclick = () => close(null);
@@ -3030,12 +3050,8 @@ function openGestorModal(g, body){
       const pw = pwInput.value;
       if(!name){ showAlert('O nome não pode ficar em branco.'); return; }
       if(isEdit){
-        const { error } = await sb.from('gestores').update({ name }).eq('id', g.id);
+        const { error } = await sb.rpc('admin_update_gestor', { p_gestor_id: g.id, p_name: name, p_password: pw || null });
         if(error){ showAlert(error.message); return; }
-        if(pw){
-          const { error: pwErr } = await sb.rpc('admin_set_gestor_password', { p_gestor_id: g.id, p_password: pw });
-          if(pwErr){ showAlert(pwErr.message); return; }
-        }
       } else {
         if(!pw){ showAlert('Defina uma senha.'); return; }
         const { error } = await sb.rpc('admin_add_gestor', { p_name: name, p_password: pw });
