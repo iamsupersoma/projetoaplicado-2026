@@ -1175,6 +1175,7 @@ let adminGroups = [], adminStudents = [];
 let openGroupId = null;
 let adminBancaStage = 1;
 let gestorSession = false;
+let gestorCanEdit = false;
 let gestorName = '';
 let usuariosSubTab = 'alunos';
 let publicBancaStage = 1;
@@ -1936,6 +1937,7 @@ async function doUnifiedLogin(){
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
   if(!error && data?.session){
     session = data.session;
+    gestorSession = false; gestorName = ''; gestorCanEdit = false;
     $('loginBtn').disabled = false;
     await bootAdminPanel();
     return;
@@ -1947,6 +1949,7 @@ async function doUnifiedLogin(){
   if(gData){
     gestorSession = true;
     gestorName = gData.name || '';
+    gestorCanEdit = !!gData.can_edit;
     await bootGestorPanel();
     return;
   }
@@ -1971,7 +1974,9 @@ async function loadAdminGroups(){
   adminGroups = data || [];
 }
 async function loadAdminStudents(){
-  const { data } = await sb.from('students').select('*').order('created_at');
+  const { data } = gestorSession
+    ? await sb.rpc('get_all_students')
+    : await sb.from('students').select('*').order('created_at');
   adminStudents = data || [];
 }
 function renderAdminPanel(){
@@ -1980,7 +1985,7 @@ function renderAdminPanel(){
 
   root().innerHTML = `
     <div class="main">
-      <div class="session-label">${gestorSession ? 'Modo leitura · <strong>Gestor</strong>' : `Logado como <strong>${esc(session?.user?.email || '')}</strong>`}</div>
+      <div class="session-label">${gestorSession ? `${gestorCanEdit ? '' : 'Modo leitura · '}Gestor · <strong>${esc(gestorName)}</strong>` : `Logado como <strong>${esc(session?.user?.email || '')}</strong>`}</div>
       <div id="adminNotifArea"></div>
       <div class="admin-layout">
         <div class="admin-sidebar" id="adminTabNav"></div>
@@ -1988,9 +1993,7 @@ function renderAdminPanel(){
       </div>
     </div>`;
 
-  const tabs = gestorSession
-    ? [ ['links','Links'], ['grupos','Grupos'], ['bancas','Bancas'], ['usuarios','Usuários'] ]
-    : [ ['links','Links'], ['grupos','Grupos'], ['bancas','Bancas'], ['usuarios','Usuários'] ];
+  const tabs = [ ['links','Links'], ['grupos','Grupos'], ['bancas','Bancas'], ['usuarios','Usuários'] ];
   const badges = { usuarios: pendingStudents, grupos: groupsSemSenha };
   const nav = $('adminTabNav');
   tabs.forEach(([id,label]) => {
@@ -2966,147 +2969,6 @@ async function renderAdminBancasTab(body){
 
     card.appendChild(scoresWrap);
 
-    // ── link da apresentação (editável) ──
-    if(bancaRecord){
-      const linkWrap = document.createElement('div');
-      linkWrap.style.cssText = 'border-top:1px solid var(--line);padding-top:14px;margin-top:16px;';
-      const linkLabel = document.createElement('div');
-      linkLabel.style.cssText = 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin-bottom:6px;';
-      linkLabel.textContent = 'Link da apresentação';
-      const linkRow = document.createElement('div');
-      linkRow.style.cssText = 'display:flex;gap:8px;align-items:center;';
-      const linkInput = document.createElement('input');
-      linkInput.className = 'field';
-      linkInput.style.cssText = 'margin-bottom:0;font-size:13px;flex:1;';
-      linkInput.placeholder = 'https://docs.google.com/presentation/…';
-      linkInput.value = bancaRecord.presentation_link || '';
-      const linkSaveBtn = document.createElement('button');
-      linkSaveBtn.className = 'btn-sm primary-outline';
-      linkSaveBtn.textContent = 'Salvar';
-      linkSaveBtn.onclick = async () => {
-        const val = linkInput.value.trim() || null;
-        const { error } = await sb.from('bancas').update({ presentation_link: val }).eq('id', bancaRecord.id);
-        if(error){ showAlert(error.message); return; }
-        renderAdminBancasTab(body);
-      };
-      linkRow.appendChild(linkInput);
-      if(bancaRecord.presentation_link){
-        const openBtn = document.createElement('a');
-        openBtn.className = 'btn-sm';
-        openBtn.href = bancaRecord.presentation_link;
-        openBtn.target = '_blank';
-        openBtn.rel = 'noopener';
-        openBtn.innerHTML = phIcon('arrow-square-out') + ' Abrir';
-        linkRow.appendChild(openBtn);
-      }
-      linkRow.appendChild(linkSaveBtn);
-      linkWrap.appendChild(linkLabel);
-      linkWrap.appendChild(linkRow);
-      card.appendChild(linkWrap);
-    }
-
-    // ── avaliadores da banca (gerenciável) ──
-    if(bancaRecord){
-      const evWrap = document.createElement('div');
-      evWrap.style.cssText = 'border-top:1px solid var(--line);padding-top:14px;margin-top:16px;';
-
-      const evHeader = document.createElement('div');
-      evHeader.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;';
-      const evTitle = document.createElement('div');
-      evTitle.style.cssText = 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);';
-      evTitle.textContent = 'Avaliadores';
-      const addEvBtn = document.createElement('button');
-      addEvBtn.className = 'btn-sm primary-outline';
-      addEvBtn.innerHTML = phIcon('plus') + ' Adicionar';
-      addEvBtn.onclick = async () => {
-        const { data: allReaders } = await sb.from('banca_readers').select('id,name,role').order('name');
-        const assignedIds = new Set(evaluators.map(e => e.reader_id));
-        const available = (allReaders || []).filter(r => !assignedIds.has(r.id));
-        showModal((box, close) => {
-          let selectedIds = new Set();
-          box.innerHTML = `<h3 style="margin-bottom:12px;">Adicionar avaliador</h3>`;
-          if(!available.length){
-            box.innerHTML += `<p style="font-size:13.5px;color:var(--ink-mid);">Todos os avaliadores cadastrados já estão nesta banca, ou não há avaliadores cadastrados.</p>
-              <div class="modal-actions"><button class="btn-sm" id="modalClose">Fechar</button></div>`;
-            box.querySelector('#modalClose').onclick = close;
-            return;
-          }
-          const list = document.createElement('div');
-          list.className = 'picker-list';
-          list.style.cssText = 'margin-bottom:14px;max-height:240px;overflow-y:auto;';
-          available.forEach(r => {
-            const row = document.createElement('div');
-            row.className = 'picker-row';
-            const cb = document.createElement('input');
-            cb.type = 'checkbox';
-            cb.onchange = () => { selectedIds.has(r.id) ? selectedIds.delete(r.id) : selectedIds.add(r.id); };
-            row.appendChild(cb);
-            const info = document.createElement('div');
-            info.innerHTML = `<strong style="font-size:13.5px;">${esc(r.name)}</strong>${r.role ? `<br><span style="font-size:12px;color:var(--ink-soft);">${esc(r.role)}</span>` : ''}`;
-            row.appendChild(info);
-            row.onclick = () => { cb.checked = !cb.checked; selectedIds.has(r.id) ? selectedIds.delete(r.id) : selectedIds.add(r.id); };
-            list.appendChild(row);
-          });
-          box.appendChild(list);
-          const actions = document.createElement('div');
-          actions.className = 'modal-actions';
-          const cancelBtn = document.createElement('button');
-          cancelBtn.className = 'btn-sm';
-          cancelBtn.textContent = 'Cancelar';
-          cancelBtn.onclick = close;
-          const confirmBtn = document.createElement('button');
-          confirmBtn.className = 'btn-primary auto';
-          confirmBtn.textContent = 'Adicionar selecionados';
-          confirmBtn.onclick = async () => {
-            if(!selectedIds.size){ close(); return; }
-            for(const rid of selectedIds){
-              await sb.from('evaluators').insert({ banca_id: bancaRecord.id, reader_id: rid });
-            }
-            close();
-            renderAdminBancasTab(body);
-          };
-          actions.appendChild(cancelBtn);
-          actions.appendChild(confirmBtn);
-          box.appendChild(actions);
-        });
-      };
-      evHeader.appendChild(evTitle);
-      evHeader.appendChild(addEvBtn);
-      evWrap.appendChild(evHeader);
-
-      if(!evaluators.length){
-        const empty = document.createElement('p');
-        empty.style.cssText = 'font-size:13px;color:var(--ink-soft);';
-        empty.textContent = 'Nenhum avaliador definido para esta etapa.';
-        evWrap.appendChild(empty);
-      } else {
-        const evList = document.createElement('div');
-        evList.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
-        evaluators.forEach(ev => {
-          const row = document.createElement('div');
-          row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg);border:1px solid var(--line);border-radius:10px;';
-          const info = document.createElement('div');
-          info.style.cssText = 'flex:1;min-width:0;';
-          info.innerHTML = `<strong style="font-size:13.5px;">${esc(ev.name)}</strong>${ev.role ? `<br><span style="font-size:12px;color:var(--ink-soft);">${esc(ev.role)}</span>` : ''}`;
-          const removeBtn = document.createElement('button');
-          removeBtn.className = 'btn-sm danger';
-          removeBtn.innerHTML = phIcon('trash');
-          removeBtn.title = 'Remover avaliador';
-          removeBtn.onclick = async () => {
-            if(!(await showConfirm(`Remover ${ev.name} desta banca?`))) return;
-            const { error } = await sb.from('evaluators').delete().eq('id', ev.id);
-            if(error){ showAlert(error.message); return; }
-            renderAdminBancasTab(body);
-          };
-          row.appendChild(info);
-          row.appendChild(removeBtn);
-          evList.appendChild(row);
-        });
-        evWrap.appendChild(evList);
-      }
-      card.appendChild(evWrap);
-    }
-
     // ── comentários ──
     if(bancaRecord){
       const bancaComments = (commentsData || []).filter(c => c.banca_id === bancaRecord.id);
@@ -3350,7 +3212,7 @@ function renderUsuariosSubTab(){
           <h3 style="margin-bottom:0;">Gestores</h3>
           <button class="btn-copy" type="button" id="copyGestorUrl" title="Copiar link" aria-label="Copiar link">${phIcon('link')}</button>
         </div>
-        <div class="hint">Gestores veem todas as informações do painel — links, alunos, grupos, notas e membros — mas não podem editar nada.</div>
+        <div class="hint">Gestores têm acesso completo ao painel e podem editar grupos, bancas e links.</div>
         <div class="simple-list" id="gestoresList" style="margin-bottom:14px;"></div>
         ${!gestorSession ? `<button class="btn-primary auto" id="addGestorBtn">+ Adicionar gestor</button>` : ''}
       </div>`;
@@ -3374,7 +3236,10 @@ async function renderGestoresList(body){
 }
 function buildGestorRow(g, body){
   const row = document.createElement('div'); row.className = 'simple-row';
-  row.innerHTML = `<div class="meta"><strong>${esc(g.name)}</strong></div>`;
+  const editBadge = g.can_edit
+    ? `<span style="font-size:11px;font-weight:600;color:#16a34a;background:#dcfce7;border-radius:6px;padding:2px 7px;margin-left:8px;">Pode editar</span>`
+    : `<span style="font-size:11px;font-weight:600;color:var(--ink-soft);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 7px;margin-left:8px;">Somente leitura</span>`;
+  row.innerHTML = `<div class="meta"><strong>${esc(g.name)}</strong>${editBadge}</div>`;
   const acts = document.createElement('div'); acts.className = 'row-acts';
   if(!gestorSession){
     const edit = document.createElement('button'); edit.className = 'btn-sm'; edit.textContent = 'Editar';
@@ -3414,12 +3279,20 @@ function openGestorModal(g, body){
           </div>
         </div>
       </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px 14px;background:var(--bg);border:1px solid var(--line);border-radius:10px;">
+        <input type="checkbox" id="modalGestorCanEdit" style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent);">
+        <label for="modalGestorCanEdit" style="font-size:13.5px;cursor:pointer;user-select:none;">
+          <strong>Permissão de edição</strong><br>
+          <span style="font-size:12px;color:var(--ink-soft);">Gestor pode criar e editar grupos, bancas e links</span>
+        </label>
+      </div>
       <div class="modal-actions">
         <button class="btn-sm" id="modalGestorCancel">Cancelar</button>
         <button class="btn-primary auto" id="modalGestorSave">Salvar</button>
       </div>`;
     box.querySelector('#modalGestorName').value = isEdit ? g.name : '';
     box.querySelector('#modalGestorEmail').value = isEdit ? (g.email || '') : '';
+    box.querySelector('#modalGestorCanEdit').checked = isEdit ? !!g.can_edit : false;
     const pwInput = box.querySelector('#modalGestorPassword');
     if(isEdit && g.password) pwInput.value = g.password;
     const eyeBtn = box.querySelector('#modalGestorPwEye');
@@ -3435,14 +3308,15 @@ function openGestorModal(g, body){
       const name = box.querySelector('#modalGestorName').value.trim();
       const email = box.querySelector('#modalGestorEmail').value.trim();
       const pw = pwInput.value;
+      const canEdit = box.querySelector('#modalGestorCanEdit').checked;
       if(!name){ showAlert('O nome não pode ficar em branco.'); return; }
       if(!email){ showAlert('O e-mail não pode ficar em branco.'); return; }
       if(isEdit){
-        const { error } = await sb.rpc('admin_update_gestor', { p_gestor_id: g.id, p_name: name, p_email: email, p_password: pw || null });
+        const { error } = await sb.rpc('admin_update_gestor', { p_gestor_id: g.id, p_name: name, p_email: email, p_password: pw || null, p_can_edit: canEdit });
         if(error){ showAlert(error.message); return; }
       } else {
         if(!pw){ showAlert('Defina uma senha.'); return; }
-        const { error } = await sb.rpc('admin_add_gestor', { p_name: name, p_email: email, p_password: pw });
+        const { error } = await sb.rpc('admin_add_gestor', { p_name: name, p_email: email, p_password: pw, p_can_edit: canEdit });
         if(error){ showAlert(error.message); return; }
       }
       close(true);
