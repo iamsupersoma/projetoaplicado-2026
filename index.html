@@ -2047,11 +2047,11 @@ function renderAdminLinksTab(body){
   body.innerHTML = `
     <div class="admin-bar">
       <div class="admin-bar-left">Cadastre e organize os links do repositório.</div>
-      ${!gestorSession ? `<div style="display:flex;gap:8px;align-items:center;">
-        <label class="btn-sm primary-outline" id="csvImportLabel" style="cursor:pointer;" title="CSV com colunas: titulo, url, descricao (opcional)">
+      ${(!gestorSession || gestorCanEdit) ? `<div style="display:flex;gap:8px;align-items:center;">
+        ${!gestorSession ? `<label class="btn-sm primary-outline" id="csvImportLabel" style="cursor:pointer;" title="CSV com colunas: titulo, url, descricao (opcional)">
           ${phIcon('upload-simple')} Importar CSV
           <input type="file" id="csvImportInput" accept=".csv,text/csv" style="display:none;">
-        </label>
+        </label>` : ''}
         <button class="btn-sm primary-outline" id="newLinkBtn">+ Novo link</button>
       </div>` : ''}
     </div>
@@ -2060,9 +2060,9 @@ function renderAdminLinksTab(body){
       <div id="csvImportStatus" style="display:none;margin-bottom:12px;padding:10px 14px;border-radius:10px;font-size:13px;"></div>
       <div class="admin-link-list" id="adminLinkList"></div>
     </div>`;
-  if(!gestorSession){
+  if(!gestorSession || gestorCanEdit){
     $('newLinkBtn').onclick = () => openLinkModal(null, body);
-    $('csvImportInput').onchange = (e) => importLinksFromCSV(e.target.files[0], body);
+    if(!gestorSession) $('csvImportInput').onchange = (e) => importLinksFromCSV(e.target.files[0], body);
   }
   renderLinkList(body);
 }
@@ -2203,18 +2203,28 @@ function openLinkModal(link, body){
       const categoryIds = box.querySelector('#modalCategoryMs')._getSelectedIds();
       const dateValue = box.querySelector('#modalLinkDate').value;
       if(!title || !url){ showAlert('Preencha ao menos o título e a URL.'); return; }
-      const payload = { title, url, description: desc };
-      if(dateValue) payload.created_at = new Date(dateValue + 'T12:00:00').toISOString();
+      const createdAt = dateValue ? new Date(dateValue + 'T12:00:00').toISOString() : new Date().toISOString();
       let linkId = isEdit ? link.id : null;
-      if(isEdit){
-        const { error } = await sb.from('links').update(payload).eq('id', link.id);
+      if(gestorSession){
+        const { data, error } = await sb.rpc('gestor_save_link', {
+          p_id: isEdit ? link.id : null,
+          p_title: title, p_url: url, p_description: desc,
+          p_created_at: createdAt, p_category_ids: categoryIds,
+        });
         if(error){ showAlert(error.message); return; }
+        if(!isEdit) linkId = data;
       } else {
-        const { data, error } = await sb.from('links').insert(payload).select().single();
-        if(error){ showAlert(error.message); return; }
-        linkId = data.id;
+        const payload = { title, url, description: desc, created_at: createdAt };
+        if(isEdit){
+          const { error } = await sb.from('links').update(payload).eq('id', link.id);
+          if(error){ showAlert(error.message); return; }
+        } else {
+          const { data, error } = await sb.from('links').insert(payload).select().single();
+          if(error){ showAlert(error.message); return; }
+          linkId = data.id;
+        }
+        await saveLinkCategories(linkId, categoryIds);
       }
-      await saveLinkCategories(linkId, categoryIds);
       await loadLinksData();
       close(true);
       renderLinkList(body);
@@ -2243,13 +2253,15 @@ function buildLinkDisplayRow(link, body){
   textWrap.innerHTML = `<strong><a href="${esc(link.url)}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${esc(link.title)}</a></strong><span>${cats.length ? esc(cats.map(c=>c.name).join(', ')) : 'Sem categoria'}</span>`;
   meta.appendChild(textWrap);
   const acts = document.createElement('div'); acts.className = 'row-acts';
-  if(!gestorSession){
+  if(!gestorSession || gestorCanEdit){
     const eb = document.createElement('button'); eb.className = 'btn-sm'; eb.textContent = 'Editar';
     eb.onclick = () => openLinkModal(link, body);
     const db = document.createElement('button'); db.className = 'btn-sm danger'; db.textContent = 'Excluir';
     db.onclick = async () => {
       if(!(await showConfirm('Excluir este link?'))) return;
-      const { error } = await sb.from('links').delete().eq('id', link.id);
+      const { error } = gestorSession
+        ? await sb.rpc('gestor_delete_link', { p_link_id: link.id })
+        : await sb.from('links').delete().eq('id', link.id);
       if(error){ showAlert(error.message); return; }
       links = links.filter(l => l.id !== link.id);
       renderLinkList(body);
@@ -2433,10 +2445,10 @@ function renderAdminGruposTab(body){
   body.innerHTML = `
     <div class="admin-bar">
       <div class="admin-bar-left">Cadastre grupos, defina a senha de acesso e registre as avaliações da banca.</div>
-      ${!gestorSession ? `<button class="btn-sm primary-outline" id="newGroupBtn">+ Novo grupo</button>` : ''}
+      ${(!gestorSession || gestorCanEdit) ? `<button class="btn-sm primary-outline" id="newGroupBtn">+ Novo grupo</button>` : ''}
     </div>
     <div class="group-cards-grid" id="groupCardsGrid"></div>`;
-  if(!gestorSession){
+  if(!gestorSession || gestorCanEdit){
     $('newGroupBtn').onclick = async () => {
       const result = await showPrompt('Novo grupo', [
         { key: 'name', label: 'Nome do grupo', placeholder: 'ex: MechFinder' },
@@ -2446,12 +2458,17 @@ function renderAdminGruposTab(body){
       const base = slugify(name);
       let slug = base, n = 1;
       while(adminGroups.some(g => g.slug === slug)) { slug = base + (++n); }
-      const { data, error } = await sb.from('groups').insert({
-        slug, group_name: name.trim(), order_index: adminGroups.length
-      }).select().single();
+      let newId, error;
+      if(gestorSession){
+        const res = await sb.rpc('gestor_create_group', { p_slug: slug, p_group_name: name.trim(), p_order_index: adminGroups.length });
+        error = res.error; newId = res.data;
+      } else {
+        const res = await sb.from('groups').insert({ slug, group_name: name.trim(), order_index: adminGroups.length }).select().single();
+        error = res.error; newId = res.data?.id;
+      }
       if(error){ showAlert(error.message); return; }
-      adminGroups.push(data);
-      openGroupId = data.id;
+      await loadAdminGroups();
+      openGroupId = newId;
       renderAdminPanel();
     };
   }
@@ -2472,9 +2489,9 @@ function renderAdminGruposTab(body){
         ${hasPw
           ? `<span class="pw-status has-pw">${phIcon('lock-key')} Com senha</span>`
           : `<span class="pw-status no-pw">${phIcon('lock-simple-open')} Sem senha</span>`}
-        ${!gestorSession ? `<button class="btn-sm pw-edit" title="Editar senha">Editar senha</button>` : ''}
+        ${(!gestorSession || gestorCanEdit) ? `<button class="btn-sm pw-edit" title="Editar senha">Editar senha</button>` : ''}
       </span>`;
-    if(!gestorSession) card.querySelector('.pw-edit').onclick = e => { e.stopPropagation(); openGroupPasswordModal(g); };
+    if(!gestorSession || gestorCanEdit) card.querySelector('.pw-edit').onclick = e => { e.stopPropagation(); openGroupPasswordModal(g); };
     card.onclick = () => { openGroupId = g.id; renderAdminPanel(); };
     grid.appendChild(card);
   });
@@ -2538,7 +2555,7 @@ async function renderAdminGroupDetail(body, groupId){
     <div class="section-title" style="margin-bottom:2px;">${esc(g.project_title || g.group_name)}</div>
     <div class="section-sub">${esc(g.slug)}</div>
 
-    ${gestorSession ? `
+    ${(gestorSession && !gestorCanEdit) ? `
     <div class="admin-section">
       <h3>Dados do grupo</h3>
       <div class="form-grid">
@@ -2568,15 +2585,19 @@ async function renderAdminGroupDetail(body, groupId){
       <button class="btn-sm danger" id="deleteGroupBtn">Excluir grupo</button>
     </div>` : ''}`;
 
+
   $('backToGroups').onclick = () => { openGroupId = null; renderAdminPanel(); };
 
-  if(!gestorSession){
+  if(!gestorSession || gestorCanEdit){
     $('saveGroupBtn').onclick = async () => {
-      const payload = {
-        group_name: $('gName').value.trim() || g.group_name,
-        project_title: $('gTitle').value.trim() || null,
-      };
-      const { error } = await sb.from('groups').update(payload).eq('id', g.id);
+      const group_name = $('gName').value.trim() || g.group_name;
+      const project_title = $('gTitle').value.trim() || null;
+      let error;
+      if(gestorSession){
+        ({ error } = await sb.rpc('gestor_update_group', { p_group_id: g.id, p_group_name: group_name, p_project_title: project_title }));
+      } else {
+        ({ error } = await sb.from('groups').update({ group_name, project_title }).eq('id', g.id));
+      }
       if(error){ showAlert(error.message); return; }
       await loadAdminGroups();
       renderAdminPanel();
@@ -2593,6 +2614,7 @@ async function renderAdminGroupDetail(body, groupId){
   // load banca scores async so the page appears immediately
   (async () => {
     const section = $('groupBancasSection');
+    try {
     const [
       { data: bancasData },
       { data: evaluatorsData },
@@ -2663,6 +2685,9 @@ async function renderAdminGroupDetail(body, groupId){
       wrap.appendChild(renderRubricResultsView(rubric || [], bancaObj));
       section.appendChild(wrap);
     });
+    } catch(err) {
+      section.innerHTML = `<p style="padding:16px 0;font-size:13px;color:var(--err);">Erro ao carregar avaliações: ${esc(err?.message || String(err))}</p>`;
+    }
   })();
 }
 
@@ -3193,7 +3218,7 @@ function renderUsuariosSubTab(){
         </div>
         <div class="hint">Cada um tem nome + cargo + senha próprios. Entram com a senha própria para lançar as notas.</div>
         <div class="simple-list" id="bancaReadersList" style="margin-bottom:14px;"></div>
-        ${!gestorSession ? `<button class="btn-primary auto" id="addReaderBtn">+ Adicionar membro</button>` : ''}
+        ${(!gestorSession || gestorCanEdit) ? `<button class="btn-primary auto" id="addReaderBtn">+ Adicionar membro</button>` : ''}
       </div>
       <div class="admin-section">
         <h3>Atribuição por etapa</h3>
@@ -3203,7 +3228,7 @@ function renderUsuariosSubTab(){
     $('copyBancaUrl').onclick = () => { navigator.clipboard.writeText(bancaUrl).catch(()=>{}); showToast('Link copiado!'); };
     renderBancaReadersList(sub);
     renderStageAssignments();
-    if(!gestorSession) $('addReaderBtn').onclick = () => openReaderModal(null, sub);
+    if(!gestorSession || gestorCanEdit) $('addReaderBtn').onclick = () => openReaderModal(null, sub);
   } else {
     const gestorUrl = baseUrl + '?admin=1';
     sub.innerHTML = `
@@ -3556,13 +3581,16 @@ function buildReaderDisplayRow(r, body){
   const row = document.createElement('div'); row.className = 'simple-row';
   row.innerHTML = `<div class="meta"><strong>${esc(r.name)}</strong><span>${esc(r.role || '')}</span></div>`;
   const acts = document.createElement('div'); acts.className = 'row-acts';
-  if(!gestorSession){
+  if(!gestorSession || gestorCanEdit){
     const edit = document.createElement('button'); edit.className = 'btn-sm'; edit.textContent = 'Editar';
     edit.onclick = () => openReaderModal(r, body);
     const del = document.createElement('button'); del.className = 'btn-sm danger'; del.textContent = 'Remover';
     del.onclick = async () => {
       if(!(await showConfirm(`Remover o acesso de "${r.name}"?`))) return;
-      await sb.from('banca_readers').delete().eq('id', r.id);
+      const { error } = gestorSession
+        ? await sb.rpc('gestor_remove_evaluator_reader', { p_reader_id: r.id })
+        : await sb.from('banca_readers').delete().eq('id', r.id);
+      if(error){ showAlert(error.message); return; }
       renderBancaReadersList(body);
     };
     acts.append(edit, del);
@@ -3617,7 +3645,9 @@ function openReaderModal(r, body){
       const pw = box.querySelector('#modalReaderPassword').value;
       if(!name){ showAlert('O nome não pode ficar em branco.'); return; }
       if(isEdit){
-        const { error } = await sb.from('banca_readers').update({ name, role }).eq('id', r.id);
+        const { error } = gestorSession
+          ? await sb.rpc('gestor_update_banca_reader', { p_reader_id: r.id, p_name: name, p_role: role })
+          : await sb.from('banca_readers').update({ name, role }).eq('id', r.id);
         if(error){ showAlert(error.message); return; }
         if(pw){
           const { error: pwErr } = await sb.rpc('admin_set_banca_reader_password', { p_reader_id: r.id, p_password: pw });
