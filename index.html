@@ -2605,7 +2605,7 @@ async function renderAdminGroupDetail(body, groupId){
       await loadAdminGroups();
       renderAdminPanel();
     };
-    $('deleteGroupBtn').onclick = async () => {
+    if($('deleteGroupBtn')) $('deleteGroupBtn').onclick = async () => {
       if(!(await showConfirm('Excluir este grupo? Os alunos atribuídos ficam sem grupo. Esta ação não pode ser desfeita.'))) return;
       const { error } = await sb.from('groups').delete().eq('id', g.id);
       if(error){ showAlert(error.message); return; }
@@ -2637,7 +2637,8 @@ async function renderAdminGroupDetail(body, groupId){
         });
       } finally { clearTimeout(tid); }
       if(!resp.ok){ const t = await resp.text(); throw new Error(`HTTP ${resp.status}: ${t}`); }
-      const d = await resp.json();
+      const raw = await resp.json();
+      const d = Array.isArray(raw) ? raw[0] : raw;
       bancasData      = d?.bancas      || [];
       evaluatorsData  = d?.evaluators  || [];
       scoresData      = d?.scores      || [];
