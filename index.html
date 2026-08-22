@@ -1004,6 +1004,8 @@ function createMockClient(){
 }
 
 const sb = (isMockMode || !window.supabase) ? createMockClient() : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Cliente sem sessão de auth para uso em modo gestor (evita interferência de JWT expirado)
+const sbAnon = (isMockMode || !window.supabase) ? sb : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 
 const $ = id => document.getElementById(id);
 const root = () => $('appRoot');
@@ -1943,9 +1945,8 @@ async function doUnifiedLogin(){
     return;
   }
 
-  // tenta gestor — garante que não há sessão de admin salva no localStorage
-  await sb.auth.signOut().catch(() => {});
-  const { data: gData } = await sb.rpc('gestor_login', { p_email: email, p_password: pass });
+  // tenta gestor via cliente anon isolado (sem interferência de JWT do admin)
+  const { data: gData } = await sbAnon.rpc('gestor_login', { p_email: email, p_password: pass });
   $('loginBtn').disabled = false;
   if(gData){
     gestorSession = true;
@@ -1971,12 +1972,13 @@ async function bootAdminPanel(){
   renderAdminPanel();
 }
 async function loadAdminGroups(){
-  const { data } = await sb.from('groups').select('*').order('order_index');
+  const client = gestorSession ? sbAnon : sb;
+  const { data } = await client.from('groups').select('*').order('order_index');
   adminGroups = data || [];
 }
 async function loadAdminStudents(){
   const { data } = gestorSession
-    ? await sb.rpc('get_all_students')
+    ? await sbAnon.rpc('get_all_students')
     : await sb.from('students').select('*').order('created_at');
   adminStudents = data || [];
 }
@@ -2207,7 +2209,7 @@ function openLinkModal(link, body){
       const createdAt = dateValue ? new Date(dateValue + 'T12:00:00').toISOString() : new Date().toISOString();
       let linkId = isEdit ? link.id : null;
       if(gestorSession){
-        const { data, error } = await sb.rpc('gestor_save_link', {
+        const { data, error } = await sbAnon.rpc('gestor_save_link', {
           p_id: isEdit ? link.id : null,
           p_title: title, p_url: url, p_description: desc,
           p_created_at: createdAt, p_category_ids: categoryIds,
@@ -2461,7 +2463,7 @@ function renderAdminGruposTab(body){
       while(adminGroups.some(g => g.slug === slug)) { slug = base + (++n); }
       let newId, error;
       if(gestorSession){
-        const res = await sb.rpc('gestor_create_group', { p_slug: slug, p_group_name: name.trim(), p_order_index: adminGroups.length });
+        const res = await sbAnon.rpc('gestor_create_group', { p_slug: slug, p_group_name: name.trim(), p_order_index: adminGroups.length });
         error = res.error; newId = res.data;
       } else {
         const res = await sb.from('groups').insert({ slug, group_name: name.trim(), order_index: adminGroups.length }).select().single();
@@ -2535,7 +2537,7 @@ function openGroupPasswordModal(g){
       if(!pw){ showAlert('Preencha a senha.'); return; }
       const btn = box.querySelector('#modalGroupPwSave');
       btn.disabled = true; btn.textContent = 'Salvando…';
-      const { error } = await sb.rpc('admin_set_group_password', { p_group_id: g.id, p_password: pw });
+      const { error } = await (gestorSession ? sbAnon : sb).rpc('admin_set_group_password', { p_group_id: g.id, p_password: pw });
       if(error){ btn.disabled = false; btn.textContent = 'Salvar'; showAlert(error.message); return; }
       g.password_hash = pw;
       close(true);
@@ -2595,7 +2597,7 @@ async function renderAdminGroupDetail(body, groupId){
       const project_title = $('gTitle').value.trim() || null;
       let error;
       if(gestorSession){
-        ({ error } = await sb.rpc('gestor_update_group', { p_group_id: g.id, p_group_name: group_name, p_project_title: project_title }));
+        ({ error } = await sbAnon.rpc('gestor_update_group', { p_group_id: g.id, p_group_name: group_name, p_project_title: project_title }));
       } else {
         ({ error } = await sb.from('groups').update({ group_name, project_title }).eq('id', g.id));
       }
@@ -2618,8 +2620,8 @@ async function renderAdminGroupDetail(body, groupId){
     try {
     let bancasData = [], evaluatorsData = [], scoresData = [], readersData = [];
     if(gestorSession){
-      // usa RPC security definer para evitar problemas de sessão JWT
-      const { data: d, error } = await sb.rpc('get_group_banca_data', { p_group_id: g.id });
+      // usa cliente anon isolado para evitar interferência de JWT expirado
+      const { data: d, error } = await sbAnon.rpc('get_group_banca_data', { p_group_id: g.id });
       if(error) throw new Error(error.message);
       bancasData      = d?.bancas      || [];
       evaluatorsData  = d?.evaluators  || [];
@@ -3603,7 +3605,7 @@ function buildReaderDisplayRow(r, body){
     del.onclick = async () => {
       if(!(await showConfirm(`Remover o acesso de "${r.name}"?`))) return;
       const { error } = gestorSession
-        ? await sb.rpc('gestor_remove_evaluator_reader', { p_reader_id: r.id })
+        ? await sbAnon.rpc('gestor_remove_evaluator_reader', { p_reader_id: r.id })
         : await sb.from('banca_readers').delete().eq('id', r.id);
       if(error){ showAlert(error.message); return; }
       renderBancaReadersList(body);
@@ -3661,16 +3663,16 @@ function openReaderModal(r, body){
       if(!name){ showAlert('O nome não pode ficar em branco.'); return; }
       if(isEdit){
         const { error } = gestorSession
-          ? await sb.rpc('gestor_update_banca_reader', { p_reader_id: r.id, p_name: name, p_role: role })
+          ? await sbAnon.rpc('gestor_update_banca_reader', { p_reader_id: r.id, p_name: name, p_role: role })
           : await sb.from('banca_readers').update({ name, role }).eq('id', r.id);
         if(error){ showAlert(error.message); return; }
         if(pw){
-          const { error: pwErr } = await sb.rpc('admin_set_banca_reader_password', { p_reader_id: r.id, p_password: pw });
+          const { error: pwErr } = await (gestorSession ? sbAnon : sb).rpc('admin_set_banca_reader_password', { p_reader_id: r.id, p_password: pw });
           if(pwErr){ showAlert(pwErr.message); return; }
         }
       } else {
         if(!pw){ showAlert('Defina uma senha.'); return; }
-        const { error } = await sb.rpc('admin_add_banca_reader', { p_name: name, p_role: role, p_password: pw });
+        const { error } = await (gestorSession ? sbAnon : sb).rpc('admin_add_banca_reader', { p_name: name, p_role: role, p_password: pw });
         if(error){ showAlert(error.message); return; }
       }
       close(true);
