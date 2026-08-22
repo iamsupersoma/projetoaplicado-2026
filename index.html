@@ -2620,9 +2620,24 @@ async function renderAdminGroupDetail(body, groupId){
     try {
     let bancasData = [], evaluatorsData = [], scoresData = [], readersData = [];
     if(gestorSession){
-      // usa cliente anon isolado para evitar interferência de JWT expirado
-      const { data: d, error } = await sbAnon.rpc('get_group_banca_data', { p_group_id: g.id });
-      if(error) throw new Error(error.message);
+      // fetch direto evita qualquer interferência do cliente Supabase JS em modo gestor (anon)
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 10000);
+      let resp;
+      try {
+        resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_group_banca_data`, {
+          method: 'POST',
+          signal: ctrl.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ p_group_id: g.id }),
+        });
+      } finally { clearTimeout(tid); }
+      if(!resp.ok){ const t = await resp.text(); throw new Error(`HTTP ${resp.status}: ${t}`); }
+      const d = await resp.json();
       bancasData      = d?.bancas      || [];
       evaluatorsData  = d?.evaluators  || [];
       scoresData      = d?.scores      || [];
