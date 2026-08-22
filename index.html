@@ -1943,7 +1943,8 @@ async function doUnifiedLogin(){
     return;
   }
 
-  // tenta gestor
+  // tenta gestor — garante que não há sessão de admin salva no localStorage
+  await sb.auth.signOut().catch(() => {});
   const { data: gData } = await sb.rpc('gestor_login', { p_email: email, p_password: pass });
   $('loginBtn').disabled = false;
   if(gData){
@@ -2615,17 +2616,31 @@ async function renderAdminGroupDetail(body, groupId){
   (async () => {
     const section = $('groupBancasSection');
     try {
-    const [
-      { data: bancasData },
-      { data: evaluatorsData },
-      { data: scoresData },
-      { data: readersData },
-    ] = await Promise.all([
-      sb.from('bancas').select('id,stage,scheduled_date,report_file_path,report_file_name,presentation_link').eq('group_id', g.id),
-      sb.from('evaluators').select('id,banca_id,reader_id,comment'),
-      sb.from('scores').select('evaluator_id,question_id,rating,banca_id'),
-      sb.from('banca_readers').select('id,name,role'),
-    ]);
+    let bancasData = [], evaluatorsData = [], scoresData = [], readersData = [];
+    if(gestorSession){
+      // usa RPC security definer para evitar problemas de sessão JWT
+      const { data: d, error } = await sb.rpc('get_group_banca_data', { p_group_id: g.id });
+      if(error) throw new Error(error.message);
+      bancasData      = d?.bancas      || [];
+      evaluatorsData  = d?.evaluators  || [];
+      scoresData      = d?.scores      || [];
+      readersData     = d?.readers     || [];
+    } else {
+      const deadline = new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout (10s)')), 10000));
+      const [r1, r2, r3, r4] = await Promise.race([
+        Promise.allSettled([
+          sb.from('bancas').select('id,stage,scheduled_date,report_file_path,report_file_name,presentation_link').eq('group_id', g.id),
+          sb.from('evaluators').select('id,banca_id,reader_id,comment'),
+          sb.from('scores').select('evaluator_id,question_id,rating,banca_id'),
+          sb.from('banca_readers').select('id,name,role'),
+        ]),
+        deadline,
+      ]);
+      bancasData      = r1?.value?.data || [];
+      evaluatorsData  = r2?.value?.data || [];
+      scoresData      = r3?.value?.data || [];
+      readersData     = r4?.value?.data || [];
+    }
     const readerMap = Object.fromEntries((readersData || []).map(r => [r.id, r]));
     section.innerHTML = '';
 
