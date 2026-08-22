@@ -933,10 +933,11 @@ function createMockClient(){
       const g = db.groups.find(x => x.id === s.group_id);
       if(!g || !g.password_hash || g.password_hash !== params.p_password) return { data: { error: 'senha incorreta' }, error: null };
       const bancas = db.bancas.filter(b => b.group_id === g.id).sort((a, b) => a.stage - b.stage).map(b => ({
-        stage: b.stage, scheduled_date: b.scheduled_date, report_file_path: b.report_file_path,
+        id: b.id, stage: b.stage, scheduled_date: b.scheduled_date, report_file_path: b.report_file_path,
         report_file_name: b.report_file_name, presentation_link: b.presentation_link,
         evaluators: db.evaluators.filter(e => e.banca_id === b.id).map(e => ({ id: e.id, name: e.name, role: e.role, comment: e.comment })),
         scores: db.scores.filter(sc => sc.banca_id === b.id).map(sc => ({ evaluator_id: sc.evaluator_id, question_id: sc.question_id, rating: sc.rating })),
+        comments: (db.banca_comments||[]).filter(c => c.banca_id === b.id).sort((a,b) => a.created_at < b.created_at ? -1 : 1),
       }));
       return {
         data: {
