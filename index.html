@@ -3039,7 +3039,7 @@ async function renderAdminBancasTab(body){
     <div class="admin-bar">
       <div class="admin-bar-left">Notas por etapa, arquivos enviados e links de apresentação dos grupos.</div>
       <a class="btn-sm" href="?cronometro=1" target="_blank" rel="noopener" style="flex-shrink:0;" title="Abre o cronômetro da banca em tela cheia numa nova aba. Abra o mesmo link no outro dispositivo para sincronizar.">${phIcon('timer')} Cronômetro</a>
-      <a class="btn-sm" href="?sorteio=1" target="_blank" rel="noopener" style="flex-shrink:0;" title="Sorteia a ordem de apresentação dos grupos em tela cheia. O cronômetro passa a seguir essa ordem.">${phIcon('shuffle')} Sorteio</a>
+      <a class="btn-sm" href="?sorteio=1" target="_blank" rel="noopener" style="flex-shrink:0;" title="Sorteia a ordem dos grupos em tela cheia, para bancas ou atividades de aula. Abre numa nova aba.">${phIcon('shuffle')} Sorteio</a>
     </div>
     <div class="tab-nav" id="bancasStageTabs"></div>
     <div id="bancasContent"></div>`;
@@ -4108,7 +4108,7 @@ function renderTimerPage(){
           <div class="tm-row"><button id="tmPrev">← Voltar etapa</button><button class="accent" id="tmNext">Avançar etapa →</button></div>
           <div class="tm-row"><button id="tmMinus">− 1 min</button><button id="tmPlus">+ 1 min</button></div>
           <div class="tm-row"><button id="tmReset">Reiniciar etapa</button><button id="tmNextGroup">Próximo grupo</button></div>
-          <a class="tm-linkbtn" href="?sorteio=1">Sortear ordem dos grupos</a>
+          <a class="tm-linkbtn" href="?sorteio=1" target="_blank" rel="noopener">Sortear ordem dos grupos</a>
           <button id="tmFull">Tela cheia</button>
         </div>
         <p class="tm-keys"><kbd>Espaço</kbd> iniciar ou pausar · <kbd>←</kbd> <kbd>→</kbd> voltar ou avançar etapa · <kbd>R</kbd> reiniciar etapa · <kbd>F</kbd> tela cheia · <kbd>Esc</kbd> fechar</p>
@@ -4340,14 +4340,14 @@ function dwRender(){
   $('dwCta').hidden = !pending;
   if(pending){
     chip.className = 'tm-chip'; chip.textContent = 'Pronto';
-    $('dwEyebrow').textContent = 'Ordem de apresentação';
+    $('dwEyebrow').textContent = 'Ordem dos grupos';
     $('dwPos').innerHTML = '?';
-    $('dwName').textContent = total >= 2 ? 'Quem abre a banca?' : 'Cadastre os grupos';
-    $('dwSub').textContent = total >= 2 ? total + ' grupos participantes' : 'Abra os controles no canto inferior direito e liste pelo menos dois grupos.';
+    $('dwName').textContent = total >= 2 ? 'Quem começa?' : 'Liste os grupos';
+    $('dwSub').textContent = total >= 2 ? total + ' grupos no sorteio' : 'Abra os controles no canto inferior direito e liste pelo menos dois grupos.';
     stage.classList.remove('landed');
   } else if(p.cur >= 0){
     chip.className = 'tm-chip running'; chip.textContent = 'Sorteando';
-    $('dwEyebrow').textContent = p.cur === 0 ? 'Abre as apresentações' : p.cur === n - 1 ? 'Fecha as apresentações' : 'Próxima posição';
+    $('dwEyebrow').textContent = p.cur === 0 ? 'Primeiro da ordem' : p.cur === n - 1 ? 'Último da ordem' : 'Próxima posição';
     $('dwPos').innerHTML = ord(p.cur);
     $('dwName').textContent = shown;
     $('dwSub').textContent = (p.cur + 1) + ' de ' + n;
@@ -4355,10 +4355,10 @@ function dwRender(){
     if(!spinning && draw.landedAt !== p.cur){ draw.landedAt = p.cur; stage.classList.remove('landed'); void stage.offsetWidth; stage.classList.add('landed'); }
   } else {
     chip.className = 'tm-chip'; chip.textContent = 'Ordem definida';
-    $('dwEyebrow').textContent = 'Abre as apresentações';
+    $('dwEyebrow').textContent = 'Primeiro da ordem';
     $('dwPos').innerHTML = ord(0);
     $('dwName').textContent = S.order[0];
-    $('dwSub').textContent = 'Ordem salva no cronômetro deste navegador';
+    $('dwSub').textContent = 'Ordem definida · o cronômetro segue esta sequência';
     stage.classList.add('landed');
     draw.landedAt = -1;
   }
@@ -4396,7 +4396,7 @@ async function renderDrawPage(){
           </div>
           <div class="dw-body">
             <div class="dw-stage" id="dwStage" aria-live="polite">
-              <p class="dw-eyebrow" id="dwEyebrow">Ordem de apresentação</p>
+              <p class="dw-eyebrow" id="dwEyebrow">Ordem dos grupos</p>
               <p class="dw-pos" id="dwPos">?</p>
               <p class="dw-name" id="dwName"></p>
               <p class="dw-sub" id="dwSub"></p>
@@ -4417,12 +4417,12 @@ async function renderDrawPage(){
           <h3>Controles</h3>
           <div class="tm-sync" id="dwSync"><i></i><span>Conectando…</span></div>
         </div>
-        <div class="tm-field"><label for="dwNames">Grupos participantes · <span id="dwCount"></span></label><textarea id="dwNames" spellcheck="false" placeholder="Um grupo por linha"></textarea></div>
-        <p class="tm-note">Um grupo por linha. Mudar a lista apaga o resultado atual.</p>
+        <div class="tm-field"><label for="dwNames">Grupos no sorteio · <span id="dwCount"></span></label><textarea id="dwNames" spellcheck="false" placeholder="Um grupo por linha"></textarea></div>
+        <p class="tm-note">Um grupo por linha. Serve para bancas ou atividades de aula; mudar a lista apaga o resultado atual.</p>
         <div class="tm-stack">
           <button class="primary" id="dwDraw">Sortear ordem</button>
           <div class="tm-row"><button id="dwClear">Limpar resultado</button><button id="dwReload">Recarregar grupos</button></div>
-          <a class="tm-linkbtn" href="?cronometro=1">Ir para o cronômetro</a>
+          <a class="tm-linkbtn" href="?cronometro=1" target="_blank" rel="noopener">Abrir o cronômetro</a>
           <button id="dwFull">Tela cheia</button>
         </div>
         <p class="tm-keys"><kbd>Espaço</kbd> sortear · <kbd>F</kbd> tela cheia · <kbd>Esc</kbd> fechar</p>
