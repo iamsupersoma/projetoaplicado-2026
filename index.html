@@ -781,6 +781,82 @@
   #timerApp a.tm-linkbtn:hover{background:rgba(255,255,255,.2);}
   @media(max-width:760px){ #timerApp .dw-body{grid-template-columns:1fr; overflow-y:auto;} #timerApp .dw-list.two{grid-template-columns:1fr;} }
   @media(prefers-reduced-motion:reduce){ #timerApp .dw-stage.landed .dw-name{animation:none;} }
+
+  /* ======================= FERRAMENTAS · VISUAL DA PLATAFORMA (teste) =======================
+     Alternativa ao visual Senac: fundo creme, Plus Jakarta Sans, tinta preta e o degradê
+     rosa→coral da plataforma. Liga com #timerApp.plat (controles > Visual, ou &visual=plataforma). */
+  #timerApp.plat{
+    --tm-indigo:#0F0F0F; --tm-navy:#0F0F0F; --tm-cream:#F3F1EC; --tm-paper:#FFFFFF; --tm-mist:#ECEAE3;
+    --tm-warn:#D97706; --tm-alert:#DC2626; --tm-ink-soft:#8A8A85;
+    --tm-display:'Plus Jakarta Sans',-apple-system,sans-serif; --tm-body:'Plus Jakarta Sans',-apple-system,sans-serif;
+    --tm-grad:linear-gradient(120deg,#FF5FA0 0%,#FF9152 100%);
+    background:#FCFBF8; color:#0F0F0F;
+  }
+  #timerApp.plat::before, #timerApp.plat::after{content:""; position:absolute; border-radius:9999px; filter:blur(80px); pointer-events:none;}
+  #timerApp.plat::before{top:-120px; left:-90px; width:420px; height:420px; background:linear-gradient(135deg,#FF5FA0,#FF9152); opacity:.16;}
+  #timerApp.plat::after{bottom:-160px; right:-120px; width:480px; height:480px; background:linear-gradient(135deg,#FF9152,#FFC85F); opacity:.13;}
+  #timerApp.plat .tm-stage{position:relative; z-index:1;}
+  #timerApp.plat .tm-panel{border:1px solid #E4E3DC; box-shadow:0 1px 3px rgba(0,0,0,.06), 0 6px 20px rgba(0,0,0,.06); border-radius:22px;}
+  #timerApp.plat .tm-group, #timerApp.plat .dw-name{font-weight:800; letter-spacing:-.03em;}
+  #timerApp.plat .tm-digits{font-weight:800; letter-spacing:-.04em;}
+  #timerApp.plat .tm-chip{letter-spacing:.08em; font-weight:700; background:#F3F1EC; color:#444440;}
+  #timerApp.plat .tm-chip.running{background-image:var(--tm-grad); color:#fff;}
+  #timerApp.plat .tm-chip.warn{background:var(--tm-warn); background-image:none; color:#fff;}
+  #timerApp.plat .tm-track{background:#F3F1EC;}
+  #timerApp.plat .tm-track i{background-image:var(--tm-grad);}
+  #timerApp.plat .tm-track.warn i, #timerApp.plat .tm-track.alert i{background-image:none;}
+  #timerApp.plat .tm-steps li{border:1.5px solid #E4E3DC; font-weight:600;}
+  #timerApp.plat .tm-steps li.done{background:#F3F1EC; border-color:#F3F1EC; color:#444440;}
+  #timerApp.plat .tm-steps li.now{background:#0F0F0F; border-color:#0F0F0F; color:#fff;}
+  #timerApp.plat .tm-foot{color:#0F0F0F;}
+  #timerApp.plat .tm-foot small{color:#8A8A85; opacity:1;}
+  #timerApp.plat .tm-foot strong{background-image:var(--tm-grad); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  #timerApp.plat .tm-logo{filter:brightness(0); opacity:.85;}
+  #timerApp.plat .tm-applause{background:#0F0F0F; background-image:var(--tm-grad);}
+  #timerApp.plat .tm-rings i{border-color:rgba(255,255,255,.55);}
+  #timerApp.plat .tm-ap-eyebrow{color:rgba(255,255,255,.9);}
+  #timerApp.plat .tm-ap-text{color:#fff;}
+  #timerApp.plat .tm-ap-next{color:rgba(255,255,255,.75);}
+  #timerApp.plat .tm-hotspot::after{background:#0F0F0F;}
+  #timerApp.plat .dw-eyebrow{color:#8A8A85;}
+  #timerApp.plat .dw-pos{color:#ECEAE3;}
+  #timerApp.plat .dw-stage.landed .dw-pos{background-image:var(--tm-grad); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  #timerApp.plat .dw-list li{border-color:#E4E3DC; font-weight:600;}
+  #timerApp.plat .dw-list li b{background:#F3F1EC; color:#444440;}
+  #timerApp.plat .dw-list li.filled{background:#fff; border:1px solid #E4E3DC; box-shadow:0 1px 3px rgba(0,0,0,.05); color:#0F0F0F;}
+  #timerApp.plat .dw-list li.filled b{background:#0F0F0F; color:#fff;}
+  #timerApp.plat .dw-list li.now, #timerApp.plat .dw-list.movable li.dragging{background-image:var(--tm-grad); border-color:transparent; color:#fff;}
+  #timerApp.plat .dw-list li.now b, #timerApp.plat .dw-list.movable li.dragging b{background:#fff; color:#FF5FA0;}
+  #timerApp.plat .dw-list.movable li:hover{background:#F8F7F3;}
+  #timerApp.plat .dw-list.movable li.dragging{box-shadow:0 10px 24px rgba(255,95,160,.3);}
+  #timerApp.plat .dw-list.movable li:focus-visible{outline-color:#0F0F0F;}
+  #timerApp.plat .dw-cta{background:#0F0F0F;}
+  #timerApp.plat .dw-cta:hover{background:#333;}
+  /* controles em painel claro, como os modais da plataforma */
+  #timerApp.plat .tm-drawer{background:#FCFBF8; color:#0F0F0F; border-left:1px solid #E4E3DC; box-shadow:-20px 0 60px rgba(0,0,0,.12);}
+  #timerApp.plat .tm-drawer h3{color:#0F0F0F;}
+  #timerApp.plat .tm-sync{color:#8A8A85;}
+  #timerApp.plat .tm-field label{color:#8A8A85; letter-spacing:.08em; font-weight:700;}
+  #timerApp.plat .tm-drawer input, #timerApp.plat .tm-drawer textarea, #timerApp.plat .tm-dd-btn{border:1.5px solid #E4E3DC !important; color:#0F0F0F !important; background:#fff !important;}
+  #timerApp.plat .tm-drawer button, #timerApp.plat a.tm-linkbtn{background:#fff; color:#444440; border:1.5px solid #E4E3DC;}
+  #timerApp.plat .tm-drawer button:hover, #timerApp.plat a.tm-linkbtn:hover{background:#fff; border-color:#A8A8A0; color:#0F0F0F;}
+  #timerApp.plat .tm-drawer button.primary{background:#0F0F0F; border-color:#0F0F0F; color:#fff;}
+  #timerApp.plat .tm-drawer button.primary:hover{background:#333;}
+  #timerApp.plat .tm-drawer button.accent{background-image:var(--tm-grad); border-color:transparent; color:#fff;}
+  #timerApp.plat .tm-drawer button.on{background:#0F0F0F; border-color:#0F0F0F; color:#fff;}
+  #timerApp.plat .tm-keys{color:#8A8A85;}
+  #timerApp.plat .tm-keys kbd{background:#F3F1EC; color:#444440;}
+  #timerApp.plat .tm-note{color:#8A8A85;}
+  #timerApp.plat .tm-exit{color:#8A8A85 !important; border:0 !important;}
+  #timerApp.plat .tm-close{border:0 !important; background:#F3F1EC !important;}
+  #timerApp.plat .tm-drawer input:focus-visible, #timerApp.plat .tm-drawer textarea:focus-visible, #timerApp.plat .tm-drawer button:focus-visible{outline-color:#0F0F0F;}
+  #timerApp.plat .tm-dd-list{border:1px solid #E4E3DC; box-shadow:0 12px 32px rgba(0,0,0,.12);}
+  #timerApp.plat .tm-dd-list li{color:#0F0F0F; font-weight:600;}
+  #timerApp.plat .tm-dd-list li:hover, #timerApp.plat .tm-dd-list li:focus{background:#F3F1EC;}
+  #timerApp.plat .tm-dd-list li[aria-selected="true"]{background:#0F0F0F; color:#fff;}
+  #timerApp.plat .tm-dd-list li[aria-selected="true"] b{color:#0F0F0F;}
+  #timerApp.plat .tm-dd-list li.free{border-bottom-color:#E4E3DC;}
+  #timerApp .tm-drawer button.on{background:#fff; color:var(--tm-navy);}
   #timerApp .tm-exit{color:var(--tm-mist) !important; background:transparent !important; text-decoration:underline; padding:4px !important; align-self:flex-start;}
 </style>
 
@@ -3932,6 +4008,29 @@ const TIMER_PH = {
   talk: { hint: 'Tempo para apresentar a proposta', chip: 'Apresentação' },
   banca: { hint: 'Feedback e perguntas dos avaliadores', chip: 'Banca' },
 };
+const TOOLS_THEME_KEY = 'pi-ferramentas-visual';
+function toolsTheme(){
+  try { const v = new URLSearchParams(location.search).get('visual'); if(v === 'plataforma' || v === 'senac'){ try { localStorage.setItem(TOOLS_THEME_KEY, v); } catch {} return v; } } catch {}
+  try { return localStorage.getItem(TOOLS_THEME_KEY) === 'plataforma' ? 'plataforma' : 'senac'; } catch { return 'senac'; }
+}
+function setToolsTheme(v){
+  try { localStorage.setItem(TOOLS_THEME_KEY, v); } catch {}
+  try { const u = new URL(location.href); if(u.searchParams.has('visual')){ u.searchParams.set('visual', v); history.replaceState(null, '', u); } } catch {}
+  applyToolsTheme();
+}
+function applyToolsTheme(){
+  const app = $('timerApp'); if(!app) return;
+  const v = toolsTheme();
+  app.classList.toggle('plat', v === 'plataforma');
+  app.querySelectorAll('[data-visual]').forEach(b => { b.classList.toggle('on', b.dataset.visual === v); b.setAttribute('aria-pressed', b.dataset.visual === v); });
+}
+function toolsThemeControls(){
+  return `<div class="tm-field"><label>Visual</label><div class="tm-row"><button type="button" data-visual="senac">Senac</button><button type="button" data-visual="plataforma">Plataforma</button></div></div>`;
+}
+function wireToolsTheme(){
+  $('timerApp').querySelectorAll('[data-visual]').forEach(b => b.onclick = () => setToolsTheme(b.dataset.visual));
+  applyToolsTheme();
+}
 function tmFmt(ms){ const s = Math.round(ms / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }
 function tmParse(v){ const m = String(v).trim().match(/^(\d{1,3})(?:[:.,](\d{1,2}))?$/); if(!m) return null; const ms = (+m[1] * 60 + (m[2] ? +m[2] : 0)) * 1000; return ms > 0 ? ms : null; }
 function tmMins(ms){ const s = Math.round(ms / 1000); return s % 60 ? tmFmt(ms) : (s / 60) + ' min'; }
@@ -4206,6 +4305,7 @@ function renderTimerPage(){
           <a class="tm-linkbtn" href="?sorteio=1" target="_blank" rel="noopener">Sortear ordem dos grupos</a>
           <button id="tmFull">Tela cheia</button>
         </div>
+        ${toolsThemeControls()}
         <p class="tm-keys"><kbd>Espaço</kbd> iniciar ou pausar · <kbd>←</kbd> <kbd>→</kbd> voltar ou avançar etapa · <kbd>R</kbd> reiniciar etapa · <kbd>F</kbd> tela cheia · <kbd>Esc</kbd> fechar</p>
         <button class="tm-exit" id="tmExit">Sair do cronômetro</button>
       </aside>
@@ -4270,6 +4370,7 @@ function renderTimerPage(){
     document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible' && getRoute() === 'cronometro') tmKeepAwake(); });
   }
 
+  wireToolsTheme();
   tmSyncInputs(); tmRender(); tmSetSync();
   tmConnect();
   tmLoadGroups();
@@ -4590,6 +4691,7 @@ async function renderDrawPage(){
           <a class="tm-linkbtn" href="?cronometro=1" target="_blank" rel="noopener">Abrir o cronômetro</a>
           <button id="dwFull">Tela cheia</button>
         </div>
+        ${toolsThemeControls()}
         <p class="tm-keys"><kbd>Espaço</kbd> sortear · <kbd>F</kbd> tela cheia · <kbd>Esc</kbd> fechar</p>
         <button class="tm-exit" id="dwExit">Sair do sorteio</button>
       </aside>
@@ -4638,6 +4740,7 @@ async function renderDrawPage(){
     });
   }
 
+  wireToolsTheme();
   dwSyncInputs(); dwRender(); dwSetSync();
   dwConnect();
   if(!draw.raf) draw.raf = requestAnimationFrame(dwLoop);
