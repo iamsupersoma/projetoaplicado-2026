@@ -762,6 +762,14 @@
   #timerApp .dw-list li.filled b{background:var(--tm-navy); color:#fff;}
   #timerApp .dw-list li.now{background:var(--tm-indigo); color:#fff;}
   #timerApp .dw-list li.now b{background:#fff; color:var(--tm-indigo);}
+  #timerApp .dw-list.movable li{cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;}
+  #timerApp .dw-list.movable li:hover{border-color:var(--tm-mist); background:#E4E3F6;}
+  #timerApp .dw-list.movable li:focus-visible{outline:3px solid var(--tm-indigo); outline-offset:2px;}
+  #timerApp .dw-grip{margin-left:auto; flex:none; font-size:.9em; color:var(--tm-ink-soft); opacity:.6;}
+  #timerApp .dw-list.movable li.dragging{background:var(--tm-indigo); color:#fff; box-shadow:0 10px 24px rgba(7,3,142,.3); transform:scale(1.02);}
+  #timerApp .dw-list.movable li.dragging b{background:#fff; color:var(--tm-indigo);}
+  #timerApp .dw-list li.dragging .dw-grip{color:#fff;}
+  body.dw-dragging, body.dw-dragging *{cursor:grabbing !important;}
   #timerApp .dw-cta{align-self:flex-start; margin-top:1.4em; font:700 clamp(14px,1.2vw,18px)/1 var(--tm-display); letter-spacing:.04em; border:0; border-radius:999px;
     padding:1em 1.6em; background:var(--tm-indigo); color:#fff; cursor:pointer; transition:background .15s, transform .15s;}
   #timerApp .dw-cta:hover{background:#4440e0; transform:translateY(-1px);}
@@ -4382,13 +4390,13 @@ function dwDraw(){
   if(draw.anim) return;
   const names = draw.S.names;
   if(names.length < 2){ dwOpenDrawer(); $('dwNames')?.focus(); return; }
-  dwCommit({ ...draw.S, order: dwShuffle(names), drawnAt: Date.now() }, true);
+  dwCommit({ ...draw.S, order: dwShuffle(names), drawnAt: Date.now(), manual: false }, true);
 }
-function dwClear(){ if(draw.S.order.length) dwCommit({ ...draw.S, order: [], drawnAt: 0 }, false); }
+function dwClear(){ if(draw.S.order.length) dwCommit({ ...draw.S, order: [], drawnAt: 0, manual: false }, false); }
 function dwSetNames(names){
   const same = names.length === draw.S.names.length && names.every((n, i) => n === draw.S.names[i]);
   if(same) return;
-  dwCommit({ ...draw.S, names, order: [], drawnAt: 0 }, false);
+  dwCommit({ ...draw.S, names, order: [], drawnAt: 0, manual: false }, false);
 }
 async function dwReloadGroups(){
   const names = await dwFetchGroupNames();
@@ -4449,25 +4457,87 @@ function dwRender(){
     stage.classList.toggle('landed', !spinning);
     if(!spinning && draw.landedAt !== p.cur){ draw.landedAt = p.cur; stage.classList.remove('landed'); void stage.offsetWidth; stage.classList.add('landed'); }
   } else {
-    chip.className = 'tm-chip'; chip.textContent = 'Ordem definida';
+    chip.className = 'tm-chip'; chip.textContent = S.manual ? 'Ordem ajustada' : 'Ordem definida';
     $('dwEyebrow').textContent = 'Primeiro da ordem';
     $('dwPos').innerHTML = ord(0);
     $('dwName').textContent = S.order[0];
-    $('dwSub').textContent = 'Ordem definida · o cronômetro segue esta sequência';
+    $('dwSub').textContent = 'Arraste os grupos na lista para ajustar · o cronômetro segue esta ordem';
     stage.classList.add('landed');
     draw.landedAt = -1;
   }
 
+  if(draw.drag) return;
   const list = $('dwList');
   list.classList.toggle('two', total > 6);
   const shownDone = pending ? 0 : p.done + (p.cur >= 0 && !spinning ? 1 : 0);
+  const movable = !pending && p.cur < 0;
+  list.classList.toggle('movable', movable);
   let html = '';
   for(let i = 0; i < total; i++){
     const filled = !pending && i < shownDone;
     const isNow = filled && p.cur === i;
-    html += `<li class="${filled ? 'filled' : ''}${isNow ? ' now' : ''}"><b>${i + 1}</b><span>${filled ? esc(S.order[i]) : '—'}</span></li>`;
+    html += dwItem(i, filled ? S.order[i] : null, isNow, movable);
   }
   list.innerHTML = html;
+  if(draw.refocus != null){ list.children[draw.refocus]?.focus(); draw.refocus = null; }
+}
+function dwItem(i, name, isNow, movable, dragging){
+  const cls = [name != null ? 'filled' : '', isNow ? 'now' : '', dragging ? 'dragging' : ''].filter(Boolean).join(' ');
+  const attrs = movable ? ` data-i="${i}" tabindex="0" aria-label="${i + 1}º ${esc(name)}. Arraste ou use Alt e as setas para mudar a posição."` : '';
+  return `<li class="${cls}"${attrs}><b>${i + 1}</b><span>${name != null ? esc(name) : '—'}</span>${movable ? '<i class="ph-bold ph-dots-six-vertical dw-grip" aria-hidden="true"></i>' : ''}</li>`;
+}
+
+/* ---- ajuste manual: arrastar (mouse ou toque) e Alt + setas ---- */
+function dwMove(from, to){
+  const order = draw.S.order.slice();
+  if(to < 0 || to >= order.length || from === to) return;
+  const [it] = order.splice(from, 1); order.splice(to, 0, it);
+  dwCommit({ ...draw.S, order, manual: true }, false);
+}
+function dwDragStart(e){
+  const li = e.target.closest('#dwList.movable li[data-i]');
+  if(!li || draw.anim || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  e.preventDefault();
+  const from = +li.dataset.i;
+  draw.drag = { from, to: from, order: draw.S.order.slice(), id: e.pointerId };
+  document.body.classList.add('dw-dragging');
+  dwDragPaint();
+}
+function dwDragMove(e){
+  const d = draw.drag; if(!d || e.pointerId !== d.id) return;
+  const items = [...$('dwList').children];
+  let best = d.to, bestDist = Infinity;
+  items.forEach((el, i) => {
+    const r = el.getBoundingClientRect();
+    const dist = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+    if(dist < bestDist){ bestDist = dist; best = i; }
+  });
+  if(best !== d.to){ d.to = best; dwDragPaint(); }
+}
+function dwDragPaint(){
+  const d = draw.drag, list = $('dwList');
+  const order = d.order.slice(); const [it] = order.splice(d.from, 1); order.splice(d.to, 0, it);
+  list.innerHTML = order.map((n, i) => dwItem(i, n, false, true, i === d.to)).join('');
+}
+function dwDragEnd(e){
+  const d = draw.drag; if(!d || (e && e.pointerId !== d.id)) return;
+  draw.drag = null;
+  document.body.classList.remove('dw-dragging');
+  draw.lastKey = '';
+  if(d.to !== d.from) dwMove(d.from, d.to); else dwRender();
+}
+function dwListKey(e){
+  const li = e.target.closest('#dwList.movable li[data-i]'); if(!li) return;
+  e.stopPropagation();
+  if(!e.altKey || !/^Arrow(Up|Down|Left|Right)$/.test(e.key)){
+    if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); (e.key === 'ArrowDown' ? li.nextElementSibling : li.previousElementSibling)?.focus(); }
+    return;
+  }
+  e.preventDefault();
+  const from = +li.dataset.i, to = from + (e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 1);
+  if(to < 0 || to >= draw.S.order.length) return;
+  draw.refocus = to;
+  dwMove(from, to);
 }
 function dwLoop(){
   if(getRoute() !== 'sorteio'){ draw.raf = 0; return; }
@@ -4543,11 +4613,19 @@ async function renderDrawPage(){
   $('dwFull').onclick = tmFull;
   $('dwExit').onclick = () => { if(document.fullscreenElement) document.exitFullscreen().catch(() => {}); goHome(); };
   $('dwNames').addEventListener('change', e => dwSetNames(dwParseNames(e.target.value)));
+  $('dwList').addEventListener('pointerdown', dwDragStart);
+  $('dwList').addEventListener('keydown', dwListKey);
+  if(!draw.dragWired){
+    draw.dragWired = true;
+    window.addEventListener('pointermove', dwDragMove);
+    window.addEventListener('pointerup', dwDragEnd);
+    window.addEventListener('pointercancel', dwDragEnd);
+  }
 
   if(!draw.booted){
     draw.booted = true;
     document.addEventListener('keydown', e => {
-      if(getRoute() !== 'sorteio' || /^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(e.target.tagName)) return;
+      if(getRoute() !== 'sorteio' || /^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(e.target.tagName) || e.target.closest?.('#dwList')) return;
       if(e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); dwDraw(); }
       else if(e.key === 'f' || e.key === 'F') tmFull();
       else if(e.key === 'Escape' && draw.closeDrawer) draw.closeDrawer();
