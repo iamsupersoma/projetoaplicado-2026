@@ -326,6 +326,26 @@
   .btn-sm.danger:hover{border-color:#DC2626; color:#DC2626;}
   .btn-sm.primary-outline{border-color:var(--ink); color:var(--ink);}
 
+  /* ---- FERRAMENTAS ---- */
+  .tool-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:18px;}
+  .tool-card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:22px 22px 18px; display:flex; flex-direction:column; gap:8px; text-decoration:none; color:var(--ink); transition:.2s;
+  }
+  .tool-card:hover{transform:translateY(-2px); box-shadow:0 4px 8px rgba(0,0,0,.07), 0 12px 28px rgba(0,0,0,.09);}
+  .tool-card:focus-visible{outline:2px solid var(--ink); outline-offset:3px;}
+  .tool-icon{
+    width:46px; height:46px; border-radius:14px; display:grid; place-items:center; font-size:22px; color:#fff; margin-bottom:6px;
+    background-image:linear-gradient(135deg, var(--accent-a) 0%, var(--accent-b) 100%);
+  }
+  .tool-title{font-size:17px; font-weight:800; letter-spacing:-0.01em;}
+  .tool-desc{font-size:13.5px; color:var(--ink-mid); line-height:1.55; flex:1;}
+  .tool-open{
+    display:inline-flex; align-items:center; gap:5px; font-size:12.5px; font-weight:700; color:var(--ink-mid);
+    padding-top:10px; margin-top:6px; border-top:1px solid var(--line);
+  }
+  .tool-card:hover .tool-open{color:var(--ink);}
+
   .admin-section{
     background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
     padding:24px; margin-bottom:18px; box-shadow:var(--shadow);
@@ -686,6 +706,24 @@
     padding:12px 14px; width:100%; font-variant-numeric:tabular-nums;}
   #timerApp .tm-drawer select{font-size:15px;}
   #timerApp .tm-drawer input:focus-visible, #timerApp .tm-drawer select:focus-visible, #timerApp .tm-drawer button:focus-visible{outline:3px solid #fff; outline-offset:2px;}
+  #timerApp .tm-dd{position:relative;}
+  #timerApp .tm-dd-btn{width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px; text-align:left;
+    font:700 16px/1.2 var(--tm-display) !important; color:var(--tm-navy) !important; background:#fff !important; border-radius:12px !important; padding:13px 14px !important;}
+  #timerApp .tm-dd-btn span{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  #timerApp .tm-dd-btn i{flex:none; font-size:14px; transition:transform .2s;}
+  #timerApp .tm-dd-btn[aria-expanded="true"] i{transform:rotate(180deg);}
+  #timerApp .tm-dd-list{position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:5; list-style:none; margin:0; padding:6px; max-height:min(320px,50vh); overflow-y:auto;
+    background:#fff; border-radius:14px; box-shadow:0 18px 40px rgba(3,1,60,.45);}
+  #timerApp .tm-dd-list li{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; cursor:pointer;
+    font:700 15px/1.2 var(--tm-display); color:var(--tm-navy); outline:none;}
+  #timerApp .tm-dd-list li span{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  #timerApp .tm-dd-list li b{flex:none; width:24px; height:24px; border-radius:50%; display:grid; place-items:center; background:var(--tm-mist); color:var(--tm-navy); font:800 12px/1 var(--tm-display);}
+  #timerApp .tm-dd-list li i{flex:none; color:var(--tm-indigo);}
+  #timerApp .tm-dd-list li.free{color:var(--tm-ink-soft); font-weight:500; border-bottom:1px solid var(--tm-mist); border-radius:10px 10px 0 0; margin-bottom:4px;}
+  #timerApp .tm-dd-list li:hover, #timerApp .tm-dd-list li:focus{background:var(--tm-mist);}
+  #timerApp .tm-dd-list li[aria-selected="true"]{background:var(--tm-indigo); color:#fff;}
+  #timerApp .tm-dd-list li[aria-selected="true"] b{background:#fff; color:var(--tm-indigo);}
+  #timerApp .tm-dd-list li[aria-selected="true"] i{color:#fff;}
   #timerApp .tm-row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
   #timerApp .tm-stack{display:flex; flex-direction:column; gap:10px;}
   #timerApp .tm-drawer button{font:700 14px/1.1 var(--tm-display); border:0; border-radius:999px; padding:13px 16px; cursor:pointer;
@@ -2133,7 +2171,7 @@ function renderAdminPanel(){
       </div>
     </div>`;
 
-  const tabs = [ ['links','Links'], ['grupos','Grupos'], ['bancas','Bancas'], ['usuarios','Usuários'] ];
+  const tabs = [ ['links','Links'], ['grupos','Grupos'], ['bancas','Bancas'], ['ferramentas','Ferramentas'], ['usuarios','Usuários'] ];
   const badges = { usuarios: pendingStudents, grupos: groupsSemSenha };
   const nav = $('adminTabNav');
   tabs.forEach(([id,label]) => {
@@ -2171,6 +2209,7 @@ function renderAdminPanel(){
   if(adminTab === 'links') renderAdminLinksTab(body);
   else if(adminTab === 'grupos') { openGroupId ? renderAdminGroupDetail(body, openGroupId) : renderAdminGruposTab(body); }
   else if(adminTab === 'bancas') renderAdminBancasTab(body);
+  else if(adminTab === 'ferramentas') renderAdminFerramentasTab(body);
   else if(adminTab === 'usuarios') renderAdminUsuariosTab(body);
   else if(adminTab === 'config') renderAdminConfigTab(body);
 }
@@ -3015,6 +3054,29 @@ function renderAdminConfigTab(body){
   body.innerHTML = '';
 }
 
+/* ======================= ADMIN: FERRAMENTAS TAB ======================= */
+const ADMIN_TOOLS = [
+  { href: '?cronometro=1', icon: 'timer', title: 'Cronômetro',
+    desc: 'Contagem em tela cheia para apresentações: 10 min do grupo, aplausos, 5 min de considerações da banca e aplausos. Tempos editáveis.' },
+  { href: '?sorteio=1', icon: 'shuffle', title: 'Sorteio da ordem',
+    desc: 'Sorteia a ordem dos grupos para bancas ou atividades de aula, revelando posição por posição. O cronômetro segue a ordem sorteada.' },
+];
+function renderAdminFerramentasTab(body){
+  body.innerHTML = `
+    <div class="admin-bar">
+      <div class="admin-bar-left">Telas para projetar em aula. Abra o mesmo link em outro dispositivo e as telas ficam sincronizadas.</div>
+    </div>
+    <div class="tool-grid">
+      ${ADMIN_TOOLS.map(t => `
+        <a class="tool-card" href="${t.href}" target="_blank" rel="noopener">
+          <span class="tool-icon">${phIcon(t.icon, { weight: 'bold' })}</span>
+          <span class="tool-title">${esc(t.title)}</span>
+          <span class="tool-desc">${esc(t.desc)}</span>
+          <span class="tool-open">Abrir em nova aba ${phIcon('arrow-up-right', { weight: 'bold' })}</span>
+        </a>`).join('')}
+    </div>`;
+}
+
 /* ======================= ADMIN: BANCAS TAB ======================= */
 async function renderAdminBancasTab(body){
   body.innerHTML = '<div class="loading-state">Carregando bancas…</div>';
@@ -3038,8 +3100,6 @@ async function renderAdminBancasTab(body){
   body.innerHTML = `
     <div class="admin-bar">
       <div class="admin-bar-left">Notas por etapa, arquivos enviados e links de apresentação dos grupos.</div>
-      <a class="btn-sm" href="?cronometro=1" target="_blank" rel="noopener" style="flex-shrink:0;" title="Abre o cronômetro da banca em tela cheia numa nova aba. Abra o mesmo link no outro dispositivo para sincronizar.">${phIcon('timer')} Cronômetro</a>
-      <a class="btn-sm" href="?sorteio=1" target="_blank" rel="noopener" style="flex-shrink:0;" title="Sorteia a ordem de apresentação dos grupos em tela cheia. O cronômetro passa a seguir essa ordem.">${phIcon('shuffle')} Sorteio</a>
     </div>
     <div class="tab-nav" id="bancasStageTabs"></div>
     <div id="bancasContent"></div>`;
@@ -3954,11 +4014,10 @@ async function tmLoadGroups(){
       timer.groups = (data || []).filter(g => tmGroupLabel(g));
     } catch { timer.groups = []; }
   }
-  const sel = $('tmGroupSel'); if(!sel) return;
+  const field = $('tmGroupField'); if(!field) return;
   $('tmGroupSelLabel').textContent = timer.fromDraw ? 'Grupo · ordem do sorteio' : 'Grupo cadastrado';
-  if(!timer.groups.length){ sel.parentElement.hidden = true; return; }
-  sel.parentElement.hidden = false;
-  sel.innerHTML = '<option value="-1">Digitar nome…</option>' + timer.groups.map((g, i) => `<option value="${i}">${esc(tmGroupLabel(g))}</option>`).join('');
+  if(!timer.groups.length){ field.hidden = true; return; }
+  field.hidden = false;
   tmSyncInputs();
 }
 
@@ -4004,6 +4063,29 @@ async function tmFull(){ try { if(document.fullscreenElement) await document.exi
 let tmWake = null;
 async function tmKeepAwake(){ try { if(navigator.wakeLock && !tmWake){ tmWake = await navigator.wakeLock.request('screen'); tmWake.addEventListener('release', () => { tmWake = null; }); } } catch {} }
 
+/* ---- lista de grupos (dropdown próprio, no estilo do painel) ---- */
+function tmDdBuild(){
+  const S = timer.S, cur = S.groupIdx >= 0 && S.groupIdx < timer.groups.length ? S.groupIdx : -1;
+  const opts = [{ i: -1, label: 'Digitar nome…' }].concat(timer.groups.map((g, i) => ({ i, label: tmGroupLabel(g) })));
+  $('tmGroupList').innerHTML = opts.map(o => `<li role="option" tabindex="-1" data-i="${o.i}" aria-selected="${o.i === cur}" class="${o.i === -1 ? 'free' : ''}">${o.i >= 0 && timer.fromDraw ? `<b>${o.i + 1}</b>` : ''}<span>${esc(o.label)}</span>${o.i === cur ? '<i class="ph-bold ph-check"></i>' : ''}</li>`).join('');
+}
+function tmDdOpen(){
+  tmDdBuild();
+  const list = $('tmGroupList');
+  list.hidden = false; $('tmGroupBtn').setAttribute('aria-expanded', 'true');
+  (list.querySelector('[aria-selected="true"]') || list.querySelector('li'))?.focus();
+}
+function tmDdClose(refocus){
+  const list = $('tmGroupList'); if(!list || list.hidden) return;
+  list.hidden = true; $('tmGroupBtn').setAttribute('aria-expanded', 'false');
+  if(refocus) $('tmGroupBtn').focus();
+}
+function tmDdPick(i){
+  tmDdClose(true);
+  if(i >= 0 && timer.groups[i]) tmCommit({ ...timer.S, group: tmGroupLabel(timer.groups[i]), groupIdx: i });
+  else { tmCommit({ ...timer.S, groupIdx: -1 }); $('tmInGroup').focus(); $('tmInGroup').select(); }
+}
+
 /* ---- render ---- */
 function tmSyncInputs(){
   const a = document.activeElement, S = timer.S;
@@ -4011,7 +4093,7 @@ function tmSyncInputs(){
   if(a !== $('tmInGroup')) $('tmInGroup').value = S.group;
   if(a !== $('tmInTalk')) $('tmInTalk').value = tmFmt(S.durations.talk);
   if(a !== $('tmInBanca')) $('tmInBanca').value = tmFmt(S.durations.banca);
-  const sel = $('tmGroupSel'); if(sel && a !== sel) sel.value = String(S.groupIdx >= 0 && S.groupIdx < timer.groups.length ? S.groupIdx : -1);
+  if($('tmGroupBtnText')){ const gi = S.groupIdx >= 0 && S.groupIdx < timer.groups.length ? S.groupIdx : -1; $('tmGroupBtnText').textContent = gi >= 0 ? tmGroupLabel(timer.groups[gi]) : 'Digitar nome…'; if(!$('tmGroupList').hidden) tmDdBuild(); }
   $('tmStTalk').textContent = tmMins(S.durations.talk);
   $('tmStBanca').textContent = tmMins(S.durations.banca);
 }
@@ -4097,7 +4179,12 @@ function renderTimerPage(){
           <h3>Controles</h3>
           <div class="tm-sync" id="tmSync"><i></i><span>Conectando…</span></div>
         </div>
-        <div class="tm-field" hidden><label for="tmGroupSel" id="tmGroupSelLabel">Grupo cadastrado</label><select id="tmGroupSel"></select></div>
+        <div class="tm-field" hidden id="tmGroupField"><label id="tmGroupSelLabel">Grupo cadastrado</label>
+          <div class="tm-dd" id="tmGroupDd">
+            <button type="button" class="tm-dd-btn" id="tmGroupBtn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="tmGroupSelLabel tmGroupBtnText"><span id="tmGroupBtnText">Digitar nome…</span><i class="ph-bold ph-caret-down"></i></button>
+            <ul class="tm-dd-list" id="tmGroupList" role="listbox" tabindex="-1" hidden></ul>
+          </div>
+        </div>
         <div class="tm-field"><label for="tmInGroup">Nome na tela</label><input id="tmInGroup" type="text" autocomplete="off"></div>
         <div class="tm-row">
           <div class="tm-field"><label for="tmInTalk">Apresentação</label><input id="tmInTalk" type="text" inputmode="numeric"></div>
@@ -4108,7 +4195,7 @@ function renderTimerPage(){
           <div class="tm-row"><button id="tmPrev">← Voltar etapa</button><button class="accent" id="tmNext">Avançar etapa →</button></div>
           <div class="tm-row"><button id="tmMinus">− 1 min</button><button id="tmPlus">+ 1 min</button></div>
           <div class="tm-row"><button id="tmReset">Reiniciar etapa</button><button id="tmNextGroup">Próximo grupo</button></div>
-          <a class="tm-linkbtn" href="?sorteio=1">Sortear ordem dos grupos</a>
+          <a class="tm-linkbtn" href="?sorteio=1" target="_blank" rel="noopener">Sortear ordem dos grupos</a>
           <button id="tmFull">Tela cheia</button>
         </div>
         <p class="tm-keys"><kbd>Espaço</kbd> iniciar ou pausar · <kbd>←</kbd> <kbd>→</kbd> voltar ou avançar etapa · <kbd>R</kbd> reiniciar etapa · <kbd>F</kbd> tela cheia · <kbd>Esc</kbd> fechar</p>
@@ -4138,11 +4225,19 @@ function renderTimerPage(){
   $('tmFull').onclick = tmFull;
   $('tmExit').onclick = () => { if(document.fullscreenElement) document.exitFullscreen().catch(() => {}); goHome(); };
   $('tmInGroup').addEventListener('change', e => tmCommit({ ...timer.S, group: e.target.value.trim() || 'Grupo', groupIdx: -1 }));
-  $('tmGroupSel').addEventListener('change', e => {
-    const i = +e.target.value;
-    if(i >= 0 && timer.groups[i]) tmCommit({ ...timer.S, group: tmGroupLabel(timer.groups[i]), groupIdx: i });
-    else { tmCommit({ ...timer.S, groupIdx: -1 }); $('tmInGroup').focus(); }
+  $('tmGroupBtn').addEventListener('click', () => $('tmGroupList').hidden ? tmDdOpen() : tmDdClose(true));
+  $('tmGroupBtn').addEventListener('keydown', e => { if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); tmDdOpen(); } });
+  $('tmGroupList').addEventListener('keydown', e => {
+    e.stopPropagation();
+    const items = [...$('tmGroupList').querySelectorAll('li')];
+    let i = items.indexOf(document.activeElement);
+    if(e.key === 'ArrowDown'){ e.preventDefault(); items[Math.min(items.length - 1, i + 1)]?.focus(); }
+    else if(e.key === 'ArrowUp'){ e.preventDefault(); items[Math.max(0, i - 1)]?.focus(); }
+    else if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); if(i >= 0) tmDdPick(+items[i].dataset.i); }
+    else if(e.key === 'Escape' || e.key === 'Tab'){ e.stopPropagation(); tmDdClose(true); }
   });
+  $('tmGroupList').addEventListener('click', e => { const li = e.target.closest('li'); if(li) tmDdPick(+li.dataset.i); });
+  document.addEventListener('mousedown', e => { const dd = $('tmGroupDd'); if(dd && !dd.contains(e.target)) tmDdClose(false); });
   $('tmInTalk').addEventListener('change', e => tmSetDur('talk', e.target));
   $('tmInBanca').addEventListener('change', e => tmSetDur('banca', e.target));
   drawer.querySelectorAll('input').forEach(i => i.addEventListener('keydown', e => { if(e.key === 'Enter') i.blur(); }));
@@ -4150,7 +4245,7 @@ function renderTimerPage(){
   if(!timer.booted){
     timer.booted = true;
     document.addEventListener('keydown', e => {
-      if(getRoute() !== 'cronometro' || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+      if(getRoute() !== 'cronometro' || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.target.closest?.('.tm-dd')) return;
       if(e.key === ' '){ e.preventDefault(); tmToggle(); tmKeepAwake(); }
       else if(e.key === 'ArrowRight') tmAdvance();
       else if(e.key === 'ArrowLeft') tmBack();
@@ -4340,14 +4435,14 @@ function dwRender(){
   $('dwCta').hidden = !pending;
   if(pending){
     chip.className = 'tm-chip'; chip.textContent = 'Pronto';
-    $('dwEyebrow').textContent = 'Ordem de apresentação';
+    $('dwEyebrow').textContent = 'Ordem dos grupos';
     $('dwPos').innerHTML = '?';
-    $('dwName').textContent = total >= 2 ? 'Quem abre a banca?' : 'Cadastre os grupos';
-    $('dwSub').textContent = total >= 2 ? total + ' grupos participantes' : 'Abra os controles no canto inferior direito e liste pelo menos dois grupos.';
+    $('dwName').textContent = total >= 2 ? 'Quem começa?' : 'Liste os grupos';
+    $('dwSub').textContent = total >= 2 ? total + ' grupos no sorteio' : 'Abra os controles no canto inferior direito e liste pelo menos dois grupos.';
     stage.classList.remove('landed');
   } else if(p.cur >= 0){
     chip.className = 'tm-chip running'; chip.textContent = 'Sorteando';
-    $('dwEyebrow').textContent = p.cur === 0 ? 'Abre as apresentações' : p.cur === n - 1 ? 'Fecha as apresentações' : 'Próxima posição';
+    $('dwEyebrow').textContent = p.cur === 0 ? 'Primeiro da ordem' : p.cur === n - 1 ? 'Último da ordem' : 'Próxima posição';
     $('dwPos').innerHTML = ord(p.cur);
     $('dwName').textContent = shown;
     $('dwSub').textContent = (p.cur + 1) + ' de ' + n;
@@ -4355,10 +4450,10 @@ function dwRender(){
     if(!spinning && draw.landedAt !== p.cur){ draw.landedAt = p.cur; stage.classList.remove('landed'); void stage.offsetWidth; stage.classList.add('landed'); }
   } else {
     chip.className = 'tm-chip'; chip.textContent = 'Ordem definida';
-    $('dwEyebrow').textContent = 'Abre as apresentações';
+    $('dwEyebrow').textContent = 'Primeiro da ordem';
     $('dwPos').innerHTML = ord(0);
     $('dwName').textContent = S.order[0];
-    $('dwSub').textContent = 'Ordem salva no cronômetro deste navegador';
+    $('dwSub').textContent = 'Ordem definida · o cronômetro segue esta sequência';
     stage.classList.add('landed');
     draw.landedAt = -1;
   }
@@ -4396,7 +4491,7 @@ async function renderDrawPage(){
           </div>
           <div class="dw-body">
             <div class="dw-stage" id="dwStage" aria-live="polite">
-              <p class="dw-eyebrow" id="dwEyebrow">Ordem de apresentação</p>
+              <p class="dw-eyebrow" id="dwEyebrow">Ordem dos grupos</p>
               <p class="dw-pos" id="dwPos">?</p>
               <p class="dw-name" id="dwName"></p>
               <p class="dw-sub" id="dwSub"></p>
@@ -4417,12 +4512,12 @@ async function renderDrawPage(){
           <h3>Controles</h3>
           <div class="tm-sync" id="dwSync"><i></i><span>Conectando…</span></div>
         </div>
-        <div class="tm-field"><label for="dwNames">Grupos participantes · <span id="dwCount"></span></label><textarea id="dwNames" spellcheck="false" placeholder="Um grupo por linha"></textarea></div>
-        <p class="tm-note">Um grupo por linha. Mudar a lista apaga o resultado atual.</p>
+        <div class="tm-field"><label for="dwNames">Grupos no sorteio · <span id="dwCount"></span></label><textarea id="dwNames" spellcheck="false" placeholder="Um grupo por linha"></textarea></div>
+        <p class="tm-note">Um grupo por linha. Serve para bancas ou atividades de aula; mudar a lista apaga o resultado atual.</p>
         <div class="tm-stack">
           <button class="primary" id="dwDraw">Sortear ordem</button>
           <div class="tm-row"><button id="dwClear">Limpar resultado</button><button id="dwReload">Recarregar grupos</button></div>
-          <a class="tm-linkbtn" href="?cronometro=1">Ir para o cronômetro</a>
+          <a class="tm-linkbtn" href="?cronometro=1" target="_blank" rel="noopener">Abrir o cronômetro</a>
           <button id="dwFull">Tela cheia</button>
         </div>
         <p class="tm-keys"><kbd>Espaço</kbd> sortear · <kbd>F</kbd> tela cheia · <kbd>Esc</kbd> fechar</p>
