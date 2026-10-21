@@ -698,6 +698,43 @@
   #timerApp .tm-keys{font:400 16px/1.45 var(--tm-body); color:var(--tm-mist); margin:0;}
   #timerApp .tm-keys kbd{font:700 12px/1 var(--tm-display); background:rgba(255,255,255,.14); border-radius:6px; padding:3px 6px; color:#fff;}
   #timerApp .tm-close{position:absolute; top:16px; right:16px; width:38px; height:38px; padding:0 !important; font-size:20px !important;}
+
+  /* ======================= SORTEIO DA ORDEM (?sorteio=1) =======================
+     Reaproveita a base do cronômetro (#timerApp / .tm-*); aqui só o que é do sorteio. */
+  #timerApp .dw-body{flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:clamp(18px,3vw,56px); margin-top:clamp(14px,3vh,34px);}
+  #timerApp .dw-stage{display:flex; flex-direction:column; justify-content:center; min-width:0;}
+  #timerApp .dw-eyebrow{font:700 clamp(12px,1.25vw,20px)/1 var(--tm-display); letter-spacing:.32em; text-transform:uppercase; color:var(--tm-indigo); margin:0 0 .8em;}
+  #timerApp .dw-pos{font:900 clamp(72px,13vw,220px)/.85 var(--tm-display); letter-spacing:-.04em; color:var(--tm-mist); margin:0; font-variant-numeric:tabular-nums; transition:color .3s;}
+  #timerApp .dw-pos sup{font-size:.42em; vertical-align:.95em; letter-spacing:0; margin-left:.04em;}
+  #timerApp .dw-name{font:800 clamp(32px,5.4vw,92px)/1.02 var(--tm-display); letter-spacing:-.025em; color:var(--tm-navy); margin:.18em 0 0; min-height:2.04em;
+    text-wrap:balance; overflow-wrap:anywhere;}
+  #timerApp .dw-stage.spinning .dw-name{color:var(--tm-ink-soft);}
+  #timerApp .dw-stage.landed .dw-pos{color:var(--tm-indigo);}
+  #timerApp .dw-stage.landed .dw-name{animation:dwLand .45s cubic-bezier(.2,1.4,.4,1);}
+  @keyframes dwLand{from{transform:scale(.92); opacity:.4}to{transform:none; opacity:1}}
+  #timerApp .dw-sub{font:400 clamp(16px,1.7vw,28px)/1.2 var(--tm-body); color:var(--tm-ink-soft); margin:.5em 0 0;}
+  #timerApp .dw-list{list-style:none; margin:0; padding:0; align-self:center; display:grid; gap:clamp(6px,1vh,12px); min-width:0; counter-reset:none;}
+  #timerApp .dw-list.two{grid-template-columns:repeat(2,minmax(0,1fr));}
+  #timerApp .dw-list li{display:flex; align-items:center; gap:.8em; min-width:0; padding:.55em .9em .55em .55em; border-radius:999px; border:2px dashed var(--tm-mist);
+    font:700 clamp(15px,1.5vw,24px)/1.1 var(--tm-body); color:var(--tm-ink-soft); transition:background .35s, border-color .35s, color .35s;}
+  #timerApp .dw-list li b{flex:none; width:2em; height:2em; border-radius:50%; display:grid; place-items:center; background:var(--tm-mist); color:var(--tm-navy);
+    font:800 .82em/1 var(--tm-display); font-variant-numeric:tabular-nums; transition:background .35s, color .35s;}
+  #timerApp .dw-list li span{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  #timerApp .dw-list li.filled{border-style:solid; border-color:transparent; background:var(--tm-cream); color:var(--tm-navy);}
+  #timerApp .dw-list li.filled b{background:var(--tm-navy); color:#fff;}
+  #timerApp .dw-list li.now{background:var(--tm-indigo); color:#fff;}
+  #timerApp .dw-list li.now b{background:#fff; color:var(--tm-indigo);}
+  #timerApp .dw-cta{align-self:flex-start; margin-top:1.4em; font:700 clamp(14px,1.2vw,18px)/1 var(--tm-display); letter-spacing:.04em; border:0; border-radius:999px;
+    padding:1em 1.6em; background:var(--tm-indigo); color:#fff; cursor:pointer; transition:background .15s, transform .15s;}
+  #timerApp .dw-cta:hover{background:#4440e0; transform:translateY(-1px);}
+  #timerApp .dw-cta:focus-visible{outline:3px solid var(--tm-navy); outline-offset:3px;}
+  #timerApp .tm-drawer textarea{font:700 16px/1.45 var(--tm-body); color:var(--tm-navy); background:#fff; border:0; border-radius:12px; padding:12px 14px; width:100%; min-height:180px; resize:vertical;}
+  #timerApp .tm-drawer textarea:focus-visible{outline:3px solid #fff; outline-offset:2px;}
+  #timerApp .tm-note{font:400 15px/1.35 var(--tm-body); color:var(--tm-mist); margin:-8px 0 0;}
+  #timerApp a.tm-linkbtn{font:700 14px/1.1 var(--tm-display); border-radius:999px; padding:13px 16px; text-align:center; text-decoration:none; background:rgba(255,255,255,.12); color:#fff;}
+  #timerApp a.tm-linkbtn:hover{background:rgba(255,255,255,.2);}
+  @media(max-width:760px){ #timerApp .dw-body{grid-template-columns:1fr; overflow-y:auto;} #timerApp .dw-list.two{grid-template-columns:1fr;} }
+  @media(prefers-reduced-motion:reduce){ #timerApp .dw-stage.landed .dw-name{animation:none;} }
   #timerApp .tm-exit{color:var(--tm-mist) !important; background:transparent !important; text-decoration:underline; padding:4px !important; align-self:flex-start;}
 </style>
 
@@ -1290,6 +1327,7 @@ function parseRouteFromLocation(){
     if(p.get('banca') === '1') return { name: 'banca', slug: null };
     if(p.get('grupo')) return { name: 'grupo', slug: p.get('grupo') };
     if(p.get('cronometro') === '1') return { name: 'cronometro', slug: null };
+    if(p.get('sorteio') === '1') return { name: 'sorteio', slug: null };
   } catch { /* about:srcdoc and similar sandboxed contexts */ }
   return { name: 'home', slug: null };
 }
@@ -3001,6 +3039,7 @@ async function renderAdminBancasTab(body){
     <div class="admin-bar">
       <div class="admin-bar-left">Notas por etapa, arquivos enviados e links de apresentação dos grupos.</div>
       <a class="btn-sm" href="?cronometro=1" target="_blank" rel="noopener" style="flex-shrink:0;" title="Abre o cronômetro da banca em tela cheia numa nova aba. Abra o mesmo link no outro dispositivo para sincronizar.">${phIcon('timer')} Cronômetro</a>
+      <a class="btn-sm" href="?sorteio=1" target="_blank" rel="noopener" style="flex-shrink:0;" title="Sorteia a ordem de apresentação dos grupos em tela cheia. O cronômetro passa a seguir essa ordem.">${phIcon('shuffle')} Sorteio</a>
     </div>
     <div class="tab-nav" id="bancasStageTabs"></div>
     <div id="bancasContent"></div>`;
@@ -3904,12 +3943,19 @@ function tmConnect(){
   timer.channel = ch;
 }
 async function tmLoadGroups(){
-  try {
-    const client = gestorSession ? sbAnon : sb;
-    const { data } = await client.from('groups').select('id,group_name,project_title,order_index').order('order_index');
-    timer.groups = (data || []).filter(g => tmGroupLabel(g));
-  } catch { timer.groups = []; }
+  // Se houve sorteio recente neste navegador, "Próximo grupo" segue a ordem sorteada.
+  const dw = typeof dwStored === 'function' ? dwStored() : null;
+  timer.fromDraw = !!(dw && dw.order && dw.order.length && Date.now() - (dw.drawnAt || 0) < DRAW_MAX_AGE);
+  if(timer.fromDraw) timer.groups = dw.order.map(n => ({ group_name: n }));
+  else {
+    try {
+      const client = gestorSession ? sbAnon : sb;
+      const { data } = await client.from('groups').select('id,group_name,project_title,order_index').order('order_index');
+      timer.groups = (data || []).filter(g => tmGroupLabel(g));
+    } catch { timer.groups = []; }
+  }
   const sel = $('tmGroupSel'); if(!sel) return;
+  $('tmGroupSelLabel').textContent = timer.fromDraw ? 'Grupo · ordem do sorteio' : 'Grupo cadastrado';
   if(!timer.groups.length){ sel.parentElement.hidden = true; return; }
   sel.parentElement.hidden = false;
   sel.innerHTML = '<option value="-1">Digitar nome…</option>' + timer.groups.map((g, i) => `<option value="${i}">${esc(tmGroupLabel(g))}</option>`).join('');
@@ -4051,7 +4097,7 @@ function renderTimerPage(){
           <h3>Controles</h3>
           <div class="tm-sync" id="tmSync"><i></i><span>Conectando…</span></div>
         </div>
-        <div class="tm-field" hidden><label for="tmGroupSel">Grupo cadastrado</label><select id="tmGroupSel"></select></div>
+        <div class="tm-field" hidden><label for="tmGroupSel" id="tmGroupSelLabel">Grupo cadastrado</label><select id="tmGroupSel"></select></div>
         <div class="tm-field"><label for="tmInGroup">Nome na tela</label><input id="tmInGroup" type="text" autocomplete="off"></div>
         <div class="tm-row">
           <div class="tm-field"><label for="tmInTalk">Apresentação</label><input id="tmInTalk" type="text" inputmode="numeric"></div>
@@ -4062,6 +4108,7 @@ function renderTimerPage(){
           <div class="tm-row"><button id="tmPrev">← Voltar etapa</button><button class="accent" id="tmNext">Avançar etapa →</button></div>
           <div class="tm-row"><button id="tmMinus">− 1 min</button><button id="tmPlus">+ 1 min</button></div>
           <div class="tm-row"><button id="tmReset">Reiniciar etapa</button><button id="tmNextGroup">Próximo grupo</button></div>
+          <a class="tm-linkbtn" href="?sorteio=1">Sortear ordem dos grupos</a>
           <button id="tmFull">Tela cheia</button>
         </div>
         <p class="tm-keys"><kbd>Espaço</kbd> iniciar ou pausar · <kbd>←</kbd> <kbd>→</kbd> voltar ou avançar etapa · <kbd>R</kbd> reiniciar etapa · <kbd>F</kbd> tela cheia · <kbd>Esc</kbd> fechar</p>
@@ -4133,13 +4180,313 @@ function teardownTimerPage(){
 }
 function goCronometro(){ navigateTo({ name: 'cronometro', slug: null }, '?cronometro=1'); }
 
+/* ======================= SORTEIO DA ORDEM (?sorteio=1) =======================
+   Sorteia a ordem de apresentação dos grupos, na mesma identidade do cronômetro.
+   Quem sorteia gera a ordem e envia para as outras telas (Supabase Realtime, canal
+   broadcast); todas tocam a mesma revelação, posição por posição. O resultado fica
+   salvo no navegador e o cronômetro passa a seguir essa ordem em "Próximo grupo". */
+const DRAW_CHANNEL = 'banca-sorteio';
+const DRAW_STORE_KEY = 'pi-banca-sorteio';
+const DRAW_MAX_AGE = 12 * 3600 * 1000;
+const draw = {
+  booted: false, channel: null, live: false, peers: 1, raf: 0, idleT: null, closeT: null,
+  id: Math.random().toString(36).slice(2, 10),
+  S: { names: [], order: [], rev: 0, from: '', drawnAt: 0 },
+  anim: null, lastKey: '', spinName: '', lastSwap: 0, landedAt: -1,
+};
+function dwStored(){
+  try { const d = JSON.parse(localStorage.getItem(DRAW_STORE_KEY) || 'null'); return d && Array.isArray(d.names) ? d : null; } catch { return null; }
+}
+function dwSave(){ try { localStorage.setItem(DRAW_STORE_KEY, JSON.stringify(draw.S)); } catch {} }
+function dwReduced(){ return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; }
+function dwSlotMs(i, n){ if(dwReduced()) return 500; return i >= n - 1 ? 900 : 1900; }
+function dwSpinMs(){ return dwReduced() ? 0 : 1400; }
+function dwShuffle(list){
+  const a = list.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    let r; try { r = crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296; } catch { r = Math.random(); }
+    const j = Math.floor(r * (i + 1)); [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function dwParseNames(text){
+  const seen = new Set();
+  return String(text).split('\n').map(s => s.trim()).filter(s => s && !seen.has(s.toLowerCase()) && seen.add(s.toLowerCase()));
+}
+/* Quantas posições já foram reveladas e em que ponto está a atual. */
+function dwProgress(){
+  const n = draw.S.order.length;
+  if(!n) return { done: 0, n, cur: -1, t: 0 };
+  if(!draw.anim) return { done: n, n, cur: -1, t: 1 };
+  let el = Date.now() - draw.anim.start;
+  for(let i = 0; i < n; i++){
+    const d = dwSlotMs(i, n);
+    if(el < d) return { done: i, n, cur: i, t: el / d, el };
+    el -= d;
+  }
+  draw.anim = null;
+  return { done: n, n, cur: -1, t: 1 };
+}
+
+/* ---- sincronização ---- */
+function dwWire(animate){ return { ...draw.S, animate: !!animate }; }
+function dwApply(d){
+  if(!d || !Array.isArray(d.names)) return;
+  const S = draw.S;
+  if((d.rev || 0) < S.rev || ((d.rev || 0) === S.rev && String(d.from) <= String(S.from))) return;
+  const { animate, ...rest } = d;
+  draw.S = { ...S, ...rest };
+  draw.anim = animate && rest.order && rest.order.length ? { start: Date.now() } : null;
+  draw.lastKey = '';
+  dwSave(); dwSyncInputs(); dwRender();
+}
+function dwCommit(next, animate){
+  next.rev = Math.max((draw.S.rev || 0) + 1, Date.now());
+  next.from = draw.id;
+  draw.S = next;
+  draw.anim = animate ? { start: Date.now() } : null;
+  draw.lastKey = '';
+  dwSave(); dwSyncInputs(); dwRender();
+  if(draw.channel) draw.channel.send({ type: 'broadcast', event: 'state', payload: dwWire(animate) }).catch(() => {});
+}
+function dwSetSync(){
+  const el = $('dwSync'); if(!el) return;
+  el.classList.toggle('on', draw.live);
+  el.querySelector('span').textContent = draw.live
+    ? 'Sincronizado · ' + draw.peers + (draw.peers === 1 ? ' tela aberta' : ' telas abertas')
+    : (isMockMode ? 'Modo de teste · só nesta tela' : 'Conectando…');
+}
+function dwConnect(){
+  if(isMockMode || !sbAnon || !sbAnon.channel || draw.channel) return;
+  const ch = sbAnon.channel(DRAW_CHANNEL, { config: { broadcast: { self: false }, presence: { key: draw.id } } });
+  ch.on('broadcast', { event: 'state' }, ({ payload }) => dwApply(payload));
+  ch.on('broadcast', { event: 'hello' }, () => {
+    if(draw.S.rev > 0) ch.send({ type: 'broadcast', event: 'state', payload: dwWire(false) }).catch(() => {});
+  });
+  ch.on('presence', { event: 'sync' }, () => { draw.peers = Math.max(1, Object.keys(ch.presenceState() || {}).length); dwSetSync(); });
+  ch.subscribe(status => {
+    draw.live = status === 'SUBSCRIBED';
+    if(draw.live){
+      ch.track({ screen: true }).catch(() => {});
+      ch.send({ type: 'broadcast', event: 'hello', payload: {} }).catch(() => {});
+    }
+    dwSetSync();
+  });
+  draw.channel = ch;
+}
+async function dwFetchGroupNames(){
+  try {
+    const client = gestorSession ? sbAnon : sb;
+    const { data } = await client.from('groups').select('group_name,project_title,order_index').order('order_index');
+    return (data || []).map(g => tmGroupLabel(g)).filter(Boolean);
+  } catch { return []; }
+}
+
+/* ---- ações ---- */
+function dwDraw(){
+  if(draw.anim) return;
+  const names = draw.S.names;
+  if(names.length < 2){ dwOpenDrawer(); $('dwNames')?.focus(); return; }
+  dwCommit({ ...draw.S, order: dwShuffle(names), drawnAt: Date.now() }, true);
+}
+function dwClear(){ if(draw.S.order.length) dwCommit({ ...draw.S, order: [], drawnAt: 0 }, false); }
+function dwSetNames(names){
+  const same = names.length === draw.S.names.length && names.every((n, i) => n === draw.S.names[i]);
+  if(same) return;
+  dwCommit({ ...draw.S, names, order: [], drawnAt: 0 }, false);
+}
+async function dwReloadGroups(){
+  const names = await dwFetchGroupNames();
+  if(names.length) dwSetNames(names);
+  else showToast('Nenhum grupo cadastrado encontrado');
+}
+function dwOpenDrawer(){ clearTimeout(draw.closeT); $('dwDrawer')?.classList.add('open'); }
+
+/* ---- render ---- */
+function dwSyncInputs(){
+  const ta = $('dwNames'); if(!ta) return;
+  if(document.activeElement !== ta) ta.value = draw.S.names.join('\n');
+  $('dwCount').textContent = draw.S.names.length + (draw.S.names.length === 1 ? ' grupo' : ' grupos');
+}
+function dwRender(){
+  if(!$('dwStage')) return;
+  const S = draw.S, p = dwProgress(), now = Date.now();
+  const n = S.order.length, pending = !n, total = pending ? S.names.length : n;
+  const stage = $('dwStage');
+
+  // nome girando na posição atual
+  let shown = '', spinning = false;
+  if(p.cur >= 0){
+    const spin = dwSpinMs(), el = p.el || 0;
+    const remaining = S.order.slice(p.cur);
+    if(el < spin && remaining.length > 1){
+      spinning = true;
+      const t = el / spin, gap = 55 + 320 * t * t;
+      if(now - draw.lastSwap > gap || !draw.spinName){
+        let next = remaining[Math.floor(Math.random() * remaining.length)];
+        if(next === draw.spinName && remaining.length > 1) next = remaining[(remaining.indexOf(next) + 1) % remaining.length];
+        draw.spinName = next; draw.lastSwap = now;
+      }
+      shown = draw.spinName;
+    } else shown = S.order[p.cur];
+  }
+  const key = [S.rev, p.done, p.cur, spinning ? shown : '', spinning, total].join('|');
+  if(key === draw.lastKey) return;
+  draw.lastKey = key;
+
+  const chip = $('dwChip');
+  const ord = i => `${i + 1}<sup>º</sup>`;
+  stage.classList.toggle('spinning', spinning);
+  $('dwCta').hidden = !pending;
+  if(pending){
+    chip.className = 'tm-chip'; chip.textContent = 'Pronto';
+    $('dwEyebrow').textContent = 'Ordem de apresentação';
+    $('dwPos').innerHTML = '?';
+    $('dwName').textContent = total >= 2 ? 'Quem abre a banca?' : 'Cadastre os grupos';
+    $('dwSub').textContent = total >= 2 ? total + ' grupos participantes' : 'Abra os controles no canto inferior direito e liste pelo menos dois grupos.';
+    stage.classList.remove('landed');
+  } else if(p.cur >= 0){
+    chip.className = 'tm-chip running'; chip.textContent = 'Sorteando';
+    $('dwEyebrow').textContent = p.cur === 0 ? 'Abre as apresentações' : p.cur === n - 1 ? 'Fecha as apresentações' : 'Próxima posição';
+    $('dwPos').innerHTML = ord(p.cur);
+    $('dwName').textContent = shown;
+    $('dwSub').textContent = (p.cur + 1) + ' de ' + n;
+    stage.classList.toggle('landed', !spinning);
+    if(!spinning && draw.landedAt !== p.cur){ draw.landedAt = p.cur; stage.classList.remove('landed'); void stage.offsetWidth; stage.classList.add('landed'); }
+  } else {
+    chip.className = 'tm-chip'; chip.textContent = 'Ordem definida';
+    $('dwEyebrow').textContent = 'Abre as apresentações';
+    $('dwPos').innerHTML = ord(0);
+    $('dwName').textContent = S.order[0];
+    $('dwSub').textContent = 'Ordem salva no cronômetro deste navegador';
+    stage.classList.add('landed');
+    draw.landedAt = -1;
+  }
+
+  const list = $('dwList');
+  list.classList.toggle('two', total > 6);
+  const shownDone = pending ? 0 : p.done + (p.cur >= 0 && !spinning ? 1 : 0);
+  let html = '';
+  for(let i = 0; i < total; i++){
+    const filled = !pending && i < shownDone;
+    const isNow = filled && p.cur === i;
+    html += `<li class="${filled ? 'filled' : ''}${isNow ? ' now' : ''}"><b>${i + 1}</b><span>${filled ? esc(S.order[i]) : '—'}</span></li>`;
+  }
+  list.innerHTML = html;
+}
+function dwLoop(){
+  if(getRoute() !== 'sorteio'){ draw.raf = 0; return; }
+  dwRender();
+  draw.raf = requestAnimationFrame(dwLoop);
+}
+
+async function renderDrawPage(){
+  document.body.classList.add('timer-mode');
+  document.title = 'Sorteio da Ordem · Projeto Interdisciplinar';
+  const stored = dwStored();
+  if(stored) draw.S = { ...draw.S, ...stored };
+  draw.anim = null; draw.lastKey = '';
+  root().innerHTML = `
+    <div id="timerApp">
+      <div class="tm-stage">
+        <section class="tm-panel">
+          <div class="tm-head">
+            <h1 class="tm-group">Sorteio da ordem</h1>
+            <span class="tm-chip" id="dwChip">Pronto</span>
+          </div>
+          <div class="dw-body">
+            <div class="dw-stage" id="dwStage" aria-live="polite">
+              <p class="dw-eyebrow" id="dwEyebrow">Ordem de apresentação</p>
+              <p class="dw-pos" id="dwPos">?</p>
+              <p class="dw-name" id="dwName"></p>
+              <p class="dw-sub" id="dwSub"></p>
+              <button class="dw-cta" id="dwCta">Sortear ordem</button>
+            </div>
+            <ol class="dw-list" id="dwList"></ol>
+          </div>
+        </section>
+        <div class="tm-foot">
+          <div><strong>Projeto Interdisciplinar</strong><small>MBA Ciência de Dados &amp; MBA Liderança, Gestão de Equipe e People Analytics</small></div>
+          <img class="tm-logo" alt="UniSenac" src="${TIMER_LOGO_SRC}">
+        </div>
+      </div>
+      <div class="tm-hotspot" id="dwHotspot" aria-hidden="true"></div>
+      <aside class="tm-drawer" id="dwDrawer" aria-label="Controles do sorteio">
+        <button class="tm-close" id="dwClose" aria-label="Fechar controles">×</button>
+        <div>
+          <h3>Controles</h3>
+          <div class="tm-sync" id="dwSync"><i></i><span>Conectando…</span></div>
+        </div>
+        <div class="tm-field"><label for="dwNames">Grupos participantes · <span id="dwCount"></span></label><textarea id="dwNames" spellcheck="false" placeholder="Um grupo por linha"></textarea></div>
+        <p class="tm-note">Um grupo por linha. Mudar a lista apaga o resultado atual.</p>
+        <div class="tm-stack">
+          <button class="primary" id="dwDraw">Sortear ordem</button>
+          <div class="tm-row"><button id="dwClear">Limpar resultado</button><button id="dwReload">Recarregar grupos</button></div>
+          <a class="tm-linkbtn" href="?cronometro=1">Ir para o cronômetro</a>
+          <button id="dwFull">Tela cheia</button>
+        </div>
+        <p class="tm-keys"><kbd>Espaço</kbd> sortear · <kbd>F</kbd> tela cheia · <kbd>Esc</kbd> fechar</p>
+        <button class="tm-exit" id="dwExit">Sair do sorteio</button>
+      </aside>
+    </div>`;
+
+  const drawer = $('dwDrawer');
+  const close = () => { drawer.classList.remove('open'); if(drawer.contains(document.activeElement)) document.activeElement.blur(); };
+  draw.closeDrawer = close;
+  $('dwHotspot').addEventListener('mouseenter', dwOpenDrawer);
+  $('dwHotspot').addEventListener('click', () => drawer.classList.contains('open') ? close() : dwOpenDrawer());
+  drawer.addEventListener('mouseenter', () => clearTimeout(draw.closeT));
+  drawer.addEventListener('mouseleave', () => {
+    const a = document.activeElement;
+    if(!drawer.contains(a) || a.tagName === 'BUTTON' || a.tagName === 'A') draw.closeT = setTimeout(close, 700);
+  });
+  $('dwClose').onclick = close;
+  $('dwCta').onclick = () => { dwDraw(); };
+  $('dwDraw').onclick = () => { close(); dwDraw(); };
+  $('dwClear').onclick = dwClear;
+  $('dwReload').onclick = dwReloadGroups;
+  $('dwFull').onclick = tmFull;
+  $('dwExit').onclick = () => { if(document.fullscreenElement) document.exitFullscreen().catch(() => {}); goHome(); };
+  $('dwNames').addEventListener('change', e => dwSetNames(dwParseNames(e.target.value)));
+
+  if(!draw.booted){
+    draw.booted = true;
+    document.addEventListener('keydown', e => {
+      if(getRoute() !== 'sorteio' || /^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(e.target.tagName)) return;
+      if(e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); dwDraw(); }
+      else if(e.key === 'f' || e.key === 'F') tmFull();
+      else if(e.key === 'Escape' && draw.closeDrawer) draw.closeDrawer();
+    });
+    document.addEventListener('mousemove', () => {
+      if(getRoute() !== 'sorteio') return;
+      document.body.classList.remove('tm-idle');
+      clearTimeout(draw.idleT);
+      draw.idleT = setTimeout(() => { if(getRoute() === 'sorteio' && !$('dwDrawer')?.classList.contains('open')) document.body.classList.add('tm-idle'); }, 2500);
+    });
+  }
+
+  dwSyncInputs(); dwRender(); dwSetSync();
+  dwConnect();
+  if(!draw.raf) draw.raf = requestAnimationFrame(dwLoop);
+  if(!draw.S.names.length){
+    // carga inicial só local (rev 0): se outra tela já tem um sorteio, o dela prevalece
+    const names = await dwFetchGroupNames();
+    if(names.length && !draw.S.names.length){ draw.S = { ...draw.S, names }; draw.lastKey = ''; dwSyncInputs(); dwRender(); }
+  }
+}
+function teardownDrawPage(){
+  if(draw.channel){ try { sbAnon.removeChannel(draw.channel); } catch {} draw.channel = null; draw.live = false; }
+}
+
+
 /* ======================= INIT ======================= */
 async function renderRoute(){
   renderHeaderNav();
   const route = getRoute();
 
-  if(route === 'cronometro'){ renderTimerPage(); return; }
-  teardownTimerPage();
+  if(route === 'cronometro'){ teardownDrawPage(); renderTimerPage(); return; }
+  if(route === 'sorteio'){ teardownTimerPage(); renderDrawPage(); return; }
+  teardownTimerPage(); teardownDrawPage();
 
   if(!sb){
     if(route === 'admin') renderAdminLogin();
