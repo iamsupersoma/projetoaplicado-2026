@@ -168,11 +168,11 @@
   .sidebar-tab-btn.active .notif-badge{background:rgba(255,255,255,.25); color:#fff;}
   .admin-notif-banner{
     display:flex; align-items:center; gap:10px; padding:12px 16px; margin-bottom:16px;
-    background:color-mix(in srgb, var(--senac-yellow) 14%, var(--card)); border:1px solid color-mix(in srgb, var(--senac-yellow) 55%, var(--line));
+    background:color-mix(in srgb, #EF4444 8%, var(--card)); border:1px solid color-mix(in srgb, #EF4444 30%, var(--line));
     border-radius:var(--radius); font-size:13.5px; color:var(--ink);
   }
-  .admin-notif-banner .notif-icon{font-size:16px; flex-shrink:0; color:#D99A00;}
-  .notif-link{background:none; border:none; padding:0; font:inherit; font-weight:700; color:var(--ink); cursor:pointer; text-decoration:underline; text-underline-offset:2px; text-decoration-color:var(--senac-yellow); text-decoration-thickness:2px;}
+  .admin-notif-banner .notif-icon{font-size:16px; flex-shrink:0; color:#EF4444;}
+  .notif-link{background:none; border:none; padding:0; font:inherit; font-weight:700; color:#EF4444; cursor:pointer; text-decoration:underline; text-underline-offset:2px;}
   .notif-link:hover{opacity:.8;}
   .admin-content{flex:1; min-width:0;}
   @media(max-width:760px){
@@ -713,7 +713,8 @@
   #timerApp .tm-dd-btn{width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px; text-align:left;
     font:700 16px/1.2 var(--tm-display) !important; color:var(--tm-navy) !important; background:#fff !important; border-radius:12px !important; padding:13px 14px !important;}
   #timerApp .tm-dd-btn span{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  #timerApp .tm-dd-btn i{flex:none; font-size:14px; transition:transform .2s;}
+  #timerApp .tm-dd-btn i{flex:none; display:flex; transition:transform .2s;}
+  #timerApp .dw-grip, #timerApp .tm-dd-list li i{display:flex;}
   #timerApp .tm-dd-btn[aria-expanded="true"] i{transform:rotate(180deg);}
   #timerApp .tm-dd-list{position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:5; list-style:none; margin:0; padding:6px; max-height:min(320px,50vh); overflow-y:auto;
     background:#fff; border-radius:14px; box-shadow:0 18px 40px rgba(3,1,60,.45);}
@@ -3159,6 +3160,15 @@ function renderAdminConfigTab(body){
 }
 
 /* ======================= ADMIN: FERRAMENTAS TAB ======================= */
+const TOOL_SVG = {
+  timer: '<circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M12 13.5l2.5 2.5M9.5 2.5h5M12 2.5v3.5M18.5 6.5l1.5-1.5"/>',
+  shuffle: '<path d="M3 7h3.5c2.5 0 4 1.2 5.5 3.5l1 1.5c1.5 2.3 3 3.5 5.5 3.5H21M3 17h3.5c1.6 0 2.8-.5 3.9-1.6M21 7h-2.5c-1.6 0-2.8.5-3.9 1.6M18.5 4.5 21 7l-2.5 2.5M18.5 14.5 21 17l-2.5 2.5"/>',
+  open: '<path d="M7 17 17 7M9 7h8v8"/>',
+  caret: '<path d="m6 9 6 6 6-6"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  grip: '<circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/>',
+};
+function toolSvg(name, size){ return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${TOOL_SVG[name]}</svg>`; }
 const ADMIN_TOOLS = [
   { href: '?cronometro=1', icon: 'timer', title: 'Cronômetro',
     desc: 'Contagem em tela cheia para apresentações: 10 min do grupo, aplausos, 5 min de considerações da banca e aplausos. Tempos editáveis.' },
@@ -3173,10 +3183,10 @@ function renderAdminFerramentasTab(body){
     <div class="tool-grid">
       ${ADMIN_TOOLS.map(t => `
         <a class="tool-card" href="${t.href}" target="_blank" rel="noopener">
-          <span class="tool-icon">${phIcon(t.icon, { weight: 'bold' })}</span>
+          <span class="tool-icon">${toolSvg(t.icon, 24)}</span>
           <span class="tool-title">${esc(t.title)}</span>
           <span class="tool-desc">${esc(t.desc)}</span>
-          <span class="tool-open">Abrir em nova aba ${phIcon('arrow-up-right', { weight: 'bold' })}</span>
+          <span class="tool-open">Abrir em nova aba ${toolSvg('open', 14)}</span>
         </a>`).join('')}
     </div>`;
 }
@@ -4173,7 +4183,7 @@ async function tmKeepAwake(){ try { if(navigator.wakeLock && !tmWake){ tmWake = 
 function tmDdBuild(){
   const S = timer.S, cur = S.groupIdx >= 0 && S.groupIdx < timer.groups.length ? S.groupIdx : -1;
   const opts = [{ i: -1, label: 'Digitar nome…' }].concat(timer.groups.map((g, i) => ({ i, label: tmGroupLabel(g) })));
-  $('tmGroupList').innerHTML = opts.map(o => `<li role="option" tabindex="-1" data-i="${o.i}" aria-selected="${o.i === cur}" class="${o.i === -1 ? 'free' : ''}">${o.i >= 0 && timer.fromDraw ? `<b>${o.i + 1}</b>` : ''}<span>${esc(o.label)}</span>${o.i === cur ? '<i class="ph-bold ph-check"></i>' : ''}</li>`).join('');
+  $('tmGroupList').innerHTML = opts.map(o => `<li role="option" tabindex="-1" data-i="${o.i}" aria-selected="${o.i === cur}" class="${o.i === -1 ? 'free' : ''}">${o.i >= 0 && timer.fromDraw ? `<b>${o.i + 1}</b>` : ''}<span>${esc(o.label)}</span>${o.i === cur ? `<i>${toolSvg('check', 16)}</i>` : ''}</li>`).join('');
 }
 function tmDdOpen(){
   tmDdBuild();
@@ -4287,7 +4297,7 @@ function renderTimerPage(){
         </div>
         <div class="tm-field" hidden id="tmGroupField"><label id="tmGroupSelLabel">Grupo cadastrado</label>
           <div class="tm-dd" id="tmGroupDd">
-            <button type="button" class="tm-dd-btn" id="tmGroupBtn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="tmGroupSelLabel tmGroupBtnText"><span id="tmGroupBtnText">Digitar nome…</span><i class="ph-bold ph-caret-down"></i></button>
+            <button type="button" class="tm-dd-btn" id="tmGroupBtn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="tmGroupSelLabel tmGroupBtnText"><span id="tmGroupBtnText">Digitar nome…</span><i>${toolSvg('caret', 16)}</i></button>
             <ul class="tm-dd-list" id="tmGroupList" role="listbox" tabindex="-1" hidden></ul>
           </div>
         </div>
@@ -4580,7 +4590,7 @@ function dwRender(){
 function dwItem(i, name, isNow, movable, dragging){
   const cls = [name != null ? 'filled' : '', isNow ? 'now' : '', dragging ? 'dragging' : ''].filter(Boolean).join(' ');
   const attrs = movable ? ` data-i="${i}" tabindex="0" aria-label="${i + 1}º ${esc(name)}. Arraste ou use Alt e as setas para mudar a posição."` : '';
-  return `<li class="${cls}"${attrs}><b>${i + 1}</b><span>${name != null ? esc(name) : '—'}</span>${movable ? '<i class="ph-bold ph-dots-six-vertical dw-grip" aria-hidden="true"></i>' : ''}</li>`;
+  return `<li class="${cls}"${attrs}><b>${i + 1}</b><span>${name != null ? esc(name) : '—'}</span>${movable ? `<i class="dw-grip" aria-hidden="true">${toolSvg('grip', 18)}</i>` : ''}</li>`;
 }
 
 /* ---- ajuste manual: arrastar (mouse ou toque) e Alt + setas ---- */
