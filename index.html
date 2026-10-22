@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@500;700;800;900&family=Pragati+Narrow:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@300;800;900&family=Krona+One&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -783,78 +784,100 @@
   @media(prefers-reduced-motion:reduce){ #timerApp .dw-stage.landed .dw-name{animation:none;} }
 
   /* ======================= FERRAMENTAS · VISUAL DA PLATAFORMA (teste) =======================
-     Alternativa ao visual Senac: fundo creme, Plus Jakarta Sans, tinta preta e o degradê
-     rosa→coral da plataforma. Liga com #timerApp.plat (controles > Visual, ou &visual=plataforma). */
+     Alternativa ao visual Senac: fundo creme e tinta preta da plataforma, com as cores e a
+     tipografia da campanha CPA Senac: índigo #3630D7, amarelo #FFB900, laranja #FB7014;
+     condensada alta (Big Shoulders Display) e expandida (Krona One) — equivalentes no Google
+     Fonts, já que o PDF traz o texto em curvas. Liga com #timerApp.plat. */
   #timerApp.plat{
-    --tm-indigo:#0F0F0F; --tm-navy:#0F0F0F; --tm-cream:#F3F1EC; --tm-paper:#FFFFFF; --tm-mist:#ECEAE3;
-    --tm-warn:#D97706; --tm-alert:#DC2626; --tm-ink-soft:#8A8A85;
-    --tm-display:'Plus Jakarta Sans',-apple-system,sans-serif; --tm-body:'Plus Jakarta Sans',-apple-system,sans-serif;
-    --tm-grad:linear-gradient(120deg,#FF5FA0 0%,#FF9152 100%);
-    background:#FCFBF8; color:#0F0F0F;
+    --cpa-indigo:#3630D7; --cpa-yellow:#FFB900; --cpa-orange:#FB7014; --cpa-ink:#0F0F0F;
+    --tm-indigo:var(--cpa-indigo); --tm-navy:var(--cpa-ink); --tm-cream:#F3F1EC; --tm-paper:#FFFFFF; --tm-mist:#ECEAE3;
+    --tm-warn:var(--cpa-orange); --tm-alert:#DC2626; --tm-ink-soft:#8A8A85;
+    --tm-display:'Big Shoulders Display','Arial Narrow',sans-serif;
+    --tm-body:'Plus Jakarta Sans',-apple-system,sans-serif;
+    --tm-wide:'Krona One','Plus Jakarta Sans',sans-serif;
+    background:#FCFBF8; color:var(--cpa-ink);
   }
-  #timerApp.plat::before, #timerApp.plat::after{content:""; position:absolute; border-radius:9999px; filter:blur(80px); pointer-events:none;}
-  #timerApp.plat::before{top:-120px; left:-90px; width:420px; height:420px; background:linear-gradient(135deg,#FF5FA0,#FF9152); opacity:.16;}
-  #timerApp.plat::after{bottom:-160px; right:-120px; width:480px; height:480px; background:linear-gradient(135deg,#FF9152,#FFC85F); opacity:.13;}
+  #timerApp.plat::before, #timerApp.plat::after{content:""; position:absolute; border-radius:9999px; filter:blur(90px); pointer-events:none;}
+  #timerApp.plat::before{top:-140px; left:-100px; width:440px; height:440px; background:var(--cpa-yellow); opacity:.22;}
+  #timerApp.plat::after{bottom:-180px; right:-140px; width:500px; height:500px; background:var(--cpa-orange); opacity:.16;}
   #timerApp.plat .tm-stage{position:relative; z-index:1;}
   #timerApp.plat .tm-panel{border:1px solid #E4E3DC; box-shadow:0 1px 3px rgba(0,0,0,.06), 0 6px 20px rgba(0,0,0,.06); border-radius:22px;}
-  #timerApp.plat .tm-group, #timerApp.plat .dw-name{font-weight:800; letter-spacing:-.03em;}
-  #timerApp.plat .tm-digits{font-weight:800; letter-spacing:-.04em;}
-  #timerApp.plat .tm-chip{letter-spacing:.08em; font-weight:700; background:#F3F1EC; color:#444440;}
-  #timerApp.plat .tm-chip.running{background-image:var(--tm-grad); color:#fff;}
-  #timerApp.plat .tm-chip.warn{background:var(--tm-warn); background-image:none; color:#fff;}
+  /* tipografia: títulos e números na condensada; rótulos na expandida */
+  #timerApp.plat .tm-group, #timerApp.plat .dw-name{font-family:var(--tm-display); font-weight:900; text-transform:uppercase; letter-spacing:0; line-height:.92;
+    font-size:clamp(40px,6vw,96px);}
+  #timerApp.plat .dw-name{font-size:clamp(48px,7.4vw,128px); min-height:1.84em;}
+  #timerApp.plat .tm-digits{font-family:var(--tm-display); font-weight:800; letter-spacing:0; line-height:.8; font-size:clamp(130px,31vw,480px);}
+  #timerApp.plat .tm-digits .tm-colon{transform:translateY(-.08em); margin:0 .01em; color:var(--cpa-orange);}
+  #timerApp.plat .tm-digits.warn .tm-colon, #timerApp.plat .tm-digits.alert .tm-colon{color:inherit;}
+  #timerApp.plat .dw-pos{font-family:var(--tm-display); font-weight:900; letter-spacing:0; color:#ECEAE3; font-size:clamp(96px,16vw,280px);}
+  #timerApp.plat .dw-pos sup{font-family:var(--tm-wide); font-size:.2em; vertical-align:2.6em; margin-left:.15em;}
+  #timerApp.plat .tm-chip, #timerApp.plat .dw-eyebrow, #timerApp.plat .tm-ap-eyebrow, #timerApp.plat .tm-ap-next, #timerApp.plat .tm-field label{
+    font-family:var(--tm-wide); font-weight:400; letter-spacing:.06em; text-transform:uppercase;}
+  #timerApp.plat .tm-chip{font-size:clamp(10px,.85vw,14px); background:#F3F1EC; color:#444440;}
+  #timerApp.plat .dw-eyebrow{font-size:clamp(11px,1vw,16px); color:#8A8A85;}
+  #timerApp.plat .tm-hint, #timerApp.plat .dw-sub{font-family:var(--tm-body); font-weight:500;}
+  #timerApp.plat .tm-chip.running{background:var(--cpa-orange); color:#fff;}
+  #timerApp.plat .tm-chip.warn{background:var(--cpa-yellow); color:var(--cpa-ink);}
+  #timerApp.plat .tm-digits.warn{color:var(--cpa-orange);}
   #timerApp.plat .tm-track{background:#F3F1EC;}
-  #timerApp.plat .tm-track i{background-image:var(--tm-grad);}
-  #timerApp.plat .tm-track.warn i, #timerApp.plat .tm-track.alert i{background-image:none;}
-  #timerApp.plat .tm-steps li{border:1.5px solid #E4E3DC; font-weight:600;}
+  #timerApp.plat .tm-track i{background:var(--cpa-orange);}
+  #timerApp.plat .tm-track.warn i{background:var(--cpa-yellow);}
+  #timerApp.plat .tm-steps li{border:1.5px solid #E4E3DC; font-family:var(--tm-body); font-weight:600;}
+  #timerApp.plat .tm-steps li b{font-family:var(--tm-display); font-weight:900; font-size:1.25em;}
   #timerApp.plat .tm-steps li.done{background:#F3F1EC; border-color:#F3F1EC; color:#444440;}
-  #timerApp.plat .tm-steps li.now{background:#0F0F0F; border-color:#0F0F0F; color:#fff;}
-  #timerApp.plat .tm-foot{color:#0F0F0F;}
-  #timerApp.plat .tm-foot small{color:#8A8A85; opacity:1;}
-  #timerApp.plat .tm-foot strong{background-image:var(--tm-grad); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  #timerApp.plat .tm-steps li.now{background:var(--cpa-ink); border-color:var(--cpa-ink); color:#fff;}
+  #timerApp.plat .tm-steps li.now b{color:var(--cpa-yellow);}
+  #timerApp.plat .tm-foot{color:var(--cpa-ink);}
+  #timerApp.plat .tm-foot strong{font-family:var(--tm-display); font-weight:900; text-transform:uppercase; font-size:clamp(18px,1.9vw,30px); letter-spacing:.01em;}
+  #timerApp.plat .tm-foot small{font-family:var(--tm-body); color:#8A8A85; opacity:1;}
   #timerApp.plat .tm-logo{filter:brightness(0); opacity:.85;}
-  #timerApp.plat .tm-applause{background:#0F0F0F; background-image:var(--tm-grad);}
-  #timerApp.plat .tm-rings i{border-color:rgba(255,255,255,.55);}
-  #timerApp.plat .tm-ap-eyebrow{color:rgba(255,255,255,.9);}
-  #timerApp.plat .tm-ap-text{color:#fff;}
-  #timerApp.plat .tm-ap-next{color:rgba(255,255,255,.75);}
-  #timerApp.plat .tm-hotspot::after{background:#0F0F0F;}
-  #timerApp.plat .dw-eyebrow{color:#8A8A85;}
-  #timerApp.plat .dw-pos{color:#ECEAE3;}
-  #timerApp.plat .dw-stage.landed .dw-pos{background-image:var(--tm-grad); -webkit-background-clip:text; background-clip:text; color:transparent;}
-  #timerApp.plat .dw-list li{border-color:#E4E3DC; font-weight:600;}
-  #timerApp.plat .dw-list li b{background:#F3F1EC; color:#444440;}
-  #timerApp.plat .dw-list li.filled{background:#fff; border:1px solid #E4E3DC; box-shadow:0 1px 3px rgba(0,0,0,.05); color:#0F0F0F;}
-  #timerApp.plat .dw-list li.filled b{background:#0F0F0F; color:#fff;}
-  #timerApp.plat .dw-list li.now, #timerApp.plat .dw-list.movable li.dragging{background-image:var(--tm-grad); border-color:transparent; color:#fff;}
-  #timerApp.plat .dw-list li.now b, #timerApp.plat .dw-list.movable li.dragging b{background:#fff; color:#FF5FA0;}
+  /* aplausos: laranja com arcos amarelos, como a peça CPA */
+  #timerApp.plat .tm-applause{background:var(--cpa-orange);}
+  #timerApp.plat .tm-rings i{border:clamp(6px,.9vw,14px) solid var(--cpa-yellow); opacity:0;}
+  #timerApp.plat .tm-applause h2{font-family:var(--tm-display); font-weight:900; text-transform:uppercase; letter-spacing:0; line-height:.85; font-size:clamp(90px,19vw,320px);}
+  #timerApp.plat .tm-ap-eyebrow{color:#fff; font-size:clamp(11px,1.1vw,18px);}
+  #timerApp.plat .tm-ap-text{color:#fff; font-family:var(--tm-body); font-weight:600;}
+  #timerApp.plat .tm-ap-next{color:var(--cpa-ink); background:var(--cpa-yellow); padding:.8em 1.3em; border-radius:999px; font-size:clamp(10px,.85vw,13px);}
+  #timerApp.plat .tm-hotspot::after{background:var(--cpa-ink);}
+  /* sorteio */
+  #timerApp.plat .dw-stage.landed .dw-pos{color:var(--cpa-orange);}
+  #timerApp.plat .dw-stage.spinning .dw-name{color:#B5B4AE;}
+  #timerApp.plat .dw-list li{border-color:#E4E3DC; font-family:var(--tm-body); font-weight:600;}
+  #timerApp.plat .dw-list li b{background:#F3F1EC; color:#444440; font-family:var(--tm-display); font-weight:900; font-size:1.05em;}
+  #timerApp.plat .dw-list li.filled{background:#fff; border:1px solid #E4E3DC; box-shadow:0 1px 3px rgba(0,0,0,.05); color:var(--cpa-ink);}
+  #timerApp.plat .dw-list li.filled b{background:var(--cpa-ink); color:#fff;}
+  #timerApp.plat .dw-list li.now, #timerApp.plat .dw-list.movable li.dragging{background:var(--cpa-orange); border-color:transparent; color:#fff;}
+  #timerApp.plat .dw-list li.now b, #timerApp.plat .dw-list.movable li.dragging b{background:var(--cpa-yellow); color:var(--cpa-ink);}
   #timerApp.plat .dw-list.movable li:hover{background:#F8F7F3;}
-  #timerApp.plat .dw-list.movable li.dragging{box-shadow:0 10px 24px rgba(255,95,160,.3);}
-  #timerApp.plat .dw-list.movable li:focus-visible{outline-color:#0F0F0F;}
-  #timerApp.plat .dw-cta{background:#0F0F0F;}
+  #timerApp.plat .dw-list.movable li.dragging{box-shadow:0 10px 24px rgba(251,112,20,.3);}
+  #timerApp.plat .dw-list.movable li:focus-visible{outline-color:var(--cpa-ink);}
+  #timerApp.plat .dw-cta{background:var(--cpa-ink); font-family:var(--tm-body);}
   #timerApp.plat .dw-cta:hover{background:#333;}
   /* controles em painel claro, como os modais da plataforma */
-  #timerApp.plat .tm-drawer{background:#FCFBF8; color:#0F0F0F; border-left:1px solid #E4E3DC; box-shadow:-20px 0 60px rgba(0,0,0,.12);}
-  #timerApp.plat .tm-drawer h3{color:#0F0F0F;}
-  #timerApp.plat .tm-sync{color:#8A8A85;}
-  #timerApp.plat .tm-field label{color:#8A8A85; letter-spacing:.08em; font-weight:700;}
-  #timerApp.plat .tm-drawer input, #timerApp.plat .tm-drawer textarea, #timerApp.plat .tm-dd-btn{border:1.5px solid #E4E3DC !important; color:#0F0F0F !important; background:#fff !important;}
-  #timerApp.plat .tm-drawer button, #timerApp.plat a.tm-linkbtn{background:#fff; color:#444440; border:1.5px solid #E4E3DC;}
-  #timerApp.plat .tm-drawer button:hover, #timerApp.plat a.tm-linkbtn:hover{background:#fff; border-color:#A8A8A0; color:#0F0F0F;}
-  #timerApp.plat .tm-drawer button.primary{background:#0F0F0F; border-color:#0F0F0F; color:#fff;}
+  #timerApp.plat .tm-drawer{background:#FCFBF8; color:var(--cpa-ink); border-left:1px solid #E4E3DC; box-shadow:-20px 0 60px rgba(0,0,0,.12); font-family:var(--tm-body);}
+  #timerApp.plat .tm-drawer h3{color:var(--cpa-ink); font-family:var(--tm-display); font-weight:900; text-transform:uppercase; font-size:26px; letter-spacing:0;}
+  #timerApp.plat .tm-sync{color:#8A8A85; font-family:var(--tm-body); font-size:14px;}
+  #timerApp.plat .tm-field label{color:#8A8A85; font-size:10px;}
+  #timerApp.plat .tm-drawer input, #timerApp.plat .tm-drawer textarea, #timerApp.plat .tm-dd-btn{border:1.5px solid #E4E3DC !important; color:var(--cpa-ink) !important; background:#fff !important; font-family:var(--tm-body) !important;}
+  #timerApp.plat .tm-drawer button, #timerApp.plat a.tm-linkbtn{background:#fff; color:#444440; border:1.5px solid #E4E3DC; font-family:var(--tm-body);}
+  #timerApp.plat .tm-drawer button:hover, #timerApp.plat a.tm-linkbtn:hover{background:#fff; border-color:#A8A8A0; color:var(--cpa-ink);}
+  #timerApp.plat .tm-drawer button.primary{background:var(--cpa-ink); border-color:var(--cpa-ink); color:#fff;}
   #timerApp.plat .tm-drawer button.primary:hover{background:#333;}
-  #timerApp.plat .tm-drawer button.accent{background-image:var(--tm-grad); border-color:transparent; color:#fff;}
-  #timerApp.plat .tm-drawer button.on{background:#0F0F0F; border-color:#0F0F0F; color:#fff;}
-  #timerApp.plat .tm-keys{color:#8A8A85;}
-  #timerApp.plat .tm-keys kbd{background:#F3F1EC; color:#444440;}
-  #timerApp.plat .tm-note{color:#8A8A85;}
+  #timerApp.plat .tm-drawer button.accent{background:var(--cpa-orange); border-color:var(--cpa-orange); color:#fff;}
+  #timerApp.plat .tm-drawer button.accent:hover{background:#E9620A;}
+  #timerApp.plat .tm-drawer button.on{background:var(--cpa-ink); border-color:var(--cpa-ink); color:#fff;}
+  #timerApp.plat .tm-keys{color:#8A8A85; font-family:var(--tm-body); font-size:14px;}
+  #timerApp.plat .tm-keys kbd{background:#F3F1EC; color:#444440; font-family:var(--tm-body);}
+  #timerApp.plat .tm-note{color:#8A8A85; font-family:var(--tm-body); font-size:13.5px;}
   #timerApp.plat .tm-exit{color:#8A8A85 !important; border:0 !important;}
   #timerApp.plat .tm-close{border:0 !important; background:#F3F1EC !important;}
-  #timerApp.plat .tm-drawer input:focus-visible, #timerApp.plat .tm-drawer textarea:focus-visible, #timerApp.plat .tm-drawer button:focus-visible{outline-color:#0F0F0F;}
+  #timerApp.plat .tm-drawer input:focus-visible, #timerApp.plat .tm-drawer textarea:focus-visible, #timerApp.plat .tm-drawer button:focus-visible{outline-color:var(--cpa-ink);}
   #timerApp.plat .tm-dd-list{border:1px solid #E4E3DC; box-shadow:0 12px 32px rgba(0,0,0,.12);}
-  #timerApp.plat .tm-dd-list li{color:#0F0F0F; font-weight:600;}
+  #timerApp.plat .tm-dd-list li{color:var(--cpa-ink); font-family:var(--tm-body); font-weight:600;}
   #timerApp.plat .tm-dd-list li:hover, #timerApp.plat .tm-dd-list li:focus{background:#F3F1EC;}
-  #timerApp.plat .tm-dd-list li[aria-selected="true"]{background:#0F0F0F; color:#fff;}
-  #timerApp.plat .tm-dd-list li[aria-selected="true"] b{color:#0F0F0F;}
+  #timerApp.plat .tm-dd-list li[aria-selected="true"]{background:var(--cpa-ink); color:#fff;}
+  #timerApp.plat .tm-dd-list li[aria-selected="true"] b{background:var(--cpa-yellow); color:var(--cpa-ink);}
+  #timerApp.plat .tm-dd-list li[aria-selected="true"] i{color:var(--cpa-yellow);}
   #timerApp.plat .tm-dd-list li.free{border-bottom-color:#E4E3DC;}
   #timerApp .tm-drawer button.on{background:#fff; color:var(--tm-navy);}
   #timerApp .tm-exit{color:var(--tm-mist) !important; background:transparent !important; text-decoration:underline; padding:4px !important; align-self:flex-start;}
