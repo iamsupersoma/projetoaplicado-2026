@@ -810,8 +810,8 @@ function createMockClient(){
       return { data: null, error: null };
     }
     if(name === 'gestor_login'){
-      const g = (db.gestores || []).find(g => g.password === params.p_password);
-      if(!g) return { data: { error: 'senha incorreta' }, error: null };
+      const g = (db.gestores || []).find(g => g.password === params.p_password && (!params.p_email || (g.email || '').toLowerCase() === params.p_email.toLowerCase()));
+      if(!g) return { data: null, error: null };
       return { data: { gestor_id: g.id, gestor_name: g.name, ...buildGroupsOverview() }, error: null };
     }
     if(name === 'admin_add_gestor'){
@@ -820,6 +820,17 @@ function createMockClient(){
       db.gestores.push({ id, name: params.p_name, password: params.p_password, email: params.p_email || null, created_at: new Date().toISOString() });
       await saveDb();
       return { data: id, error: null };
+    }
+    if(name === 'admin_delete_gestor'){
+      db.gestores = (db.gestores || []).filter(g => g.id !== params.p_gestor_id);
+      await saveDb();
+      return { data: null, error: null };
+    }
+    if(name === 'admin_update_gestor_info'){
+      const g = (db.gestores || []).find(g => g.id === params.p_gestor_id);
+      if(g){ g.name = params.p_name; g.email = params.p_email; }
+      await saveDb();
+      return { data: null, error: null };
     }
     if(name === 'admin_set_gestor_password'){
       const g = (db.gestores || []).find(g => g.id === params.p_gestor_id);
@@ -3000,7 +3011,7 @@ async function renderGestoresList(body){
 }
 function buildGestorRow(g, body){
   const row = document.createElement('div'); row.className = 'simple-row';
-  row.innerHTML = `<div class="meta"><strong>${esc(g.name)}</strong></div>`;
+  row.innerHTML = `<div class="meta"><strong>${esc(g.name)}</strong><span>${esc(g.email || 'sem e-mail cadastrado')}</span></div>`;
   const acts = document.createElement('div'); acts.className = 'row-acts';
   if(!gestorSession){
     const edit = document.createElement('button'); edit.className = 'btn-sm'; edit.textContent = 'Editar';
@@ -3008,7 +3019,8 @@ function buildGestorRow(g, body){
     const del = document.createElement('button'); del.className = 'btn-sm danger'; del.textContent = 'Remover';
     del.onclick = async () => {
       if(!(await showConfirm(`Remover o acesso de "${g.name}"?`))) return;
-      await sb.from('gestores').delete().eq('id', g.id);
+      const { error } = await sb.rpc('admin_delete_gestor', { p_gestor_id: g.id });
+      if(error){ showAlert('Não foi possível remover: ' + error.message); return; }
       renderGestoresList(body);
     };
     acts.append(edit, del);
@@ -3026,6 +3038,10 @@ function openGestorModal(g, body){
         <input class="field" id="modalGestorName" style="margin-bottom:0;" placeholder="Nome do gestor">
       </div>
       <div style="margin-bottom:10px;">
+        <span class="modal-field-label">E-mail (usado para entrar)</span>
+        <input class="field" id="modalGestorEmail" type="email" style="margin-bottom:0;" placeholder="email@exemplo.com" autocomplete="off">
+      </div>
+      <div style="margin-bottom:10px;">
         <span class="modal-field-label">${isEdit ? 'Nova senha (deixe em branco para manter)' : 'Senha'}</span>
         <div class="field-icon-wrap two-icons">
           <input class="field" id="modalGestorPassword" type="password" placeholder="Senha" autocomplete="off">
@@ -3040,6 +3056,7 @@ function openGestorModal(g, body){
         <button class="btn-primary auto" id="modalGestorSave">Salvar</button>
       </div>`;
     box.querySelector('#modalGestorName').value = isEdit ? g.name : '';
+    box.querySelector('#modalGestorEmail').value = isEdit ? (g.email || '') : '';
     const pwInput = box.querySelector('#modalGestorPassword');
     const eyeBtn = box.querySelector('#modalGestorPwEye');
     eyeBtn.onclick = () => {
@@ -3051,10 +3068,12 @@ function openGestorModal(g, body){
     box.querySelector('#modalGestorCancel').onclick = () => close(null);
     box.querySelector('#modalGestorSave').onclick = async () => {
       const name = box.querySelector('#modalGestorName').value.trim();
+      const email = box.querySelector('#modalGestorEmail').value.trim();
       const pw = pwInput.value;
       if(!name){ showAlert('O nome não pode ficar em branco.'); return; }
+      if(!email || !email.includes('@')){ showAlert('Informe um e-mail válido. Ele é usado para entrar.'); return; }
       if(isEdit){
-        const { error } = await sb.from('gestores').update({ name }).eq('id', g.id);
+        const { error } = await sb.rpc('admin_update_gestor_info', { p_gestor_id: g.id, p_name: name, p_email: email });
         if(error){ showAlert(error.message); return; }
         if(pw){
           const { error: pwErr } = await sb.rpc('admin_set_gestor_password', { p_gestor_id: g.id, p_password: pw });
@@ -3062,7 +3081,7 @@ function openGestorModal(g, body){
         }
       } else {
         if(!pw){ showAlert('Defina uma senha.'); return; }
-        const { error } = await sb.rpc('admin_add_gestor', { p_name: name, p_password: pw });
+        const { error } = await sb.rpc('admin_add_gestor', { p_name: name, p_email: email, p_password: pw });
         if(error){ showAlert(error.message); return; }
       }
       close(true);
@@ -3391,22 +3410,26 @@ function renderGestorLoginPage(){
           <h2 style="font-size:20px;font-weight:700;margin-bottom:4px;">Acesso Gestor</h2>
           <p style="font-size:13px;color:var(--ink-soft);">Visualização completa sem permissão de edição.</p>
         </div>
-        <input id="gestorPassword" class="field" type="password" placeholder="Senha de acesso" autocomplete="current-password">
+        <input id="gestorEmail" class="field" type="email" placeholder="E-mail" autocomplete="username">
+        <input id="gestorPassword" class="field" type="password" placeholder="Senha" autocomplete="current-password">
         <div class="error-msg" id="gestorError"></div>
         <button class="btn-primary" id="gestorEnterBtn" style="width:100%;margin-top:4px;">Entrar</button>
       </div>
     </div>`;
   $('gestorEnterBtn').onclick = tryGestorLogin;
   $('gestorPassword').addEventListener('keydown', e => { if(e.key === 'Enter') tryGestorLogin(); });
-  setTimeout(() => $('gestorPassword')?.focus(), 50);
+  $('gestorEmail').addEventListener('keydown', e => { if(e.key === 'Enter') $('gestorPassword').focus(); });
+  setTimeout(() => $('gestorEmail')?.focus(), 50);
 }
 async function tryGestorLogin(){
+  const email = $('gestorEmail')?.value?.trim();
   const pw = $('gestorPassword')?.value?.trim();
-  if(!pw) return;
+  if(!email || !pw){ $('gestorError').textContent = 'Informe e-mail e senha.'; return; }
+  $('gestorError').textContent = '';
   $('gestorEnterBtn').disabled = true;
-  const { data } = await sb.rpc('gestor_login', { p_password: pw });
+  const { data } = await sb.rpc('gestor_login', { p_email: email, p_password: pw });
   $('gestorEnterBtn').disabled = false;
-  if(!data || data.error){ $('gestorError').textContent = 'Senha incorreta.'; return; }
+  if(!data || data.error){ $('gestorError').textContent = 'E-mail ou senha incorretos.'; return; }
   gestorSession = true;
   gestorPassword = pw;
   gestorData = data;
