@@ -930,6 +930,17 @@ function createMockClient(){
       await saveDb();
       return { data: true, error: null };
     }
+    if(name === 'student_register'){
+      const email = (params.p_email || '').trim().toLowerCase();
+      const nm = (params.p_name || '').trim();
+      if(!nm || !/^\S+@\S+\.\S+$/.test(email)) return { data: { status: 'invalid' }, error: null };
+      const found = db.students.filter(s => (s.email || '').trim().toLowerCase() === email)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+      if(found) return { data: { status: (found.status === 'assigned' && found.group_id) ? 'assigned' : 'pending' }, error: null };
+      db.students.push({ id: muid(), full_name: nm, email, status: 'pending', group_id: null, created_at: new Date().toISOString() });
+      await saveDb();
+      return { data: { status: 'created' }, error: null };
+    }
     if(name === 'student_group_login'){
       const email = (params.p_email || '').toLowerCase();
       const matches = db.students.filter(s => (s.email || '').toLowerCase() === email)
@@ -1445,9 +1456,26 @@ async function submitStudentRegistration(){
   if(!name || !email){ $('alunoError').textContent = 'Preencha nome e e-mail.'; return; }
   if(!/^\S+@\S+\.\S+$/.test(email)){ $('alunoError').textContent = 'Informe um e-mail válido.'; return; }
   $('alunoSubmitBtn').disabled = true;
-  const { error } = await sb.from('students').insert({ full_name: name, email, status: 'pending' });
+  const { data, error } = await sb.rpc('student_register', { p_name: name, p_email: email });
   $('alunoSubmitBtn').disabled = false;
-  if(error){ $('alunoError').textContent = 'Não foi possível registrar agora. Tente novamente.'; return; }
+  if(error || !data){ $('alunoError').textContent = 'Não foi possível registrar agora. Tente novamente.'; return; }
+  if(data.status === 'invalid'){ $('alunoError').textContent = 'Confira nome e e-mail e tente de novo.'; return; }
+  if(data.status === 'assigned'){
+    // Já registrado e incluído em um grupo: leva direto para a entrada, com o e-mail preenchido.
+    alunoMode = 'login';
+    renderAlunoModeBody();
+    $('alunoLoginEmail').value = email;
+    const info = document.createElement('div');
+    info.className = 'success-msg';
+    info.textContent = 'Você já está registrado e foi incluído em um grupo. Digite a senha do seu grupo para entrar.';
+    $('alunoLoginEmail').parentNode.insertBefore(info, $('alunoLoginEmail'));
+    $('alunoLoginPassword').focus();
+    return;
+  }
+  if(data.status === 'pending'){
+    $('alunoSuccess').textContent = 'Seu registro com este e-mail já existe e está aguardando o professor te incluir em um grupo. Não precisa registrar de novo; depois, use a aba "Já me registrei".';
+    return;
+  }
   $('alunoName').value=''; $('alunoEmail').value='';
   $('alunoSuccess').textContent = 'Registrado! Assim que o professor te incluir em um grupo, use a aba "Já me registrei" pra entrar.';
 }
