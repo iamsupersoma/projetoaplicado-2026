@@ -1927,7 +1927,7 @@ function renderAdminLogin(){
     <div class="main narrow">
       <div class="gate-box" style="margin-top:20px;">
         <h2>Entrar</h2>
-        <p>Entre com seu e-mail e senha de administrador.</p>
+        <p>Entre com seu e-mail e senha. Vale para professores e gestores.</p>
         <input type="email" id="loginEmail" class="field" placeholder="E-mail" autocomplete="username">
         <input type="password" id="loginPassword" class="field" placeholder="Senha" autocomplete="current-password">
         <div class="error-msg" id="loginError"></div>
@@ -1943,10 +1943,31 @@ async function doAdminLogin(){
   const pass = $('loginPassword').value;
   $('loginBtn').disabled = true; $('loginError').textContent = '';
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if(error){
+    // Não é administrador: tenta como gestor (mesmo e-mail e senha da tela de gestor).
+    const g = await tryGestorFromAdminLogin(email, pass.trim());
+    if(g === 'ok') return; // a tela já foi trocada pelo painel do gestor
+    $('loginBtn').disabled = false;
+    $('loginError').textContent = g === 'erro'
+      ? 'Não foi possível entrar agora. Tente novamente.'
+      : 'E-mail ou senha incorretos.';
+    return;
+  }
   $('loginBtn').disabled = false;
-  if(error){ $('loginError').textContent = 'E-mail ou senha incorretos.'; return; }
   session = data.session;
   await bootAdminPanel();
+}
+async function tryGestorFromAdminLogin(email, pass){
+  if(!email || !pass) return 'recusado';
+  const { data, error } = await sb.rpc('gestor_login', { p_email: email, p_password: pass });
+  if(error) return 'erro';
+  if(!data || data.error) return 'recusado';
+  gestorSession = true;
+  gestorPassword = pass;
+  gestorData = data;
+  await loadLinksData();
+  navigateTo({ name: 'gestor', slug: null }, '?gestor=1');
+  return 'ok';
 }
 async function doLogout(){
   if(sb) await sb.auth.signOut();
@@ -3438,7 +3459,7 @@ function renderGestorLoginPage(){
           <h2 style="font-size:20px;font-weight:700;margin-bottom:4px;">Acesso Gestor</h2>
           <p style="font-size:13px;color:var(--ink-soft);">Visualização completa sem permissão de edição.</p>
         </div>
-        <input id="gestorEmail" class="field" type="email" placeholder="E-mail" autocomplete="username">
+        <input id="gestorEmail" class="field" type="email" placeholder="E-mail (se tiver cadastrado)" autocomplete="username">
         <input id="gestorPassword" class="field" type="password" placeholder="Senha" autocomplete="current-password">
         <div class="error-msg" id="gestorError"></div>
         <button class="btn-primary" id="gestorEnterBtn" style="width:100%;margin-top:4px;">Entrar</button>
@@ -3452,12 +3473,14 @@ function renderGestorLoginPage(){
 async function tryGestorLogin(){
   const email = $('gestorEmail')?.value?.trim();
   const pw = $('gestorPassword')?.value?.trim();
-  if(!email || !pw){ $('gestorError').textContent = 'Informe e-mail e senha.'; return; }
+  if(!pw){ $('gestorError').textContent = 'Informe a senha.'; return; }
   $('gestorError').textContent = '';
   $('gestorEnterBtn').disabled = true;
-  const { data } = await sb.rpc('gestor_login', { p_email: email, p_password: pw });
+  // E-mail em branco só vale para gestores antigos, cadastrados sem e-mail.
+  const { data, error } = await sb.rpc('gestor_login', { p_email: email || '', p_password: pw });
   $('gestorEnterBtn').disabled = false;
-  if(!data || data.error){ $('gestorError').textContent = 'E-mail ou senha incorretos.'; return; }
+  if(error){ $('gestorError').textContent = 'Não foi possível entrar agora (' + (error.message || 'erro de conexão') + '). Tente de novo.'; return; }
+  if(!data || data.error){ $('gestorError').textContent = email ? 'E-mail ou senha incorretos.' : 'Senha incorreta. Se você tem e-mail cadastrado, informe-o também.'; return; }
   gestorSession = true;
   gestorPassword = pw;
   gestorData = data;
