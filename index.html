@@ -1015,7 +1015,36 @@ function phIcon(name, opts){
   const cls = opts.class ? ' ' + opts.class : '';
   return `<i class="${base} ph-${name}${cls}"></i>`;
 }
-function fmtDate(iso){ if(!iso) return ''; try{ return new Date(iso).toLocaleDateString('pt-BR'); }catch{ return ''; } }
+function fmtDate(iso){
+  if(!iso) return '';
+  try{
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso));
+    if(m) return `${m[3]}/${m[2]}/${m[1]}`;               // data pura (YYYY-MM-DD): sem conversão de fuso
+    return new Date(iso).toLocaleDateString('pt-BR');
+  }catch{ return ''; }
+}
+/* Campos de data e hora no padrão brasileiro (dd/mm/aaaa e hh:mm de 24 horas), independentes do idioma do navegador */
+function dateToBr(d){ d = d instanceof Date ? d : new Date(d); if(isNaN(d)) return ''; return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear(); }
+function isoToBr(iso){ const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso||'')); return m ? `${m[3]}/${m[2]}/${m[1]}` : ''; }
+function brToIso(br){
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(br||'').trim()); if(!m) return null;
+  const d = +m[1], mo = +m[2], y = +m[3], t = new Date(y, mo-1, d);
+  if(t.getFullYear() !== y || t.getMonth() !== mo-1 || t.getDate() !== d) return null;
+  return `${m[3]}-${m[2]}-${m[1]}`;
+}
+function normTime(v){
+  const m = /^(\d{1,2}):?(\d{2})$/.exec(String(v||'').trim()); if(!m) return null;
+  const h = +m[1], mi = +m[2]; if(h > 23 || mi > 59) return null;
+  return String(h).padStart(2,'0') + ':' + m[2];
+}
+function maskDateInput(el){
+  el.setAttribute('inputmode','numeric'); el.setAttribute('maxlength','10'); el.setAttribute('autocomplete','off'); el.placeholder = 'dd/mm/aaaa';
+  el.addEventListener('input', () => { const d = el.value.replace(/\D/g,'').slice(0,8); el.value = d.length > 4 ? d.slice(0,2)+'/'+d.slice(2,4)+'/'+d.slice(4) : d.length > 2 ? d.slice(0,2)+'/'+d.slice(2) : d; });
+}
+function maskTimeInput(el){
+  el.setAttribute('inputmode','numeric'); el.setAttribute('maxlength','5'); el.setAttribute('autocomplete','off'); el.placeholder = 'hh:mm';
+  el.addEventListener('input', () => { const d = el.value.replace(/\D/g,'').slice(0,4); el.value = d.length > 2 ? d.slice(0,2)+':'+d.slice(2) : d; });
+}
 function fmtDateInput(iso){ if(!iso) return ''; return String(iso).slice(0,10); }
 function generateRandomPassword(){
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
@@ -2162,7 +2191,7 @@ function openLinkModal(link, body){
       </div>
       <div style="margin-bottom:10px;">
         <span class="modal-field-label">Data de publicação</span>
-        <input type="date" class="field" id="modalLinkDate" style="margin-bottom:0;">
+        <input type="text" class="field" id="modalLinkDate" style="margin-bottom:0;">
       </div>
       <div class="modal-actions">
         <button class="btn-sm" id="modalCancel">Cancelar</button>
@@ -2171,7 +2200,8 @@ function openLinkModal(link, body){
     box.querySelector('#modalLinkTitle').value = isEdit ? link.title : '';
     box.querySelector('#modalLinkUrl').value = isEdit ? link.url : '';
     box.querySelector('#modalLinkDesc').value = isEdit ? link.desc : '';
-    box.querySelector('#modalLinkDate').value = isEdit ? fmtDateInput(link.createdAt) : new Date().toISOString().slice(0, 10);
+    maskDateInput(box.querySelector('#modalLinkDate'));
+    box.querySelector('#modalLinkDate').value = dateToBr(isEdit ? link.createdAt : new Date());
     renderCategoryMultiselect(box.querySelector('#modalCategoryMs'), isEdit ? (link.categoryIds || []) : [], () => {});
     box.querySelector('#modalCancel').onclick = () => close(null);
     box.querySelector('#modalSave').onclick = async () => {
@@ -2179,8 +2209,10 @@ function openLinkModal(link, body){
       const url = box.querySelector('#modalLinkUrl').value.trim();
       const desc = box.querySelector('#modalLinkDesc').value.trim();
       const categoryIds = box.querySelector('#modalCategoryMs')._getSelectedIds();
-      const dateValue = box.querySelector('#modalLinkDate').value;
+      const dateBr = box.querySelector('#modalLinkDate').value.trim();
+      const dateValue = dateBr ? brToIso(dateBr) : '';
       if(!title || !url){ showAlert('Preencha ao menos o título e a URL.'); return; }
+      if(dateBr && !dateValue){ showAlert('Data inválida. Use o formato dd/mm/aaaa.'); return; }
       const payload = { title, url, description: desc };
       if(dateValue) payload.created_at = new Date(dateValue + 'T12:00:00').toISOString();
       let linkId = isEdit ? link.id : null;
@@ -2834,8 +2866,8 @@ async function renderBancaInviteCard(container, stage){
     <div class="section-sub" style="margin-top:0;margin-bottom:14px;">Data, horário e local que aparecem no convite que alunos e convidados geram para Stories e Post.</div>
     ${loadErr ? `<p class="hint" style="color:#B42318;">Não foi possível carregar os dados do convite. Confira se a tabela banca_invites existe no Supabase.</p>` : ''}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px;">
-      <div><span class="modal-field-label">Data</span><input class="field" id="invDate" type="date" style="margin-bottom:0;" ${ro ? 'disabled' : ''}></div>
-      <div><span class="modal-field-label">Horário</span><input class="field" id="invTime" type="time" style="margin-bottom:0;" ${ro ? 'disabled' : ''}></div>
+      <div><span class="modal-field-label">Data</span><input class="field" id="invDate" type="text" style="margin-bottom:0;" ${ro ? 'disabled' : ''}></div>
+      <div><span class="modal-field-label">Horário</span><input class="field" id="invTime" type="text" style="margin-bottom:0;" ${ro ? 'disabled' : ''}></div>
     </div>
     <div style="margin-bottom:10px;"><span class="modal-field-label">Local</span><input class="field" id="invPlace" style="margin-bottom:0;" placeholder="Ex.: Sala 103 – Prédio Tech" maxlength="80" ${ro ? 'disabled' : ''}></div>
     <div style="margin-bottom:14px;"><span class="modal-field-label">Endereço (opcional)</span><input class="field" id="invAddr" style="margin-bottom:0;" placeholder="Ex.: R. Félix da Cunha, 520, Centro" maxlength="80" ${ro ? 'disabled' : ''}></div>
@@ -2848,15 +2880,18 @@ async function renderBancaInviteCard(container, stage){
     <p class="hint" style="margin:10px 0 0;">O link só mostra o gerador depois que data, horário e local forem salvos.</p>`;
   container.appendChild(card);
   const $i = id => card.querySelector('#' + id);
-  $i('invDate').value = row.event_date ? String(row.event_date).slice(0, 10) : '';
+  maskDateInput($i('invDate')); maskTimeInput($i('invTime'));
+  $i('invDate').value = isoToBr(row.event_date);
   $i('invTime').value = row.event_time ? String(row.event_time).slice(0, 5) : '';
   $i('invPlace').value = row.location || '';
   $i('invAddr').value = row.address || '';
   $i('invCopy').onclick = () => { navigator.clipboard.writeText(url).catch(()=>{}); showToast('Copiado!'); };
   if(!ro) $i('invSave').onclick = async () => {
-    const event_date = $i('invDate').value, event_time = $i('invTime').value;
+    const event_date = brToIso($i('invDate').value), event_time = normTime($i('invTime').value);
     const location_ = $i('invPlace').value.trim(), address = $i('invAddr').value.trim();
-    if(!event_date || !event_time || !location_){ showAlert('Preencha data, horário e local.'); return; }
+    if(!$i('invDate').value.trim() || !$i('invTime').value.trim() || !location_){ showAlert('Preencha data, horário e local.'); return; }
+    if(!event_date){ showAlert('Data inválida. Use o formato dd/mm/aaaa.'); return; }
+    if(!event_time){ showAlert('Horário inválido. Use o formato hh:mm (24 horas).'); return; }
     const btn = $i('invSave'); btn.disabled = true;
     const { error } = await sb.from('banca_invites').upsert(
       { stage, event_date, event_time, location: location_, address: address || null, updated_at: new Date().toISOString() },
