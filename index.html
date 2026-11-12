@@ -654,7 +654,7 @@ function createMockClient(){
     const c1 = muid(), c2 = muid(), c3 = muid(), c4 = muid(), c5 = muid();
     return {
       categories: [], links: [], link_categories: [], groups: [], bancas: [], students: [], evaluators: [], scores: [],
-      app_settings: [], banca_readers: [], banca_stage_readers: [], gestores: [],
+      app_settings: [], banca_readers: [], banca_stage_readers: [], gestores: [], banca_invites: [],
       rubric_categories: [
         { id: c1, order_index: 1, title: 'Relevância e Inovação do Produto/Serviço' },
         { id: c2, order_index: 2, title: 'Qualidade da Pesquisa e Fundamentação Teórica' },
@@ -722,7 +722,7 @@ function createMockClient(){
         // imita o trigger do banco real: cria as 3 bancas automaticamente
         inserted.forEach(g => {
           [1, 2, 3].forEach(stage => {
-            db.bancas.push({ id: muid(), group_id: g.id, stage, scheduled_date: null, report_file_path: null, report_file_name: null, presentation_link: null });
+            db.bancas.push({ id: muid(), group_id: g.id, stage, scheduled_date: null, report_file_path: null, report_file_name: null, presentation_link: null, prototype_link: null });
           });
         });
         await saveDb();
@@ -783,7 +783,7 @@ function createMockClient(){
       students: db.students.filter(s => s.group_id === g.id).map(s => ({ full_name: s.full_name, email: s.email })),
       bancas: db.bancas.filter(b => b.group_id === g.id).sort((a, b) => a.stage - b.stage).map(b => ({
         stage: b.stage, scheduled_date: b.scheduled_date,
-        report_file_path: b.report_file_path, report_file_name: b.report_file_name, presentation_link: b.presentation_link,
+        report_file_path: b.report_file_path, report_file_name: b.report_file_name, presentation_link: b.presentation_link, prototype_link: b.prototype_link,
         evaluators: db.evaluators.filter(e => e.banca_id === b.id).map(e => ({ id: e.id, reader_id: e.reader_id || null, name: e.name, role: e.role, comment: e.comment })),
         scores: db.scores.filter(s => s.banca_id === b.id).map(s => ({ evaluator_id: s.evaluator_id, question_id: s.question_id, rating: s.rating })),
       })),
@@ -842,7 +842,7 @@ function createMockClient(){
       if(!g.password_hash || g.password_hash !== params.p_password) return { data: { error: 'senha incorreta' }, error: null };
       const bancas = db.bancas.filter(b => b.group_id === g.id).sort((a, b) => a.stage - b.stage).map(b => ({
         stage: b.stage, scheduled_date: b.scheduled_date, report_file_path: b.report_file_path,
-        report_file_name: b.report_file_name, presentation_link: b.presentation_link,
+        report_file_name: b.report_file_name, presentation_link: b.presentation_link, prototype_link: b.prototype_link,
         evaluators: db.evaluators.filter(e => e.banca_id === b.id).map(e => ({ id: e.id, name: e.name, role: e.role, comment: e.comment })),
         scores: db.scores.filter(s => s.banca_id === b.id).map(s => ({ evaluator_id: s.evaluator_id, question_id: s.question_id, rating: s.rating })),
       }));
@@ -929,7 +929,7 @@ function createMockClient(){
       if(!g || !g.password_hash || g.password_hash !== params.p_password) return { data: { error: 'senha incorreta' }, error: null };
       const bancas = db.bancas.filter(b => b.group_id === g.id).sort((a, b) => a.stage - b.stage).map(b => ({
         stage: b.stage, scheduled_date: b.scheduled_date, report_file_path: b.report_file_path,
-        report_file_name: b.report_file_name, presentation_link: b.presentation_link,
+        report_file_name: b.report_file_name, presentation_link: b.presentation_link, prototype_link: b.prototype_link,
         evaluators: db.evaluators.filter(e => e.banca_id === b.id).map(e => ({ id: e.id, name: e.name, role: e.role, comment: e.comment })),
         scores: db.scores.filter(sc => sc.banca_id === b.id).map(sc => ({ evaluator_id: sc.evaluator_id, question_id: sc.question_id, rating: sc.rating })),
       }));
@@ -948,6 +948,7 @@ function createMockClient(){
       if(!banca) return { data: false, error: null };
       if(params.p_report_file_path){ banca.report_file_path = params.p_report_file_path; banca.report_file_name = params.p_report_file_name; }
       banca.presentation_link = params.p_presentation_link;
+      banca.prototype_link = params.p_prototype_link || null;
       await saveDb();
       return { data: true, error: null };
     }
@@ -1812,10 +1813,10 @@ function renderPublicBancaBody(bancas){
     </div>
     <div class="admin-section">
       <h3>Anexos</h3>
-      <div class="hint">Envie o relatório (PDF ou DOCX) e cole o link da apresentação desta etapa.</div>
+      <div class="hint">Envie o relatório (PDF ou DOCX) e cole os links da apresentação e do protótipo desta etapa.</div>
       <div class="simple-list" style="margin-bottom:14px;">
         ${reportUrl ? `<div class="simple-row"><div class="meta"><strong>${esc(banca.report_file_name || 'Relatório')}</strong></div><a class="btn-sm" href="${reportUrl}" target="_blank" rel="noopener">Baixar</a></div>` : ''}
-        ${(!reportUrl && !banca.presentation_link) ? '<p style="font-size:13px;color:var(--ink-soft)">Nenhum anexo enviado ainda.</p>' : ''}
+        ${(!reportUrl && !banca.presentation_link && !banca.prototype_link) ? '<p style="font-size:13px;color:var(--ink-soft)">Nenhum anexo enviado ainda.</p>' : ''}
       </div>
       <div class="form-grid">
         <div>
@@ -1823,6 +1824,7 @@ function renderPublicBancaBody(bancas){
           <input id="pubReportFile" type="file" accept=".pdf,.doc,.docx">
         </div>
         <div><label>Link da apresentação</label><input id="pubPresentation" class="field" value="${esc(banca.presentation_link||'')}" placeholder="https://docs.google.com/presentation/..."></div>
+        <div><label>Link do protótipo</label><input id="pubPrototype" class="field" value="${esc(banca.prototype_link||'')}" placeholder="https://www.figma.com/..."></div>
       </div>
       <div class="error-msg" id="pubAttachError"></div>
       <div class="success-msg" id="pubAttachSuccess"></div>
@@ -1859,11 +1861,13 @@ function renderPublicBancaBody(bancas){
       p_group_slug: groupSession.slug, p_group_password: groupSession.password, p_stage: publicBancaStage,
       p_report_file_path: reportPath, p_report_file_name: reportName,
       p_presentation_link: $('pubPresentation').value.trim() || null,
+      p_prototype_link: $('pubPrototype').value.trim() || null,
     });
     $('pubSaveAttachBtn').disabled = false;
     if(error || !ok){ $('pubAttachError').textContent = 'Não foi possível salvar agora. Tente novamente.'; return; }
     if(reportPath){ banca.report_file_path = reportPath; banca.report_file_name = reportName; }
     banca.presentation_link = $('pubPresentation').value.trim() || null;
+    banca.prototype_link = $('pubPrototype').value.trim() || null;
     $('pubAttachSuccess').textContent = 'Anexos salvos.';
     renderPublicBancaBody(bancas);
   };
@@ -2570,7 +2574,7 @@ async function renderAdminGroupDetail(body, groupId){
       { data: scoresData },
       { data: readersData },
     ] = await Promise.all([
-      sb.from('bancas').select('id,stage,scheduled_date,report_file_path,report_file_name,presentation_link').eq('group_id', g.id),
+      sb.from('bancas').select('id,stage,scheduled_date,report_file_path,report_file_name,presentation_link,prototype_link').eq('group_id', g.id),
       sb.from('evaluators').select('id,banca_id,reader_id,comment'),
       sb.from('scores').select('evaluator_id,question_id,rating,banca_id'),
       sb.from('banca_readers').select('id,name,role'),
@@ -2603,7 +2607,8 @@ async function renderAdminGroupDetail(body, groupId){
       // entregáveis
       const hasFile = bancaRecord?.report_file_path;
       const hasLink = bancaRecord?.presentation_link;
-      if(hasFile || hasLink){
+      const hasProto = bancaRecord?.prototype_link;
+      if(hasFile || hasLink || hasProto){
         const deliverWrap = document.createElement('div');
         deliverWrap.style.cssText = 'background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;';
         if(hasFile){
@@ -2625,6 +2630,16 @@ async function renderAdminGroupDetail(body, groupId){
               ${phIcon('presentation')} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(bancaRecord.presentation_link)}</span>
             </span>
             <a href="${esc(bancaRecord.presentation_link)}" target="_blank" rel="noopener" class="btn-sm" style="flex-shrink:0;">${phIcon('arrow-square-out')} Abrir</a>`;
+          deliverWrap.appendChild(row);
+        }
+        if(hasProto){
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+          row.innerHTML = `
+            <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;flex:1;min-width:0;color:var(--ink);">
+              ${phIcon('cube')} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Protótipo: ${esc(bancaRecord.prototype_link)}</span>
+            </span>
+            <a href="${esc(bancaRecord.prototype_link)}" target="_blank" rel="noopener" class="btn-sm" style="flex-shrink:0;">${phIcon('arrow-square-out')} Abrir</a>`;
           deliverWrap.appendChild(row);
         }
         wrap.appendChild(deliverWrap);
@@ -2802,6 +2817,56 @@ function renderAdminConfigTab(body){
   $('copyProfUrl').onclick = () => { navigator.clipboard.writeText(profUrl).catch(()=>{}); showToast('Copiado!'); };
 }
 
+/* ======================= ADMIN: CONVITE DA BANCA ======================= */
+function inviteUrl(stage){
+  return location.origin + location.pathname.replace(/[^/]*$/, '') + 'convite.html?etapa=' + stage;
+}
+async function renderBancaInviteCard(container, stage){
+  const { data: rows, error: loadErr } = await sb.from('banca_invites').select('*').eq('stage', stage);
+  const row = (rows && rows[0]) || {};
+  const ro = isReadOnly();
+  const url = inviteUrl(stage);
+  const card = document.createElement('div');
+  card.className = 'admin-section';
+  card.style.marginBottom = '16px';
+  card.innerHTML = `
+    <div class="section-title" style="font-size:16px;margin-bottom:2px;">Convite da ${esc(BANCA_LABELS[stage])}</div>
+    <div class="section-sub" style="margin-top:0;margin-bottom:14px;">Data, horário e local que aparecem no convite que alunos e convidados geram para Stories e Post.</div>
+    ${loadErr ? `<p class="hint" style="color:#B42318;">Não foi possível carregar os dados do convite. Confira se a tabela banca_invites existe no Supabase.</p>` : ''}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px;">
+      <div><span class="modal-field-label">Data</span><input class="field" id="invDate" type="date" style="margin-bottom:0;" ${ro ? 'disabled' : ''}></div>
+      <div><span class="modal-field-label">Horário</span><input class="field" id="invTime" type="time" style="margin-bottom:0;" ${ro ? 'disabled' : ''}></div>
+    </div>
+    <div style="margin-bottom:10px;"><span class="modal-field-label">Local</span><input class="field" id="invPlace" style="margin-bottom:0;" placeholder="Ex.: Sala 103 – Prédio Tech" maxlength="80" ${ro ? 'disabled' : ''}></div>
+    <div style="margin-bottom:14px;"><span class="modal-field-label">Endereço (opcional)</span><input class="field" id="invAddr" style="margin-bottom:0;" placeholder="Ex.: R. Félix da Cunha, 520, Centro" maxlength="80" ${ro ? 'disabled' : ''}></div>
+    ${ro ? '' : '<button class="btn-primary auto" id="invSave">Salvar convite</button>'}
+    <div class="simple-list" style="margin-top:16px;">
+      <div class="simple-row"><div class="meta"><strong>Link público do convite</strong><span>${esc(url)}</span></div>
+        <button class="btn-sm" id="invCopy">Copiar</button>
+        <a class="btn-sm" href="${esc(url)}" target="_blank" rel="noopener">${phIcon('arrow-square-out')} Abrir</a></div>
+    </div>
+    <p class="hint" style="margin:10px 0 0;">O link só mostra o gerador depois que data, horário e local forem salvos.</p>`;
+  container.appendChild(card);
+  const $i = id => card.querySelector('#' + id);
+  $i('invDate').value = row.event_date ? String(row.event_date).slice(0, 10) : '';
+  $i('invTime').value = row.event_time ? String(row.event_time).slice(0, 5) : '';
+  $i('invPlace').value = row.location || '';
+  $i('invAddr').value = row.address || '';
+  $i('invCopy').onclick = () => { navigator.clipboard.writeText(url).catch(()=>{}); showToast('Copiado!'); };
+  if(!ro) $i('invSave').onclick = async () => {
+    const event_date = $i('invDate').value, event_time = $i('invTime').value;
+    const location_ = $i('invPlace').value.trim(), address = $i('invAddr').value.trim();
+    if(!event_date || !event_time || !location_){ showAlert('Preencha data, horário e local.'); return; }
+    const btn = $i('invSave'); btn.disabled = true;
+    const { error } = await sb.from('banca_invites').upsert(
+      { stage, event_date, event_time, location: location_, address: address || null, updated_at: new Date().toISOString() },
+      { onConflict: 'stage' });
+    btn.disabled = false;
+    if(error){ showAlert('Não foi possível salvar: ' + error.message); return; }
+    showToast('Convite salvo.');
+  };
+}
+
 /* ======================= ADMIN: BANCAS TAB ======================= */
 async function renderAdminBancasTab(body){
   body.innerHTML = '<div class="loading-state">Carregando bancas…</div>';
@@ -2812,7 +2877,7 @@ async function renderAdminBancasTab(body){
     { data: scoresData },
     { data: readersData },
   ] = await Promise.all([
-    sb.from('bancas').select('id,group_id,stage,scheduled_date,report_file_path,report_file_name,presentation_link'),
+    sb.from('bancas').select('id,group_id,stage,scheduled_date,report_file_path,report_file_name,presentation_link,prototype_link'),
     sb.from('evaluators').select('id,banca_id,reader_id,comment'),
     sb.from('scores').select('evaluator_id,question_id,rating,banca_id'),
     sb.from('banca_readers').select('id,name,role'),
@@ -2837,6 +2902,7 @@ async function renderAdminBancasTab(body){
   });
 
   const content = $('bancasContent');
+  await renderBancaInviteCard(content, adminBancaStage);
   if(!adminGroups.length){
     content.innerHTML = '<p style="padding:24px 0;font-size:14px;color:var(--ink-soft);">Nenhum grupo cadastrado.</p>';
     return;
@@ -2874,7 +2940,8 @@ async function renderAdminBancasTab(body){
     // ── entregáveis ──
     const hasFile = bancaRecord?.report_file_path;
     const hasLink = bancaRecord?.presentation_link;
-    if(hasFile || hasLink){
+    const hasProto = bancaRecord?.prototype_link;
+    if(hasFile || hasLink || hasProto){
       const deliverSection = document.createElement('div');
       deliverSection.className = 'admin-section';
       deliverSection.style.cssText = 'margin-bottom:16px;padding:12px 16px;display:flex;flex-direction:column;gap:10px;';
@@ -2901,6 +2968,16 @@ async function renderAdminBancasTab(body){
             ${phIcon('presentation')} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(bancaRecord.presentation_link)}</span>
           </span>
           <a href="${esc(bancaRecord.presentation_link)}" target="_blank" rel="noopener" class="btn-sm" style="flex-shrink:0;">${phIcon('arrow-square-out')} Abrir</a>`;
+        deliverSection.appendChild(row);
+      }
+      if(hasProto){
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+        row.innerHTML = `
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;flex:1;min-width:0;color:var(--ink);">
+            ${phIcon('cube')} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Protótipo: ${esc(bancaRecord.prototype_link)}</span>
+          </span>
+          <a href="${esc(bancaRecord.prototype_link)}" target="_blank" rel="noopener" class="btn-sm" style="flex-shrink:0;">${phIcon('arrow-square-out')} Abrir</a>`;
         deliverSection.appendChild(row);
       }
       card.appendChild(deliverSection);
