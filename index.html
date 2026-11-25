@@ -799,6 +799,18 @@
   .doc-view img{max-width:100%; height:auto; border-radius:12px; display:block; border:1px solid var(--line);}
   .doc-view figcaption{font-size:13px; color:var(--ink-soft); margin-top:6px;}
   .doc-empty{color:var(--ink-soft);}
+  .doc-view li > p{margin:0;}
+  .doc-view ol{margin:0 0 12px; padding-left:22px;}
+  .doc-view a{color:#2563EB; text-decoration:underline;}
+  .doc-view blockquote{margin:0 0 12px; padding:2px 16px; border-left:3px solid var(--line); color:var(--ink-mid);}
+  .doc-toolbar{display:flex; gap:4px; flex-wrap:wrap; align-items:center; padding:8px; border:1px solid var(--line); border-bottom:0; border-radius:12px 12px 0 0; background:var(--card); position:sticky; top:0; z-index:5;}
+  .doc-toolbar button, .doc-tb-img{min-width:34px; height:34px; padding:0 10px; border:1px solid transparent; background:transparent; border-radius:8px; cursor:pointer; color:var(--ink-mid); font:inherit; font-size:13px; font-weight:700; display:inline-grid; place-items:center;}
+  .doc-toolbar button:hover, .doc-tb-img:hover{border-color:var(--line); color:var(--ink); background:var(--bg);}
+  .doc-tb-sep{width:1px; height:20px; background:var(--line); margin:0 4px;}
+  .doc-rte{max-width:none; min-height:420px; padding:20px 24px; border:1px solid var(--line); border-radius:0 0 12px 12px; background:var(--card); outline:none;}
+  .doc-rte:empty:before{content:attr(data-ph); color:var(--ink-soft);}
+  .doc-rte img{max-width:100%; height:auto;}
+  .doc-rte h2:first-child, .doc-rte h3:first-child{margin-top:0;}
   .doc-card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px; margin-bottom:18px; box-shadow:var(--shadow);}
   .doc-card h3{margin:0 0 4px; font-size:20px; font-weight:800; letter-spacing:-0.01em;}
   .doc-card .doc-date{font-size:12px; color:var(--ink-soft); margin-bottom:12px;}
@@ -808,20 +820,6 @@
   .doc-ed-state{font-size:12.5px; color:var(--ink-soft); margin-left:auto;}
   .doc-title-input{width:100%; font:inherit; font-size:28px; font-weight:800; letter-spacing:-0.02em; border:0; border-bottom:1px solid var(--line); background:transparent; padding:6px 0 10px; margin-bottom:16px; color:var(--ink); outline:none;}
   .doc-title-input:focus{border-bottom-color:var(--ink);}
-  .doc-block{display:flex; gap:8px; align-items:flex-start; margin-bottom:10px;}
-  .doc-block-main{flex:1; min-width:0;}
-  .doc-block textarea, .doc-block input.doc-cap{width:100%; font:inherit; border:1px solid transparent; border-radius:10px; padding:8px 10px; background:var(--card); color:var(--ink); resize:none; outline:none; line-height:1.6; overflow:hidden;}
-  .doc-block textarea:hover, .doc-block textarea:focus, .doc-block input.doc-cap:focus{border-color:var(--line);}
-  .doc-block textarea.t-heading{font-size:24px; font-weight:800; letter-spacing:-0.02em;}
-  .doc-block textarea.t-subheading{font-size:18px; font-weight:700;}
-  .doc-block input.doc-cap{font-size:13px; margin-top:6px; color:var(--ink-mid);}
-  .doc-block img{max-width:100%; max-height:360px; border-radius:10px; display:block; border:1px solid var(--line);}
-  .doc-block-tools{display:flex; flex-direction:column; gap:4px;}
-  .doc-block-tools button{width:28px; height:28px; border:1px solid var(--line); background:var(--card); border-radius:8px; cursor:pointer; color:var(--ink-mid); display:grid; place-items:center; font-size:14px;}
-  .doc-block-tools button:hover{border-color:#A8A8A0; color:var(--ink);}
-  .doc-block-tools button:disabled{opacity:.35; cursor:default;}
-  .doc-block-hint{font-size:11px; color:var(--ink-soft); padding:0 10px;}
-  .doc-add-bar{display:flex; gap:8px; flex-wrap:wrap; margin:18px 0 26px; padding:12px; border:1px dashed var(--line); border-radius:12px;}
 </style>
 
 <div class="hero-blob" style="top:-90px; left:-70px; width:340px; height:340px; background:linear-gradient(135deg,var(--accent-a),var(--accent-b)); opacity:.14;"></div>
@@ -3220,6 +3218,8 @@ function getDocImageUrl(path){
   return data?.publicUrl || '';
 }
 function renderDocBlocks(blocks){
+  const rich = docContentHtml(blocks);
+  if(rich !== null) return rich || '<p class="doc-empty">Documento vazio.</p>';
   const html = (Array.isArray(blocks) ? blocks : []).map(b => {
     if(b.type === 'heading') return `<h2>${esc(b.text || '')}</h2>`;
     if(b.type === 'subheading') return `<h3>${esc(b.text || '')}</h3>`;
@@ -3310,16 +3310,91 @@ async function renderAdminDocumentosTab(body){
   };
 }
 
+/* ---- Conteúdo rico: sanitização (usada ao colar, ao salvar e ao exibir) ---- */
+const DOC_DROP_TAGS = new Set(['SCRIPT','STYLE','IFRAME','OBJECT','EMBED','LINK','META','NOSCRIPT','SVG','FORM','INPUT','BUTTON','TEXTAREA','SELECT','HEAD','TITLE']);
+function sanitizeDocHtml(html){
+  const doc = new DOMParser().parseFromString('<body>' + String(html || '') + '</body>', 'text/html');
+  const out = document.createElement('div');
+  const safeUrl = (u, img) => {
+    u = String(u || '').trim();
+    if(/^https?:\/\//i.test(u)) return u;
+    if(img && /^data:image\/(png|jpe?g|gif|webp);/i.test(u)) return u;
+    if(!img && /^mailto:/i.test(u)) return u;
+    return '';
+  };
+  function walk(node, parent){
+    node.childNodes.forEach(n => {
+      if(n.nodeType === 3){ parent.appendChild(document.createTextNode(n.nodeValue)); return; }
+      if(n.nodeType !== 1) return;
+      const tag = n.tagName;
+      if(DOC_DROP_TAGS.has(tag)) return;
+      const st = (n.getAttribute('style') || '').toLowerCase();
+      let target = null;
+      if(tag === 'H1' || tag === 'H2') target = 'h2';
+      else if(tag === 'H3' || tag === 'H4' || tag === 'H5' || tag === 'H6') target = 'h3';
+      else if(tag === 'P' || tag === 'DIV') target = 'p';
+      else if(tag === 'BR') target = 'br';
+      else if(tag === 'STRONG' || tag === 'B'){
+        // o Google Docs envolve tudo em <b style="font-weight:normal">: não é negrito de verdade
+        if(/font-weight:\s*(normal|[1-5]00)/.test(st)){ walk(n, parent); return; }
+        target = 'strong';
+      }
+      else if(tag === 'EM' || tag === 'I') target = 'em';
+      else if(tag === 'U') target = 'u';
+      else if(tag === 'S' || tag === 'STRIKE' || tag === 'DEL') target = 's';
+      else if(tag === 'UL' || tag === 'OL' || tag === 'LI' || tag === 'BLOCKQUOTE') target = tag.toLowerCase();
+      else if(tag === 'A' || tag === 'IMG') target = tag.toLowerCase();
+      else if(tag === 'SPAN' || tag === 'FONT'){
+        // Google Docs / Word guardam negrito e itálico em estilo inline
+        const bold = /font-weight:\s*(bold|[6-9]00)/.test(st);
+        const ital = /font-style:\s*italic/.test(st);
+        let host = parent;
+        if(bold){ const b = document.createElement('strong'); host.appendChild(b); host = b; }
+        if(ital){ const i = document.createElement('em'); host.appendChild(i); host = i; }
+        walk(n, host);
+        return;
+      }
+      if(!target){ walk(n, parent); return; }
+      if(target === 'br'){ parent.appendChild(document.createElement('br')); return; }
+      if(target === 'img'){
+        const src = safeUrl(n.getAttribute('src'), true);
+        if(!src) return;
+        const img = document.createElement('img');
+        img.setAttribute('src', src);
+        img.setAttribute('alt', n.getAttribute('alt') || '');
+        parent.appendChild(img);
+        return;
+      }
+      const el = document.createElement(target);
+      if(target === 'a'){
+        const href = safeUrl(n.getAttribute('href'), false);
+        if(!href){ walk(n, parent); return; }
+        el.setAttribute('href', href); el.setAttribute('target', '_blank'); el.setAttribute('rel', 'noopener noreferrer');
+      }
+      parent.appendChild(el);
+      // negrito/itálico vindos de estilo em parágrafos e títulos
+      walk(n, el);
+    });
+  }
+  walk(doc.body, out);
+  // remove parágrafos vazios consecutivos nas pontas
+  return out.innerHTML.replace(/^(<p><br><\/p>|<p><\/p>)+|(<p><br><\/p>|<p><\/p>)+$/g, '');
+}
+function docContentHtml(content){
+  if(content && !Array.isArray(content) && typeof content === 'object') return sanitizeDocHtml(content.html || '');
+  return null;
+}
+
 async function renderDocEditor(body, id){
   body.innerHTML = '<div class="loading-state">Abrindo documento…</div>';
-  const [{ data: doc }] = await Promise.all([
-    sb.from('documents').select('id,title,content,published').eq('id', id).single(),
-  ]);
+  const { data: doc } = await sb.from('documents').select('id,title,content,published').eq('id', id).single();
   if(!doc){ openDocId = null; return renderAdminDocumentosTab(body); }
   const ro = isReadOnly();
+  // documentos antigos em blocos são convertidos para HTML na primeira edição
+  const legacy = Array.isArray(doc.content) && doc.content.length;
   const st = {
     title: doc.title || '',
-    blocks: (Array.isArray(doc.content) ? doc.content : []).map(b => ({ id: b.id || docUid(), ...b })),
+    html: docContentHtml(doc.content) ?? (legacy ? renderDocBlocks(doc.content) : ''),
     published: !!doc.published,
   };
   let dirty = false, timer = null, chain = Promise.resolve();
@@ -3327,12 +3402,11 @@ async function renderDocEditor(body, id){
   const doSave = async () => {
     if(!dirty) return;
     dirty = false;
-    const r1 = await sb.from('documents').update({
-      title: st.title.trim() || 'Documento sem título', content: st.blocks,
+    const { error } = await sb.from('documents').update({
+      title: st.title.trim() || 'Documento sem título', content: { html: st.html },
       published: st.published, updated_at: new Date().toISOString(),
     }).eq('id', id);
-    const err = r1.error;
-    setState(err ? 'Erro ao salvar' : 'Salvo');
+    setState(error ? 'Erro ao salvar' : 'Salvo');
   };
   const flush = () => { clearTimeout(timer); chain = chain.then(doSave); return chain; };
   const queueSave = () => {
@@ -3340,93 +3414,97 @@ async function renderDocEditor(body, id){
     dirty = true; setState('Salvando…');
     clearTimeout(timer); timer = setTimeout(flush, 800);
   };
-  const autosize = (ta) => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
 
-  function draw(){
-    body.innerHTML = `
-      <div class="doc-ed-bar">
-        <button class="btn-sm" id="docBack">${phIcon('arrow-left')} Documentos</button>
-        ${!ro ? `<label class="doc-tag ${st.published ? 'on' : ''}" style="cursor:pointer; display:inline-flex; gap:6px; align-items:center;">
-          <input type="checkbox" id="docPub" ${st.published ? 'checked' : ''}> Publicado na lista de links</label>` : `<span class="doc-tag ${st.published ? 'on' : ''}">${st.published ? 'Publicado' : 'Rascunho'}</span>`}
-        <span class="doc-ed-state" id="docSaveState">${ro ? 'Somente visualização' : 'Salvo'}</span>
-      </div>
-      ${ro ? `<div class="doc-view"><h2 style="margin-top:0;">${esc(st.title)}</h2>${renderDocBlocks(st.blocks)}</div>` : `
-      <input class="doc-title-input" id="docTitle" placeholder="Título do documento" value="${esc(st.title)}">
-      <div id="docBlocks"></div>
-      <div class="doc-add-bar" id="docAddBar">
-        <button class="btn-sm" data-add="heading">${phIcon('text-h')} Título</button>
-        <button class="btn-sm" data-add="subheading">${phIcon('text-h-two')} Subtítulo</button>
-        <button class="btn-sm" data-add="text">${phIcon('text-align-left')} Texto</button>
-        <button class="btn-sm" data-add="list">${phIcon('list-bullets')} Lista</button>
-        <label class="btn-sm" style="cursor:pointer;">${phIcon('image')} Imagem
-          <input type="file" id="docImgInput" accept="image/*" style="display:none;"></label>
-      </div>
-      <p style="font-size:13px; color:var(--ink-soft); margin:0 0 6px;">Ao publicar, o documento aparece na lista de links da página inicial e qualquer pessoa pode ler, sem editar.</p>
-      <button class="btn-sm" id="docCopy">Copiar link do documento</button>`}`;
-    $('docBack').onclick = async () => { await flush(); openDocId = null; renderAdminDocumentosTab(body); };
-    if(ro) return;
-    $('docPub').onchange = (e) => { st.published = e.target.checked; e.target.closest('label').classList.toggle('on', st.published); queueSave(); };
-    $('docTitle').oninput = (e) => { st.title = e.target.value; queueSave(); };
-    drawBlocks();
-    body.querySelectorAll('[data-add]').forEach(btn => {
-      btn.onclick = () => { st.blocks.push({ id: docUid(), type: btn.dataset.add, text: '' }); queueSave(); drawBlocks(true); };
-    });
-    $('docImgInput').onchange = async (e) => {
-      const file = e.target.files[0]; e.target.value = '';
-      if(!file) return;
-      try {
-        showToast('Enviando imagem…');
-        const blob = await resizeImageToBlob(file, 1600);
-        const base = sanitizeFileName(file.name.replace(/\.[^.]+$/, '')) || 'imagem';
-        const path = `${id}/${Date.now()}-${base}.jpg`;
-        const { error } = await sb.storage.from('documentos').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
-        if(error) throw error;
-        st.blocks.push({ id: docUid(), type: 'image', src: path, caption: '' });
-        queueSave(); drawBlocks(true);
-      } catch(err){
-        showAlert('Não foi possível enviar a imagem. ' + (err?.message || ''));
-      }
-    };
-    $('docCopy').onclick = () => { navigator.clipboard.writeText(docPublicUrl(id)).catch(()=>{}); showToast('Link copiado!'); };
-  }
+  body.innerHTML = `
+    <div class="doc-ed-bar">
+      <button class="btn-sm" id="docBack">${phIcon('arrow-left')} Documentos</button>
+      ${!ro ? `<label class="doc-tag ${st.published ? 'on' : ''}" style="cursor:pointer; display:inline-flex; gap:6px; align-items:center;">
+        <input type="checkbox" id="docPub" ${st.published ? 'checked' : ''}> Publicado na lista de links</label>` : `<span class="doc-tag ${st.published ? 'on' : ''}">${st.published ? 'Publicado' : 'Rascunho'}</span>`}
+      <button class="btn-sm" id="docCopy">Copiar link</button>
+      <span class="doc-ed-state" id="docSaveState">${ro ? 'Somente visualização' : 'Salvo'}</span>
+    </div>
+    ${ro ? `<div class="doc-view"><h2 style="margin-top:0;">${esc(st.title)}</h2>${st.html || '<p class="doc-empty">Documento vazio.</p>'}</div>` : `
+    <input class="doc-title-input" id="docTitle" placeholder="Título do documento" value="${esc(st.title)}">
+    <div class="doc-toolbar" id="docToolbar">
+      <button data-cmd="bold" title="Negrito"><b>B</b></button>
+      <button data-cmd="italic" title="Itálico"><i>I</i></button>
+      <button data-cmd="underline" title="Sublinhado"><u>U</u></button>
+      <span class="doc-tb-sep"></span>
+      <button data-block="h2" title="Título">Título</button>
+      <button data-block="h3" title="Subtítulo">Subtítulo</button>
+      <button data-block="p" title="Texto normal">Texto</button>
+      <span class="doc-tb-sep"></span>
+      <button data-cmd="insertUnorderedList" title="Lista com marcadores">${phIcon('list-bullets')}</button>
+      <button data-cmd="insertOrderedList" title="Lista numerada">${phIcon('list-numbers')}</button>
+      <button data-act="link" title="Inserir link">${phIcon('link')}</button>
+      <label class="doc-tb-img" title="Inserir imagem">${phIcon('image')}<input type="file" id="docImgInput" accept="image/*" style="display:none;"></label>
+      <button data-cmd="removeFormat" title="Limpar formatação">${phIcon('eraser')}</button>
+    </div>
+    <div class="doc-view doc-rte" id="docEditor" contenteditable="true" spellcheck="true" data-ph="Escreva ou cole o texto aqui. Formatação, listas, links e imagens são mantidos."></div>`}`;
 
-  function drawBlocks(scrollToEnd){
-    const wrap = $('docBlocks');
-    wrap.innerHTML = '';
-    if(!st.blocks.length) wrap.innerHTML = '<p class="doc-empty" style="margin:0 0 6px;">Adicione blocos de texto ou imagem abaixo.</p>';
-    st.blocks.forEach((b, i) => {
-      const row = document.createElement('div');
-      row.className = 'doc-block';
-      let main;
-      if(b.type === 'image'){
-        main = `<div class="doc-block-main"><img src="${esc(getDocImageUrl(b.src))}" alt=""><input class="doc-cap" placeholder="Legenda (opcional)" value="${esc(b.caption || '')}"></div>`;
-      } else {
-        const ph = { heading: 'Título', subheading: 'Subtítulo', text: 'Escreva aqui…', list: 'Um item por linha' }[b.type] || '';
-        main = `<div class="doc-block-main"><textarea class="t-${b.type}" rows="1" placeholder="${ph}">${esc(b.text || '')}</textarea>${b.type === 'list' ? '<div class="doc-block-hint">Um item por linha.</div>' : ''}</div>`;
-      }
-      row.innerHTML = `${main}
-        <div class="doc-block-tools">
-          <button title="Subir" data-act="up" ${i === 0 ? 'disabled' : ''}>${phIcon('arrow-up')}</button>
-          <button title="Descer" data-act="down" ${i === st.blocks.length - 1 ? 'disabled' : ''}>${phIcon('arrow-down')}</button>
-          <button title="Remover bloco" data-act="del">${phIcon('trash')}</button>
-        </div>`;
-      const ta = row.querySelector('textarea');
-      if(ta){ ta.oninput = () => { b.text = ta.value; autosize(ta); queueSave(); }; }
-      const cap = row.querySelector('input.doc-cap');
-      if(cap) cap.oninput = () => { b.caption = cap.value; queueSave(); };
-      row.querySelector('[data-act="up"]').onclick = () => { [st.blocks[i - 1], st.blocks[i]] = [st.blocks[i], st.blocks[i - 1]]; queueSave(); drawBlocks(); };
-      row.querySelector('[data-act="down"]').onclick = () => { [st.blocks[i + 1], st.blocks[i]] = [st.blocks[i], st.blocks[i + 1]]; queueSave(); drawBlocks(); };
-      row.querySelector('[data-act="del"]').onclick = () => { st.blocks.splice(i, 1); queueSave(); drawBlocks(); };
-      wrap.appendChild(row);
-      if(ta) autosize(ta);
-    });
-    if(scrollToEnd){
-      const last = wrap.querySelector('.doc-block:last-child textarea');
-      if(last) last.focus();
+  $('docBack').onclick = async () => { await flush(); openDocId = null; renderAdminDocumentosTab(body); };
+  $('docCopy').onclick = () => { navigator.clipboard.writeText(docPublicUrl(id)).catch(()=>{}); showToast('Link copiado!'); };
+  if(ro) return;
+
+  const ed = $('docEditor');
+  ed.innerHTML = st.html;
+  const sync = () => { st.html = sanitizeDocHtml(ed.innerHTML); queueSave(); };
+  ed.addEventListener('input', sync);
+  $('docPub').onchange = (e) => { st.published = e.target.checked; e.target.closest('label').classList.toggle('on', st.published); queueSave(); };
+  $('docTitle').oninput = (e) => { st.title = e.target.value; queueSave(); };
+
+  async function uploadAndInsert(file){
+    try {
+      showToast('Enviando imagem…');
+      const blob = await resizeImageToBlob(file, 1600);
+      const base = sanitizeFileName((file.name || 'imagem').replace(/\.[^.]+$/, '')) || 'imagem';
+      const path = `${id}/${Date.now()}-${base}.jpg`;
+      const { error } = await sb.storage.from('documentos').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+      if(error) throw error;
+      const url = getDocImageUrl(path);
+      ed.focus();
+      document.execCommand('insertHTML', false, `<p><img src="${esc(url)}" alt=""></p>`);
+      sync();
+    } catch(err){
+      showAlert('Não foi possível enviar a imagem. ' + (err?.message || ''));
     }
   }
-  draw();
+  // colar: mantém formatação básica (Google Docs, Word, sites) e imagens da área de transferência
+  ed.addEventListener('paste', (e) => {
+    const cd = e.clipboardData; if(!cd) return;
+    const imgFile = [...(cd.files || [])].find(f => /^image\//.test(f.type));
+    const html = cd.getData('text/html');
+    if(imgFile && !html){ e.preventDefault(); uploadAndInsert(imgFile); return; }
+    if(html){
+      e.preventDefault();
+      document.execCommand('insertHTML', false, sanitizeDocHtml(html));
+      sync();
+    }
+  });
+  ed.addEventListener('drop', (e) => {
+    const f = [...(e.dataTransfer?.files || [])].find(x => /^image\//.test(x.type));
+    if(f){ e.preventDefault(); uploadAndInsert(f); }
+  });
+  $('docImgInput').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; if(f) uploadAndInsert(f); };
+
+  const tb = $('docToolbar');
+  tb.querySelectorAll('button').forEach(btn => btn.addEventListener('mousedown', e => e.preventDefault())); // mantém a seleção
+  tb.querySelectorAll('[data-cmd]').forEach(btn => btn.onclick = () => { ed.focus(); document.execCommand(btn.dataset.cmd); sync(); });
+  tb.querySelectorAll('[data-block]').forEach(btn => btn.onclick = () => { ed.focus(); document.execCommand('formatBlock', false, btn.dataset.block); sync(); });
+  tb.querySelector('[data-act="link"]').onclick = async () => {
+    const sel = window.getSelection();
+    const range = sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
+    const r = await showPrompt('Inserir link', [{ key: 'url', label: 'Endereço (https://…)', placeholder: 'https://' }]);
+    if(!r || !r.url) return;
+    const url = /^(https?:|mailto:)/i.test(r.url) ? r.url : 'https://' + r.url;
+    ed.focus();
+    if(range){ sel.removeAllRanges(); sel.addRange(range); }
+    if(sel.isCollapsed) document.execCommand('insertHTML', false, `<a href="${esc(url)}">${esc(url)}</a>`);
+    else document.execCommand('createLink', false, url);
+    sync();
+  };
 }
+
 
 /* ======================= ADMIN: BANCAS TAB ======================= */
 async function renderAdminBancasTab(body){
