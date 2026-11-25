@@ -803,6 +803,8 @@
   .doc-view ol{margin:0 0 12px; padding-left:22px;}
   .doc-view a{color:#2563EB; text-decoration:underline;}
   .doc-view blockquote{margin:0 0 12px; padding:2px 16px; border-left:3px solid var(--line); color:var(--ink-mid);}
+  .doc-desc-input{width:100%; font:inherit; font-size:14.5px; line-height:1.55; border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-bottom:14px; background:var(--card); color:var(--ink); resize:none; outline:none; display:block;}
+  .doc-desc-input:focus{border-color:var(--ink);}
   .doc-toolbar{display:flex; gap:4px; flex-wrap:wrap; align-items:center; padding:8px; border:1px solid var(--line); border-bottom:0; border-radius:12px 12px 0 0; background:var(--card); position:sticky; top:0; z-index:5;}
   .doc-toolbar button, .doc-tb-img{min-width:34px; height:34px; padding:0 10px; border:1px solid transparent; background:transparent; border-radius:8px; cursor:pointer; color:var(--ink-mid); font:inherit; font-size:13px; font-weight:700; display:inline-grid; place-items:center;}
   .doc-toolbar button:hover, .doc-tb-img:hover{border-color:var(--line); color:var(--ink); background:var(--bg);}
@@ -1415,6 +1417,7 @@ let categories = [], links = [];
 let rubric = []; // [{id,title,order_index,questions:[{id,question,order_index}]}]
 let session = null;
 let activeFilter = null;
+const DOCS_FILTER = '__documentos__';
 let groupSession = { slug: null, password: null };
 let readerPassword = '';
 let readerStages = [];
@@ -1548,7 +1551,7 @@ function renderHomePage(){
 let publicDocs = [];
 async function loadPublicDocs(){
   try {
-    const { data } = await (sbAnon || sb).from('documents').select('id,title,updated_at').eq('published', true).order('updated_at', { ascending: false });
+    const { data } = await (sbAnon || sb).from('documents').select('id,title,description,updated_at').eq('published', true).order('updated_at', { ascending: false });
     publicDocs = data || [];
   } catch { publicDocs = []; }
 }
@@ -1559,7 +1562,7 @@ async function renderDocPage(id){
   root().innerHTML = '<div class="main narrow"><div class="loading-state">Carregando documento…</div></div>';
   let doc = null;
   try {
-    const r = await (sbAnon || sb).from('documents').select('id,title,content,updated_at').eq('id', id).eq('published', true).single();
+    const r = await (sbAnon || sb).from('documents').select('id,title,description,content,updated_at').eq('id', id).eq('published', true).single();
     doc = r.data;
   } catch { doc = null; }
   if(!doc){
@@ -1571,6 +1574,7 @@ async function renderDocPage(id){
       <button class="btn-sm" id="docPageBack" style="margin:18px 0 10px;">${phIcon('arrow-left')} Voltar aos links</button>
       <div class="doc-view">
         <h1 style="font-size:34px; font-weight:800; letter-spacing:-0.02em; margin:10px 0 4px; line-height:1.2;">${esc(doc.title)}</h1>
+        ${doc.description ? `<p style="font-size:16.5px; color:var(--ink-mid); margin:0 0 10px;">${esc(doc.description)}</p>` : ''}
         <div class="doc-date" style="font-size:12.5px; color:var(--ink-soft); margin-bottom:18px;">Atualizado em ${esc(fmtDateTime(doc.updated_at))}</div>
         ${renderDocBlocks(doc.content)}
       </div>
@@ -1598,17 +1602,26 @@ function renderFilters(){
     btn.onclick = () => { activeFilter = isActive ? null : cat.id; renderFilters(); renderGrid(); };
     wrap.appendChild(btn);
   });
+  if(publicDocs.length){
+    const d = document.createElement('button');
+    d.className = 'pill' + (activeFilter === DOCS_FILTER ? ' active' : '');
+    d.textContent = 'Documento';
+    d.onclick = () => { activeFilter = activeFilter === DOCS_FILTER ? null : DOCS_FILTER; renderFilters(); renderGrid(); };
+    wrap.appendChild(d);
+  }
 }
 function renderGrid(){
   const grid = $('publicGrid'); if(!grid) return;
   grid.innerHTML = '';
   const fl = filteredLinks();
-  if(activeFilter){
+  if(activeFilter === DOCS_FILTER){
+    $('sectionLabel').textContent = 'Documentos';
+  } else if(activeFilter){
     const cat = categories.find(c => c.id === activeFilter);
     $('sectionLabel').textContent = cat ? `Links — ${cat.name}` : 'Links';
   } else { $('sectionLabel').textContent = 'Todos os Links Disponíveis'; }
   const q = ($('searchInput')?.value || '').trim().toLowerCase();
-  const fd = activeFilter ? [] : publicDocs.filter(d => !q || (d.title || '').toLowerCase().includes(q));
+  const fd = (!activeFilter || activeFilter === DOCS_FILTER) ? publicDocs.filter(d => !q || (d.title || '').toLowerCase().includes(q) || (d.description || '').toLowerCase().includes(q)) : [];
   $('sectionCount').textContent = `(${fl.length + fd.length})`;
   fd.forEach(d => {
     const card = document.createElement('div'); card.className = 'link-card';
@@ -1618,7 +1631,7 @@ function renderGrid(){
       <div class="card-header"><div class="card-title-row"><span class="favicon" style="display:grid;place-items:center;font-size:16px;">${phIcon('file-text')}</span>
         <a class="card-title" href="?doc=${encodeURIComponent(d.id)}">${esc(d.title || 'Documento')}</a></div></div>
       <div><span class="card-badge" style="--badge-bg:rgba(15,15,15,.08); --badge-fg:#0F0F0F;">DOCUMENTO</span></div>
-      <div style="flex:1"></div>
+      ${d.description ? `<p class="card-desc">${esc(d.description)}</p>` : '<div style="flex:1"></div>'}
       <div class="card-footer"><div class="card-date"><strong>Atualizado em:</strong>${fmtDate(d.updated_at)}</div>
         <div class="card-actions"><button class="btn-copy" type="button" title="Copiar link" aria-label="Copiar link">${phIcon('copy')}</button>
         <a class="btn-access" href="?doc=${encodeURIComponent(d.id)}">Ler${phIcon('arrow-square-out')}</a></div></div>`;
@@ -3265,7 +3278,7 @@ async function renderAdminDocumentosTab(body){
   if(openDocId) return renderDocEditor(body, openDocId);
   body.innerHTML = '<div class="loading-state">Carregando documentos…</div>';
   const [{ data: docs }] = await Promise.all([
-    sb.from('documents').select('id,title,published,updated_at').order('updated_at', { ascending: false }),
+    sb.from('documents').select('id,title,description,published,updated_at').order('updated_at', { ascending: false }),
   ]);
   const list = docs || [];
   body.innerHTML = `
@@ -3281,6 +3294,7 @@ async function renderAdminDocumentosTab(body){
     card.innerHTML = `
       <h3>${esc(d.title || 'Documento sem título')}</h3>
       <div class="doc-date">Atualizado em ${esc(fmtDateTime(d.updated_at))}</div>
+      ${d.description ? `<p style="font-size:13.5px; color:var(--ink-mid); margin:0 0 12px;">${esc(d.description)}</p>` : ''}
       <div style="margin-bottom:14px;">
         <span class="doc-tag ${d.published ? 'on' : ''}">${d.published ? 'Publicado' : 'Rascunho'}</span>
       </div>
@@ -3387,13 +3401,14 @@ function docContentHtml(content){
 
 async function renderDocEditor(body, id){
   body.innerHTML = '<div class="loading-state">Abrindo documento…</div>';
-  const { data: doc } = await sb.from('documents').select('id,title,content,published').eq('id', id).single();
+  const { data: doc } = await sb.from('documents').select('id,title,description,content,published').eq('id', id).single();
   if(!doc){ openDocId = null; return renderAdminDocumentosTab(body); }
   const ro = isReadOnly();
   // documentos antigos em blocos são convertidos para HTML na primeira edição
   const legacy = Array.isArray(doc.content) && doc.content.length;
   const st = {
     title: doc.title || '',
+    description: doc.description || '',
     html: docContentHtml(doc.content) ?? (legacy ? renderDocBlocks(doc.content) : ''),
     published: !!doc.published,
   };
@@ -3403,7 +3418,7 @@ async function renderDocEditor(body, id){
     if(!dirty) return;
     dirty = false;
     const { error } = await sb.from('documents').update({
-      title: st.title.trim() || 'Documento sem título', content: { html: st.html },
+      title: st.title.trim() || 'Documento sem título', description: st.description.trim(), content: { html: st.html },
       published: st.published, updated_at: new Date().toISOString(),
     }).eq('id', id);
     setState(error ? 'Erro ao salvar' : 'Salvo');
@@ -3423,8 +3438,9 @@ async function renderDocEditor(body, id){
       <button class="btn-sm" id="docCopy">Copiar link</button>
       <span class="doc-ed-state" id="docSaveState">${ro ? 'Somente visualização' : 'Salvo'}</span>
     </div>
-    ${ro ? `<div class="doc-view"><h2 style="margin-top:0;">${esc(st.title)}</h2>${st.html || '<p class="doc-empty">Documento vazio.</p>'}</div>` : `
+    ${ro ? `<div class="doc-view"><h2 style="margin-top:0;">${esc(st.title)}</h2>${st.description ? `<p style="color:var(--ink-mid);">${esc(st.description)}</p>` : ''}${st.html || '<p class="doc-empty">Documento vazio.</p>'}</div>` : `
     <input class="doc-title-input" id="docTitle" placeholder="Título do documento" value="${esc(st.title)}">
+    <textarea class="doc-desc-input" id="docDesc" rows="2" maxlength="300" placeholder="Descritivo: uma ou duas frases que aparecem no card da lista de links">${esc(st.description)}</textarea>
     <div class="doc-toolbar" id="docToolbar">
       <button data-cmd="bold" title="Negrito"><b>B</b></button>
       <button data-cmd="italic" title="Itálico"><i>I</i></button>
@@ -3452,6 +3468,7 @@ async function renderDocEditor(body, id){
   ed.addEventListener('input', sync);
   $('docPub').onchange = (e) => { st.published = e.target.checked; e.target.closest('label').classList.toggle('on', st.published); queueSave(); };
   $('docTitle').oninput = (e) => { st.title = e.target.value; queueSave(); };
+  $('docDesc').oninput = (e) => { st.description = e.target.value; queueSave(); };
 
   async function uploadAndInsert(file){
     try {
