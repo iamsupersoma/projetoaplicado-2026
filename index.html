@@ -822,13 +822,6 @@
   .doc-block-tools button:disabled{opacity:.35; cursor:default;}
   .doc-block-hint{font-size:11px; color:var(--ink-soft); padding:0 10px;}
   .doc-add-bar{display:flex; gap:8px; flex-wrap:wrap; margin:18px 0 26px; padding:12px; border:1px dashed var(--line); border-radius:12px;}
-  .doc-share{border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; background:var(--card);}
-  .doc-share h4{margin:0 0 10px; font-size:15px; font-weight:800;}
-  .doc-share label{display:flex; align-items:center; gap:8px; font-size:14px; padding:4px 0; cursor:pointer;}
-  .doc-share .doc-group-list{margin:6px 0 0 24px; max-height:220px; overflow:auto;}
-  .group-view-nav{display:inline-flex; gap:4px; padding:4px; border:1px solid var(--line); border-radius:99px; margin:14px 0 20px; background:var(--card);}
-  .group-view-nav button{border:0; background:transparent; font:inherit; font-size:13.5px; font-weight:700; padding:7px 16px; border-radius:99px; cursor:pointer; color:var(--ink-mid);}
-  .group-view-nav button.active{background:var(--ink); color:#fff;}
 </style>
 
 <div class="hero-blob" style="top:-90px; left:-70px; width:340px; height:340px; background:linear-gradient(135deg,var(--accent-a),var(--accent-b)); opacity:.14;"></div>
@@ -885,7 +878,7 @@ function createMockClient(){
     const c1 = muid(), c2 = muid(), c3 = muid(), c4 = muid(), c5 = muid();
     return {
       categories: [], links: [], link_categories: [], groups: [], bancas: [], students: [], evaluators: [], scores: [],
-      app_settings: [], banca_readers: [], banca_stage_readers: [], gestores: [], banca_invites: [], documents: [], document_groups: [],
+      app_settings: [], banca_readers: [], banca_stage_readers: [], gestores: [], banca_invites: [], documents: [],
       rubric_categories: [
         { id: c1, order_index: 1, title: 'Relevância e Inovação do Produto/Serviço' },
         { id: c2, order_index: 2, title: 'Qualidade da Pesquisa e Fundamentação Teórica' },
@@ -1066,15 +1059,6 @@ function createMockClient(){
       if(g){ g.name = params.p_name; g.email = params.p_email; g.can_edit = !!params.p_can_edit; }
       await saveDb();
       return { data: null, error: null };
-    }
-    if(name === 'get_group_documents'){
-      const g = db.groups.find(x => x.slug === params.p_slug);
-      if(!g) return { data: { error: 'grupo não encontrado' }, error: null };
-      if(!g.password_hash || g.password_hash !== params.p_password) return { data: { error: 'senha incorreta' }, error: null };
-      const list = (db.documents || []).filter(d => d.published && (d.shared_all || (db.document_groups || []).some(l => l.document_id === d.id && l.group_id === g.id)))
-        .sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')))
-        .map(d => ({ id: d.id, title: d.title, content: d.content, updated_at: d.updated_at }));
-      return { data: list, error: null };
     }
     if(name === 'get_group_public_view'){
       const g = db.groups.find(x => x.slug === params.p_slug);
@@ -1456,6 +1440,7 @@ function parseRouteFromLocation(){
     if(p.get('banca') === '1') return { name: 'banca', slug: null };
     if(p.get('cronometro') === '1') return { name: 'cronometro', slug: null };
     if(p.get('sorteio') === '1') return { name: 'sorteio', slug: null };
+    if(p.get('doc')) return { name: 'doc', slug: p.get('doc') };
     if(p.get('grupo')) return { name: 'grupo', slug: p.get('grupo') };
   } catch { /* about:srcdoc and similar sandboxed contexts */ }
   return { name: 'home', slug: null };
@@ -1466,6 +1451,7 @@ function goHome(){ navigateTo({ name: 'home', slug: null }, location.pathname); 
 function goAdmin(){ navigateTo({ name: 'admin', slug: null }, '?admin=1'); }
 function goAluno(){ alunoMode = 'register'; navigateTo({ name: 'aluno', slug: null }, '?aluno=1'); }
 function goBanca(){ navigateTo({ name: 'banca', slug: null }, '?banca=1'); }
+function goDoc(id){ navigateTo({ name: 'doc', slug: id }, '?doc=' + encodeURIComponent(id)); }
 function goGrupo(slug){ navigateTo({ name: 'grupo', slug }, '?grupo=' + encodeURIComponent(slug)); }
 function navigateTo(routeObj, search){
   currentRoute = routeObj;
@@ -1561,6 +1547,38 @@ function renderHomePage(){
   renderFilters();
   renderGrid();
 }
+let publicDocs = [];
+async function loadPublicDocs(){
+  try {
+    const { data } = await (sbAnon || sb).from('documents').select('id,title,updated_at').eq('published', true).order('updated_at', { ascending: false });
+    publicDocs = data || [];
+  } catch { publicDocs = []; }
+}
+function docPublicUrl(id){
+  try { return location.origin + location.pathname + '?doc=' + encodeURIComponent(id); } catch { return '?doc=' + id; }
+}
+async function renderDocPage(id){
+  root().innerHTML = '<div class="main narrow"><div class="loading-state">Carregando documento…</div></div>';
+  let doc = null;
+  try {
+    const r = await (sbAnon || sb).from('documents').select('id,title,content,updated_at').eq('id', id).eq('published', true).single();
+    doc = r.data;
+  } catch { doc = null; }
+  if(!doc){
+    root().innerHTML = '<div class="main narrow"><div class="empty"><strong>Documento não encontrado</strong>Ele pode ter sido despublicado.</div></div>';
+    return;
+  }
+  root().innerHTML = `
+    <div class="main">
+      <button class="btn-sm" id="docPageBack" style="margin:18px 0 10px;">${phIcon('arrow-left')} Voltar aos links</button>
+      <div class="doc-view">
+        <h1 style="font-size:34px; font-weight:800; letter-spacing:-0.02em; margin:10px 0 4px; line-height:1.2;">${esc(doc.title)}</h1>
+        <div class="doc-date" style="font-size:12.5px; color:var(--ink-soft); margin-bottom:18px;">Atualizado em ${esc(fmtDateTime(doc.updated_at))}</div>
+        ${renderDocBlocks(doc.content)}
+      </div>
+    </div>`;
+  $('docPageBack').onclick = goHome;
+}
 function filteredLinks(){
   const q = ($('searchInput')?.value || '').trim().toLowerCase();
   return links.filter(l => (!activeFilter || (l.categoryIds||[]).includes(activeFilter)) &&
@@ -1591,8 +1609,26 @@ function renderGrid(){
     const cat = categories.find(c => c.id === activeFilter);
     $('sectionLabel').textContent = cat ? `Links — ${cat.name}` : 'Links';
   } else { $('sectionLabel').textContent = 'Todos os Links Disponíveis'; }
-  $('sectionCount').textContent = `(${fl.length})`;
-  if(!fl.length){
+  const q = ($('searchInput')?.value || '').trim().toLowerCase();
+  const fd = activeFilter ? [] : publicDocs.filter(d => !q || (d.title || '').toLowerCase().includes(q));
+  $('sectionCount').textContent = `(${fl.length + fd.length})`;
+  fd.forEach(d => {
+    const card = document.createElement('div'); card.className = 'link-card';
+    const bar = document.createElement('div'); bar.className = 'card-top-bar'; bar.style.background = '#0F0F0F'; card.appendChild(bar);
+    const body = document.createElement('div'); body.className = 'card-body';
+    body.innerHTML = `
+      <div class="card-header"><div class="card-title-row"><span class="favicon" style="display:grid;place-items:center;font-size:16px;">${phIcon('file-text')}</span>
+        <a class="card-title" href="?doc=${encodeURIComponent(d.id)}">${esc(d.title || 'Documento')}</a></div></div>
+      <div><span class="card-badge" style="--badge-bg:rgba(15,15,15,.08); --badge-fg:#0F0F0F;">DOCUMENTO</span></div>
+      <div style="flex:1"></div>
+      <div class="card-footer"><div class="card-date"><strong>Atualizado em:</strong>${fmtDate(d.updated_at)}</div>
+        <div class="card-actions"><button class="btn-copy" type="button" title="Copiar link" aria-label="Copiar link">${phIcon('copy')}</button>
+        <a class="btn-access" href="?doc=${encodeURIComponent(d.id)}">Ler${phIcon('arrow-square-out')}</a></div></div>`;
+    body.querySelector('.btn-copy').onclick = () => { navigator.clipboard.writeText(docPublicUrl(d.id)).catch(()=>{}); showToast('Link copiado!'); };
+    body.querySelectorAll('a').forEach(a => a.onclick = (e) => { e.preventDefault(); goDoc(d.id); });
+    card.appendChild(body); grid.appendChild(card);
+  });
+  if(!fl.length && !fd.length){
     grid.innerHTML = '<div class="empty"><strong>Nenhum link encontrado</strong>Tente outro filtro ou termo de busca.</div>';
     return;
   }
@@ -2060,18 +2096,9 @@ function renderGrupoPublic(g){
       <div class="section-sub" style="margin-bottom:2px;">${esc(g.group_name)}</div>
       <div class="section-sub" style="margin-top:0;">${memberNames}</div>
 
-      <div class="group-view-nav" id="groupViewNav">
-        <button class="active" id="gvBancas">Bancas</button>
-        <button id="gvDocs">Documentos</button>
-      </div>
-      <div id="groupBancasView">
-        <div class="tab-nav" id="publicBancaTabs"></div>
-        <div id="publicBancaBody"></div>
-      </div>
-      <div id="groupDocsView" style="display:none;"></div>
+      <div class="tab-nav" id="publicBancaTabs"></div>
+      <div id="publicBancaBody"></div>
     </div>`;
-  $('gvBancas').onclick = () => { $('gvBancas').classList.add('active'); $('gvDocs').classList.remove('active'); $('groupBancasView').style.display=''; $('groupDocsView').style.display='none'; };
-  $('gvDocs').onclick = () => { $('gvDocs').classList.add('active'); $('gvBancas').classList.remove('active'); $('groupBancasView').style.display='none'; $('groupDocsView').style.display=''; renderGroupDocuments($('groupDocsView')); };
   const bancas = g.bancas || [];
   const tabsWrap = $('publicBancaTabs');
   [1,2,3].forEach(stage => {
@@ -3237,22 +3264,18 @@ function resizeImageToBlob(file, max){
 async function renderAdminDocumentosTab(body){
   if(openDocId) return renderDocEditor(body, openDocId);
   body.innerHTML = '<div class="loading-state">Carregando documentos…</div>';
-  const [{ data: docs }, { data: links }, { data: groups }] = await Promise.all([
-    sb.from('documents').select('id,title,shared_all,published,updated_at').order('updated_at', { ascending: false }),
-    sb.from('document_groups').select('document_id,group_id'),
-    sb.from('groups').select('id,group_name,project_title,order_index'),
+  const [{ data: docs }] = await Promise.all([
+    sb.from('documents').select('id,title,published,updated_at').order('updated_at', { ascending: false }),
   ]);
   const list = docs || [];
   body.innerHTML = `
     <div class="admin-bar">
-      <div class="admin-bar-left">Notas em texto e imagem para compartilhar com os grupos. Os grupos veem os documentos publicados ao entrar na própria página.</div>
+      <div class="admin-bar-left">Notas em texto e imagem. Os documentos publicados aparecem na lista de links da página inicial, visíveis para todos.</div>
       ${!isReadOnly() ? `<button class="btn-sm primary-outline" id="newDocBtn">+ Novo documento</button>` : ''}
     </div>
     <div id="docList">${list.length ? '' : '<div class="admin-section"><p style="color:var(--ink-soft);margin:0;">Nenhum documento criado ainda.</p></div>'}</div>`;
   const wrap = $('docList');
   list.forEach(d => {
-    const n = (links || []).filter(l => l.document_id === d.id).length;
-    const share = d.shared_all ? 'Todos os grupos' : (n ? `${n} grupo${n > 1 ? 's' : ''}` : 'Nenhum grupo');
     const card = document.createElement('div');
     card.className = 'doc-card';
     card.innerHTML = `
@@ -3260,13 +3283,14 @@ async function renderAdminDocumentosTab(body){
       <div class="doc-date">Atualizado em ${esc(fmtDateTime(d.updated_at))}</div>
       <div style="margin-bottom:14px;">
         <span class="doc-tag ${d.published ? 'on' : ''}">${d.published ? 'Publicado' : 'Rascunho'}</span>
-        <span class="doc-tag">${esc(share)}</span>
       </div>
       <div style="display:flex; gap:8px;">
         <button class="btn-sm" data-open>${isReadOnly() ? 'Visualizar' : 'Abrir e editar'}</button>
+        <button class="btn-sm" data-copy>Copiar link</button>
         ${!isReadOnly() ? `<button class="btn-sm danger" data-del>Excluir</button>` : ''}
       </div>`;
     card.querySelector('[data-open]').onclick = () => { openDocId = d.id; renderAdminDocumentosTab(body); };
+    card.querySelector('[data-copy]').onclick = () => { navigator.clipboard.writeText(docPublicUrl(d.id)).catch(()=>{}); showToast('Link copiado!'); };
     const del = card.querySelector('[data-del]');
     if(del) del.onclick = async () => {
       if(!await showConfirm(`Excluir o documento "${d.title}"? Esta ação não pode ser desfeita.`, 'Excluir documento')) return;
@@ -3279,7 +3303,7 @@ async function renderAdminDocumentosTab(body){
   const nb = $('newDocBtn');
   if(nb) nb.onclick = async () => {
     nb.disabled = true;
-    const { data, error } = await sb.from('documents').insert({ title: 'Documento sem título', content: [], published: false, shared_all: false }).select().single();
+    const { data, error } = await sb.from('documents').insert({ title: 'Documento sem título', content: [], published: false }).select().single();
     if(error || !data){ nb.disabled = false; showAlert('Não foi possível criar o documento. Verifique se a migration de Documentos foi aplicada no banco.'); return; }
     openDocId = data.id;
     renderAdminDocumentosTab(body);
@@ -3288,19 +3312,15 @@ async function renderAdminDocumentosTab(body){
 
 async function renderDocEditor(body, id){
   body.innerHTML = '<div class="loading-state">Abrindo documento…</div>';
-  const [{ data: doc }, { data: groups }, { data: links }] = await Promise.all([
-    sb.from('documents').select('id,title,content,shared_all,published').eq('id', id).single(),
-    sb.from('groups').select('id,group_name,project_title,order_index').order('order_index'),
-    sb.from('document_groups').select('group_id').eq('document_id', id),
+  const [{ data: doc }] = await Promise.all([
+    sb.from('documents').select('id,title,content,published').eq('id', id).single(),
   ]);
   if(!doc){ openDocId = null; return renderAdminDocumentosTab(body); }
   const ro = isReadOnly();
   const st = {
     title: doc.title || '',
     blocks: (Array.isArray(doc.content) ? doc.content : []).map(b => ({ id: b.id || docUid(), ...b })),
-    shared_all: !!doc.shared_all,
     published: !!doc.published,
-    groupIds: new Set((links || []).map(l => l.group_id)),
   };
   let dirty = false, timer = null, chain = Promise.resolve();
   const setState = (t) => { const el = $('docSaveState'); if(el) el.textContent = t; };
@@ -3309,15 +3329,9 @@ async function renderDocEditor(body, id){
     dirty = false;
     const r1 = await sb.from('documents').update({
       title: st.title.trim() || 'Documento sem título', content: st.blocks,
-      shared_all: st.shared_all, published: st.published, updated_at: new Date().toISOString(),
+      published: st.published, updated_at: new Date().toISOString(),
     }).eq('id', id);
-    let err = r1.error;
-    const del = await sb.from('document_groups').delete().eq('document_id', id);
-    err = err || del.error;
-    if(st.groupIds.size){
-      const ins = await sb.from('document_groups').insert([...st.groupIds].map(g => ({ document_id: id, group_id: g })));
-      err = err || ins.error;
-    }
+    const err = r1.error;
     setState(err ? 'Erro ao salvar' : 'Salvo');
   };
   const flush = () => { clearTimeout(timer); chain = chain.then(doSave); return chain; };
@@ -3333,7 +3347,7 @@ async function renderDocEditor(body, id){
       <div class="doc-ed-bar">
         <button class="btn-sm" id="docBack">${phIcon('arrow-left')} Documentos</button>
         ${!ro ? `<label class="doc-tag ${st.published ? 'on' : ''}" style="cursor:pointer; display:inline-flex; gap:6px; align-items:center;">
-          <input type="checkbox" id="docPub" ${st.published ? 'checked' : ''}> Publicado para os grupos</label>` : `<span class="doc-tag ${st.published ? 'on' : ''}">${st.published ? 'Publicado' : 'Rascunho'}</span>`}
+          <input type="checkbox" id="docPub" ${st.published ? 'checked' : ''}> Publicado na lista de links</label>` : `<span class="doc-tag ${st.published ? 'on' : ''}">${st.published ? 'Publicado' : 'Rascunho'}</span>`}
         <span class="doc-ed-state" id="docSaveState">${ro ? 'Somente visualização' : 'Salvo'}</span>
       </div>
       ${ro ? `<div class="doc-view"><h2 style="margin-top:0;">${esc(st.title)}</h2>${renderDocBlocks(st.blocks)}</div>` : `
@@ -3347,17 +3361,8 @@ async function renderDocEditor(body, id){
         <label class="btn-sm" style="cursor:pointer;">${phIcon('image')} Imagem
           <input type="file" id="docImgInput" accept="image/*" style="display:none;"></label>
       </div>
-      <div class="doc-share">
-        <h4>Compartilhar com</h4>
-        <label><input type="radio" name="docShare" value="all" ${st.shared_all ? 'checked' : ''}> Todos os grupos</label>
-        <label><input type="radio" name="docShare" value="some" ${!st.shared_all ? 'checked' : ''}> Grupos selecionados</label>
-        <div class="doc-group-list" id="docGroupList" style="${st.shared_all ? 'display:none;' : ''}">
-          ${(groups || []).length ? (groups || []).map(g => `
-            <label><input type="checkbox" data-gid="${esc(g.id)}" ${st.groupIds.has(g.id) ? 'checked' : ''}> ${esc(g.project_title || g.group_name)}${g.project_title ? ` <span style="color:var(--ink-soft);">· ${esc(g.group_name)}</span>` : ''}</label>`).join('')
-            : '<span style="color:var(--ink-soft); font-size:13px;">Nenhum grupo cadastrado.</span>'}
-        </div>
-        <p style="font-size:12.5px; color:var(--ink-soft); margin:12px 0 0;">O documento só aparece para os grupos depois de marcado como publicado. Os grupos apenas leem.</p>
-      </div>`}`;
+      <p style="font-size:13px; color:var(--ink-soft); margin:0 0 6px;">Ao publicar, o documento aparece na lista de links da página inicial e qualquer pessoa pode ler, sem editar.</p>
+      <button class="btn-sm" id="docCopy">Copiar link do documento</button>`}`;
     $('docBack').onclick = async () => { await flush(); openDocId = null; renderAdminDocumentosTab(body); };
     if(ro) return;
     $('docPub').onchange = (e) => { st.published = e.target.checked; e.target.closest('label').classList.toggle('on', st.published); queueSave(); };
@@ -3382,12 +3387,7 @@ async function renderDocEditor(body, id){
         showAlert('Não foi possível enviar a imagem. ' + (err?.message || ''));
       }
     };
-    body.querySelectorAll('input[name="docShare"]').forEach(r => {
-      r.onchange = () => { if(!r.checked) return; st.shared_all = r.value === 'all'; $('docGroupList').style.display = st.shared_all ? 'none' : ''; queueSave(); };
-    });
-    body.querySelectorAll('[data-gid]').forEach(cb => {
-      cb.onchange = () => { cb.checked ? st.groupIds.add(cb.dataset.gid) : st.groupIds.delete(cb.dataset.gid); queueSave(); };
-    });
+    $('docCopy').onclick = () => { navigator.clipboard.writeText(docPublicUrl(id)).catch(()=>{}); showToast('Link copiado!'); };
   }
 
   function drawBlocks(scrollToEnd){
@@ -3427,35 +3427,6 @@ async function renderDocEditor(body, id){
   }
   draw();
 }
-
-async function renderGroupDocuments(el){
-  el.innerHTML = '<div class="loading-state">Carregando documentos…</div>';
-  const { data, error } = await sb.rpc('get_group_documents', { p_slug: groupSession.slug, p_password: groupSession.password });
-  if(error || !data || data.error){
-    el.innerHTML = '<p class="doc-empty">Não foi possível carregar os documentos.</p>';
-    return;
-  }
-  if(!data.length){
-    el.innerHTML = '<p class="doc-empty">Nenhum documento compartilhado com o seu grupo ainda.</p>';
-    return;
-  }
-  el.innerHTML = '';
-  data.forEach((d, i) => {
-    const card = document.createElement('div');
-    card.className = 'doc-card';
-    card.innerHTML = `
-      <h3>${esc(d.title)}</h3>
-      <div class="doc-date">Atualizado em ${esc(fmtDateTime(d.updated_at))}</div>
-      <button class="btn-sm" data-toggle>Abrir</button>
-      <div class="doc-view" style="display:none; margin-top:18px;">${renderDocBlocks(d.content)}</div>`;
-    const view = card.querySelector('.doc-view'), tg = card.querySelector('[data-toggle]');
-    const toggle = () => { const open = view.style.display === 'none'; view.style.display = open ? '' : 'none'; tg.textContent = open ? 'Fechar' : 'Abrir'; };
-    tg.onclick = toggle;
-    if(data.length === 1) toggle();
-    el.appendChild(card);
-  });
-}
-
 
 /* ======================= ADMIN: BANCAS TAB ======================= */
 async function renderAdminBancasTab(body){
@@ -4865,6 +4836,7 @@ async function renderRoute(){
     else if(route === 'banca') renderBancaLoginPage();
     else if(route === 'aluno') renderAlunoPage();
     else if(route === 'grupo') renderGrupoGate(currentRoute.slug);
+    else if(route === 'doc') renderDocPage(currentRoute.slug);
     else renderHomePage();
     return;
   }
@@ -4879,8 +4851,11 @@ async function renderRoute(){
     renderAlunoPage();
   } else if(route === 'grupo'){
     renderGrupoGate(currentRoute.slug);
+  } else if(route === 'doc'){
+    renderDocPage(currentRoute.slug);
   } else {
     await loadLinksData();
+    await loadPublicDocs();
     renderHomePage();
   }
 }
