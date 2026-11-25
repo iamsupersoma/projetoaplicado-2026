@@ -779,12 +779,56 @@
   #timerApp .dw-cta:focus-visible{outline:3px solid var(--tm-navy); outline-offset:3px;}
   #timerApp .tm-drawer textarea{font:700 16px/1.45 var(--tm-body); color:var(--tm-navy); background:#fff; border:0; border-radius:12px; padding:12px 14px; width:100%; min-height:180px; resize:vertical;}
   #timerApp .tm-drawer textarea:focus-visible{outline:3px solid #fff; outline-offset:2px;}
+  #timerApp .tm-check{display:flex; align-items:center; gap:10px; font:400 16px/1.25 var(--tm-body); color:#fff; cursor:pointer;}
+  #timerApp .tm-drawer .tm-check input{width:22px; height:22px; flex:none; padding:0; accent-color:#fff; cursor:pointer;}
   #timerApp .tm-note{font:400 15px/1.35 var(--tm-body); color:var(--tm-mist); margin:-8px 0 0;}
   #timerApp a.tm-linkbtn{font:700 14px/1.1 var(--tm-display); border-radius:999px; padding:13px 16px; text-align:center; text-decoration:none; background:rgba(255,255,255,.12); color:#fff;}
   #timerApp a.tm-linkbtn:hover{background:rgba(255,255,255,.2);}
   @media(max-width:760px){ #timerApp .dw-body{grid-template-columns:1fr; overflow-y:auto;} #timerApp .dw-list.two{grid-template-columns:1fr;} }
   @media(prefers-reduced-motion:reduce){ #timerApp .dw-stage.landed .dw-name{animation:none;} }
   #timerApp .tm-exit{color:var(--tm-mist) !important; background:transparent !important; text-decoration:underline; padding:4px !important; align-self:flex-start;}
+
+  /* ---- Documentos ---- */
+  .doc-view{max-width:760px; line-height:1.7; font-size:15.5px; color:var(--ink);}
+  .doc-view h2{font-size:26px; font-weight:800; letter-spacing:-0.02em; margin:28px 0 8px; line-height:1.25;}
+  .doc-view h3{font-size:19px; font-weight:700; margin:22px 0 6px; line-height:1.3;}
+  .doc-view p{margin:0 0 12px;}
+  .doc-view ul{margin:0 0 12px; padding-left:22px;}
+  .doc-view li{margin-bottom:4px;}
+  .doc-view figure{margin:18px 0;}
+  .doc-view img{max-width:100%; height:auto; border-radius:12px; display:block; border:1px solid var(--line);}
+  .doc-view figcaption{font-size:13px; color:var(--ink-soft); margin-top:6px;}
+  .doc-empty{color:var(--ink-soft);}
+  .doc-card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px; margin-bottom:18px; box-shadow:var(--shadow);}
+  .doc-card h3{margin:0 0 4px; font-size:20px; font-weight:800; letter-spacing:-0.01em;}
+  .doc-card .doc-date{font-size:12px; color:var(--ink-soft); margin-bottom:12px;}
+  .doc-tag{display:inline-block; font-size:11.5px; font-weight:700; padding:2px 9px; border-radius:99px; border:1px solid var(--line); color:var(--ink-mid); margin-right:6px;}
+  .doc-tag.on{background:#ECFDF3; border-color:#A7E3BE; color:#166534;}
+  .doc-ed-bar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px;}
+  .doc-ed-state{font-size:12.5px; color:var(--ink-soft); margin-left:auto;}
+  .doc-title-input{width:100%; font:inherit; font-size:28px; font-weight:800; letter-spacing:-0.02em; border:0; border-bottom:1px solid var(--line); background:transparent; padding:6px 0 10px; margin-bottom:16px; color:var(--ink); outline:none;}
+  .doc-title-input:focus{border-bottom-color:var(--ink);}
+  .doc-block{display:flex; gap:8px; align-items:flex-start; margin-bottom:10px;}
+  .doc-block-main{flex:1; min-width:0;}
+  .doc-block textarea, .doc-block input.doc-cap{width:100%; font:inherit; border:1px solid transparent; border-radius:10px; padding:8px 10px; background:var(--card); color:var(--ink); resize:none; outline:none; line-height:1.6; overflow:hidden;}
+  .doc-block textarea:hover, .doc-block textarea:focus, .doc-block input.doc-cap:focus{border-color:var(--line);}
+  .doc-block textarea.t-heading{font-size:24px; font-weight:800; letter-spacing:-0.02em;}
+  .doc-block textarea.t-subheading{font-size:18px; font-weight:700;}
+  .doc-block input.doc-cap{font-size:13px; margin-top:6px; color:var(--ink-mid);}
+  .doc-block img{max-width:100%; max-height:360px; border-radius:10px; display:block; border:1px solid var(--line);}
+  .doc-block-tools{display:flex; flex-direction:column; gap:4px;}
+  .doc-block-tools button{width:28px; height:28px; border:1px solid var(--line); background:var(--card); border-radius:8px; cursor:pointer; color:var(--ink-mid); display:grid; place-items:center; font-size:14px;}
+  .doc-block-tools button:hover{border-color:#A8A8A0; color:var(--ink);}
+  .doc-block-tools button:disabled{opacity:.35; cursor:default;}
+  .doc-block-hint{font-size:11px; color:var(--ink-soft); padding:0 10px;}
+  .doc-add-bar{display:flex; gap:8px; flex-wrap:wrap; margin:18px 0 26px; padding:12px; border:1px dashed var(--line); border-radius:12px;}
+  .doc-share{border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; background:var(--card);}
+  .doc-share h4{margin:0 0 10px; font-size:15px; font-weight:800;}
+  .doc-share label{display:flex; align-items:center; gap:8px; font-size:14px; padding:4px 0; cursor:pointer;}
+  .doc-share .doc-group-list{margin:6px 0 0 24px; max-height:220px; overflow:auto;}
+  .group-view-nav{display:inline-flex; gap:4px; padding:4px; border:1px solid var(--line); border-radius:99px; margin:14px 0 20px; background:var(--card);}
+  .group-view-nav button{border:0; background:transparent; font:inherit; font-size:13.5px; font-weight:700; padding:7px 16px; border-radius:99px; cursor:pointer; color:var(--ink-mid);}
+  .group-view-nav button.active{background:var(--ink); color:#fff;}
 </style>
 
 <div class="hero-blob" style="top:-90px; left:-70px; width:340px; height:340px; background:linear-gradient(135deg,var(--accent-a),var(--accent-b)); opacity:.14;"></div>
@@ -841,7 +885,7 @@ function createMockClient(){
     const c1 = muid(), c2 = muid(), c3 = muid(), c4 = muid(), c5 = muid();
     return {
       categories: [], links: [], link_categories: [], groups: [], bancas: [], students: [], evaluators: [], scores: [],
-      app_settings: [], banca_readers: [], banca_stage_readers: [], gestores: [], banca_invites: [],
+      app_settings: [], banca_readers: [], banca_stage_readers: [], gestores: [], banca_invites: [], documents: [], document_groups: [],
       rubric_categories: [
         { id: c1, order_index: 1, title: 'Relevância e Inovação do Produto/Serviço' },
         { id: c2, order_index: 2, title: 'Qualidade da Pesquisa e Fundamentação Teórica' },
@@ -1023,6 +1067,15 @@ function createMockClient(){
       await saveDb();
       return { data: null, error: null };
     }
+    if(name === 'get_group_documents'){
+      const g = db.groups.find(x => x.slug === params.p_slug);
+      if(!g) return { data: { error: 'grupo não encontrado' }, error: null };
+      if(!g.password_hash || g.password_hash !== params.p_password) return { data: { error: 'senha incorreta' }, error: null };
+      const list = (db.documents || []).filter(d => d.published && (d.shared_all || (db.document_groups || []).some(l => l.document_id === d.id && l.group_id === g.id)))
+        .sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')))
+        .map(d => ({ id: d.id, title: d.title, content: d.content, updated_at: d.updated_at }));
+      return { data: list, error: null };
+    }
     if(name === 'get_group_public_view'){
       const g = db.groups.find(x => x.slug === params.p_slug);
       if(!g) return { data: { error: 'grupo não encontrado' }, error: null };
@@ -1186,6 +1239,8 @@ function createMockClient(){
 }
 
 const sb = (isMockMode || !window.supabase) ? createMockClient() : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// cliente sem sessão de usuário, usado pelas telas públicas (cronômetro e sorteio)
+const sbAnon = (isMockMode || !window.supabase) ? sb : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 
 const $ = id => document.getElementById(id);
 const root = () => $('appRoot');
@@ -2005,9 +2060,18 @@ function renderGrupoPublic(g){
       <div class="section-sub" style="margin-bottom:2px;">${esc(g.group_name)}</div>
       <div class="section-sub" style="margin-top:0;">${memberNames}</div>
 
-      <div class="tab-nav" id="publicBancaTabs"></div>
-      <div id="publicBancaBody"></div>
+      <div class="group-view-nav" id="groupViewNav">
+        <button class="active" id="gvBancas">Bancas</button>
+        <button id="gvDocs">Documentos</button>
+      </div>
+      <div id="groupBancasView">
+        <div class="tab-nav" id="publicBancaTabs"></div>
+        <div id="publicBancaBody"></div>
+      </div>
+      <div id="groupDocsView" style="display:none;"></div>
     </div>`;
+  $('gvBancas').onclick = () => { $('gvBancas').classList.add('active'); $('gvDocs').classList.remove('active'); $('groupBancasView').style.display=''; $('groupDocsView').style.display='none'; };
+  $('gvDocs').onclick = () => { $('gvDocs').classList.add('active'); $('gvBancas').classList.remove('active'); $('groupBancasView').style.display='none'; $('groupDocsView').style.display=''; renderGroupDocuments($('groupDocsView')); };
   const bancas = g.bancas || [];
   const tabsWrap = $('publicBancaTabs');
   [1,2,3].forEach(stage => {
@@ -2191,8 +2255,8 @@ function renderAdminPanel(){
     </div>`;
 
   const tabs = isReadOnly()
-    ? [ ['links','Links'], ['alunos','Alunos'], ['grupos','Grupos'], ['bancas','Bancas'], ['ferramentas','Ferramentas'], ['usuarios','Usuários'] ]
-    : [ ['links','Links'], ['alunos','Alunos'], ['grupos','Grupos'], ['bancas','Bancas'], ['ferramentas','Ferramentas'], ['usuarios','Usuários'], ['config','Configurações'] ];
+    ? [ ['links','Links'], ['alunos','Alunos'], ['grupos','Grupos'], ['bancas','Bancas'], ['documentos','Documentos'], ['ferramentas','Ferramentas'], ['usuarios','Usuários'] ]
+    : [ ['links','Links'], ['alunos','Alunos'], ['grupos','Grupos'], ['bancas','Bancas'], ['documentos','Documentos'], ['ferramentas','Ferramentas'], ['usuarios','Usuários'], ['config','Configurações'] ];
   const badges = { alunos: pendingStudents, grupos: groupsSemSenha };
   const nav = $('adminTabNav');
   tabs.forEach(([id,label]) => {
@@ -2200,7 +2264,7 @@ function renderAdminPanel(){
     b.className = 'sidebar-tab-btn' + (adminTab === id ? ' active' : '');
     const count = badges[id] || 0;
     b.innerHTML = `<span>${esc(label)}</span>${count ? `<span class="notif-badge">${count}</span>` : ''}`;
-    b.onclick = () => { adminTab = id; openGroupId = null; renderAdminPanel(); };
+    b.onclick = () => { adminTab = id; openGroupId = null; openDocId = null; renderAdminPanel(); };
     nav.appendChild(b);
   });
 
@@ -2227,6 +2291,7 @@ function renderAdminPanel(){
   else if(adminTab === 'alunos') renderAdminAlunosTab(body);
   else if(adminTab === 'grupos') { openGroupId ? renderAdminGroupDetail(body, openGroupId) : renderAdminGruposTab(body); }
   else if(adminTab === 'bancas') renderAdminBancasTab(body);
+  else if(adminTab === 'documentos') renderAdminDocumentosTab(body);
   else if(adminTab === 'ferramentas') renderAdminFerramentasTab(body);
   else if(adminTab === 'usuarios') renderAdminUsuariosTab(body);
   else if(adminTab === 'config') renderAdminConfigTab(body);
@@ -3118,6 +3183,280 @@ function renderAdminFerramentasTab(body){
 }
 
 
+/* ======================= DOCUMENTOS ======================= */
+let openDocId = null;
+const DOC_TYPE_LABELS = { heading: 'Título', subheading: 'Subtítulo', text: 'Texto', list: 'Lista', image: 'Imagem' };
+function docUid(){ return 'b' + Math.random().toString(36).slice(2, 10); }
+function getDocImageUrl(path){
+  if(!sb || !path) return '';
+  const { data } = sb.storage.from('documentos').getPublicUrl(path);
+  return data?.publicUrl || '';
+}
+function renderDocBlocks(blocks){
+  const html = (Array.isArray(blocks) ? blocks : []).map(b => {
+    if(b.type === 'heading') return `<h2>${esc(b.text || '')}</h2>`;
+    if(b.type === 'subheading') return `<h3>${esc(b.text || '')}</h3>`;
+    if(b.type === 'text') return `<p>${esc(b.text || '').replace(/\n/g, '<br>')}</p>`;
+    if(b.type === 'list'){
+      const items = String(b.text || '').split('\n').map(x => x.trim()).filter(Boolean);
+      return items.length ? `<ul>${items.map(i => `<li>${esc(i)}</li>`).join('')}</ul>` : '';
+    }
+    if(b.type === 'image'){
+      const url = getDocImageUrl(b.src);
+      if(!url) return '';
+      return `<figure><img src="${esc(url)}" alt="${esc(b.caption || '')}" loading="lazy">${b.caption ? `<figcaption>${esc(b.caption)}</figcaption>` : ''}</figure>`;
+    }
+    return '';
+  }).join('');
+  return html || '<p class="doc-empty">Documento vazio.</p>';
+}
+function fmtDateTime(iso){
+  try { return new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); } catch { return ''; }
+}
+function resizeImageToBlob(file, max){
+  max = max || 1600;
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.width * k));
+      c.height = Math.max(1, Math.round(img.height * k));
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob(b => b ? resolve(b) : reject(new Error('Falha ao processar a imagem.')), 'image/jpeg', 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Arquivo de imagem inválido.')); };
+    img.src = url;
+  });
+}
+
+async function renderAdminDocumentosTab(body){
+  if(openDocId) return renderDocEditor(body, openDocId);
+  body.innerHTML = '<div class="loading-state">Carregando documentos…</div>';
+  const [{ data: docs }, { data: links }, { data: groups }] = await Promise.all([
+    sb.from('documents').select('id,title,shared_all,published,updated_at').order('updated_at', { ascending: false }),
+    sb.from('document_groups').select('document_id,group_id'),
+    sb.from('groups').select('id,group_name,project_title,order_index'),
+  ]);
+  const list = docs || [];
+  body.innerHTML = `
+    <div class="admin-bar">
+      <div class="admin-bar-left">Notas em texto e imagem para compartilhar com os grupos. Os grupos veem os documentos publicados ao entrar na própria página.</div>
+      ${!isReadOnly() ? `<button class="btn-sm primary-outline" id="newDocBtn">+ Novo documento</button>` : ''}
+    </div>
+    <div id="docList">${list.length ? '' : '<div class="admin-section"><p style="color:var(--ink-soft);margin:0;">Nenhum documento criado ainda.</p></div>'}</div>`;
+  const wrap = $('docList');
+  list.forEach(d => {
+    const n = (links || []).filter(l => l.document_id === d.id).length;
+    const share = d.shared_all ? 'Todos os grupos' : (n ? `${n} grupo${n > 1 ? 's' : ''}` : 'Nenhum grupo');
+    const card = document.createElement('div');
+    card.className = 'doc-card';
+    card.innerHTML = `
+      <h3>${esc(d.title || 'Documento sem título')}</h3>
+      <div class="doc-date">Atualizado em ${esc(fmtDateTime(d.updated_at))}</div>
+      <div style="margin-bottom:14px;">
+        <span class="doc-tag ${d.published ? 'on' : ''}">${d.published ? 'Publicado' : 'Rascunho'}</span>
+        <span class="doc-tag">${esc(share)}</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-sm" data-open>${isReadOnly() ? 'Visualizar' : 'Abrir e editar'}</button>
+        ${!isReadOnly() ? `<button class="btn-sm danger" data-del>Excluir</button>` : ''}
+      </div>`;
+    card.querySelector('[data-open]').onclick = () => { openDocId = d.id; renderAdminDocumentosTab(body); };
+    const del = card.querySelector('[data-del]');
+    if(del) del.onclick = async () => {
+      if(!await showConfirm(`Excluir o documento "${d.title}"? Esta ação não pode ser desfeita.`, 'Excluir documento')) return;
+      await sb.from('documents').delete().eq('id', d.id);
+      showToast('Documento excluído.');
+      renderAdminDocumentosTab(body);
+    };
+    wrap.appendChild(card);
+  });
+  const nb = $('newDocBtn');
+  if(nb) nb.onclick = async () => {
+    nb.disabled = true;
+    const { data, error } = await sb.from('documents').insert({ title: 'Documento sem título', content: [], published: false, shared_all: false }).select().single();
+    if(error || !data){ nb.disabled = false; showAlert('Não foi possível criar o documento. Verifique se a migration de Documentos foi aplicada no banco.'); return; }
+    openDocId = data.id;
+    renderAdminDocumentosTab(body);
+  };
+}
+
+async function renderDocEditor(body, id){
+  body.innerHTML = '<div class="loading-state">Abrindo documento…</div>';
+  const [{ data: doc }, { data: groups }, { data: links }] = await Promise.all([
+    sb.from('documents').select('id,title,content,shared_all,published').eq('id', id).single(),
+    sb.from('groups').select('id,group_name,project_title,order_index').order('order_index'),
+    sb.from('document_groups').select('group_id').eq('document_id', id),
+  ]);
+  if(!doc){ openDocId = null; return renderAdminDocumentosTab(body); }
+  const ro = isReadOnly();
+  const st = {
+    title: doc.title || '',
+    blocks: (Array.isArray(doc.content) ? doc.content : []).map(b => ({ id: b.id || docUid(), ...b })),
+    shared_all: !!doc.shared_all,
+    published: !!doc.published,
+    groupIds: new Set((links || []).map(l => l.group_id)),
+  };
+  let dirty = false, timer = null, chain = Promise.resolve();
+  const setState = (t) => { const el = $('docSaveState'); if(el) el.textContent = t; };
+  const doSave = async () => {
+    if(!dirty) return;
+    dirty = false;
+    const r1 = await sb.from('documents').update({
+      title: st.title.trim() || 'Documento sem título', content: st.blocks,
+      shared_all: st.shared_all, published: st.published, updated_at: new Date().toISOString(),
+    }).eq('id', id);
+    let err = r1.error;
+    const del = await sb.from('document_groups').delete().eq('document_id', id);
+    err = err || del.error;
+    if(st.groupIds.size){
+      const ins = await sb.from('document_groups').insert([...st.groupIds].map(g => ({ document_id: id, group_id: g })));
+      err = err || ins.error;
+    }
+    setState(err ? 'Erro ao salvar' : 'Salvo');
+  };
+  const flush = () => { clearTimeout(timer); chain = chain.then(doSave); return chain; };
+  const queueSave = () => {
+    if(ro) return;
+    dirty = true; setState('Salvando…');
+    clearTimeout(timer); timer = setTimeout(flush, 800);
+  };
+  const autosize = (ta) => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
+
+  function draw(){
+    body.innerHTML = `
+      <div class="doc-ed-bar">
+        <button class="btn-sm" id="docBack">${phIcon('arrow-left')} Documentos</button>
+        ${!ro ? `<label class="doc-tag ${st.published ? 'on' : ''}" style="cursor:pointer; display:inline-flex; gap:6px; align-items:center;">
+          <input type="checkbox" id="docPub" ${st.published ? 'checked' : ''}> Publicado para os grupos</label>` : `<span class="doc-tag ${st.published ? 'on' : ''}">${st.published ? 'Publicado' : 'Rascunho'}</span>`}
+        <span class="doc-ed-state" id="docSaveState">${ro ? 'Somente visualização' : 'Salvo'}</span>
+      </div>
+      ${ro ? `<div class="doc-view"><h2 style="margin-top:0;">${esc(st.title)}</h2>${renderDocBlocks(st.blocks)}</div>` : `
+      <input class="doc-title-input" id="docTitle" placeholder="Título do documento" value="${esc(st.title)}">
+      <div id="docBlocks"></div>
+      <div class="doc-add-bar" id="docAddBar">
+        <button class="btn-sm" data-add="heading">${phIcon('text-h')} Título</button>
+        <button class="btn-sm" data-add="subheading">${phIcon('text-h-two')} Subtítulo</button>
+        <button class="btn-sm" data-add="text">${phIcon('text-align-left')} Texto</button>
+        <button class="btn-sm" data-add="list">${phIcon('list-bullets')} Lista</button>
+        <label class="btn-sm" style="cursor:pointer;">${phIcon('image')} Imagem
+          <input type="file" id="docImgInput" accept="image/*" style="display:none;"></label>
+      </div>
+      <div class="doc-share">
+        <h4>Compartilhar com</h4>
+        <label><input type="radio" name="docShare" value="all" ${st.shared_all ? 'checked' : ''}> Todos os grupos</label>
+        <label><input type="radio" name="docShare" value="some" ${!st.shared_all ? 'checked' : ''}> Grupos selecionados</label>
+        <div class="doc-group-list" id="docGroupList" style="${st.shared_all ? 'display:none;' : ''}">
+          ${(groups || []).length ? (groups || []).map(g => `
+            <label><input type="checkbox" data-gid="${esc(g.id)}" ${st.groupIds.has(g.id) ? 'checked' : ''}> ${esc(g.project_title || g.group_name)}${g.project_title ? ` <span style="color:var(--ink-soft);">· ${esc(g.group_name)}</span>` : ''}</label>`).join('')
+            : '<span style="color:var(--ink-soft); font-size:13px;">Nenhum grupo cadastrado.</span>'}
+        </div>
+        <p style="font-size:12.5px; color:var(--ink-soft); margin:12px 0 0;">O documento só aparece para os grupos depois de marcado como publicado. Os grupos apenas leem.</p>
+      </div>`}`;
+    $('docBack').onclick = async () => { await flush(); openDocId = null; renderAdminDocumentosTab(body); };
+    if(ro) return;
+    $('docPub').onchange = (e) => { st.published = e.target.checked; e.target.closest('label').classList.toggle('on', st.published); queueSave(); };
+    $('docTitle').oninput = (e) => { st.title = e.target.value; queueSave(); };
+    drawBlocks();
+    body.querySelectorAll('[data-add]').forEach(btn => {
+      btn.onclick = () => { st.blocks.push({ id: docUid(), type: btn.dataset.add, text: '' }); queueSave(); drawBlocks(true); };
+    });
+    $('docImgInput').onchange = async (e) => {
+      const file = e.target.files[0]; e.target.value = '';
+      if(!file) return;
+      try {
+        showToast('Enviando imagem…');
+        const blob = await resizeImageToBlob(file, 1600);
+        const base = sanitizeFileName(file.name.replace(/\.[^.]+$/, '')) || 'imagem';
+        const path = `${id}/${Date.now()}-${base}.jpg`;
+        const { error } = await sb.storage.from('documentos').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+        if(error) throw error;
+        st.blocks.push({ id: docUid(), type: 'image', src: path, caption: '' });
+        queueSave(); drawBlocks(true);
+      } catch(err){
+        showAlert('Não foi possível enviar a imagem. ' + (err?.message || ''));
+      }
+    };
+    body.querySelectorAll('input[name="docShare"]').forEach(r => {
+      r.onchange = () => { if(!r.checked) return; st.shared_all = r.value === 'all'; $('docGroupList').style.display = st.shared_all ? 'none' : ''; queueSave(); };
+    });
+    body.querySelectorAll('[data-gid]').forEach(cb => {
+      cb.onchange = () => { cb.checked ? st.groupIds.add(cb.dataset.gid) : st.groupIds.delete(cb.dataset.gid); queueSave(); };
+    });
+  }
+
+  function drawBlocks(scrollToEnd){
+    const wrap = $('docBlocks');
+    wrap.innerHTML = '';
+    if(!st.blocks.length) wrap.innerHTML = '<p class="doc-empty" style="margin:0 0 6px;">Adicione blocos de texto ou imagem abaixo.</p>';
+    st.blocks.forEach((b, i) => {
+      const row = document.createElement('div');
+      row.className = 'doc-block';
+      let main;
+      if(b.type === 'image'){
+        main = `<div class="doc-block-main"><img src="${esc(getDocImageUrl(b.src))}" alt=""><input class="doc-cap" placeholder="Legenda (opcional)" value="${esc(b.caption || '')}"></div>`;
+      } else {
+        const ph = { heading: 'Título', subheading: 'Subtítulo', text: 'Escreva aqui…', list: 'Um item por linha' }[b.type] || '';
+        main = `<div class="doc-block-main"><textarea class="t-${b.type}" rows="1" placeholder="${ph}">${esc(b.text || '')}</textarea>${b.type === 'list' ? '<div class="doc-block-hint">Um item por linha.</div>' : ''}</div>`;
+      }
+      row.innerHTML = `${main}
+        <div class="doc-block-tools">
+          <button title="Subir" data-act="up" ${i === 0 ? 'disabled' : ''}>${phIcon('arrow-up')}</button>
+          <button title="Descer" data-act="down" ${i === st.blocks.length - 1 ? 'disabled' : ''}>${phIcon('arrow-down')}</button>
+          <button title="Remover bloco" data-act="del">${phIcon('trash')}</button>
+        </div>`;
+      const ta = row.querySelector('textarea');
+      if(ta){ ta.oninput = () => { b.text = ta.value; autosize(ta); queueSave(); }; }
+      const cap = row.querySelector('input.doc-cap');
+      if(cap) cap.oninput = () => { b.caption = cap.value; queueSave(); };
+      row.querySelector('[data-act="up"]').onclick = () => { [st.blocks[i - 1], st.blocks[i]] = [st.blocks[i], st.blocks[i - 1]]; queueSave(); drawBlocks(); };
+      row.querySelector('[data-act="down"]').onclick = () => { [st.blocks[i + 1], st.blocks[i]] = [st.blocks[i], st.blocks[i + 1]]; queueSave(); drawBlocks(); };
+      row.querySelector('[data-act="del"]').onclick = () => { st.blocks.splice(i, 1); queueSave(); drawBlocks(); };
+      wrap.appendChild(row);
+      if(ta) autosize(ta);
+    });
+    if(scrollToEnd){
+      const last = wrap.querySelector('.doc-block:last-child textarea');
+      if(last) last.focus();
+    }
+  }
+  draw();
+}
+
+async function renderGroupDocuments(el){
+  el.innerHTML = '<div class="loading-state">Carregando documentos…</div>';
+  const { data, error } = await sb.rpc('get_group_documents', { p_slug: groupSession.slug, p_password: groupSession.password });
+  if(error || !data || data.error){
+    el.innerHTML = '<p class="doc-empty">Não foi possível carregar os documentos.</p>';
+    return;
+  }
+  if(!data.length){
+    el.innerHTML = '<p class="doc-empty">Nenhum documento compartilhado com o seu grupo ainda.</p>';
+    return;
+  }
+  el.innerHTML = '';
+  data.forEach((d, i) => {
+    const card = document.createElement('div');
+    card.className = 'doc-card';
+    card.innerHTML = `
+      <h3>${esc(d.title)}</h3>
+      <div class="doc-date">Atualizado em ${esc(fmtDateTime(d.updated_at))}</div>
+      <button class="btn-sm" data-toggle>Abrir</button>
+      <div class="doc-view" style="display:none; margin-top:18px;">${renderDocBlocks(d.content)}</div>`;
+    const view = card.querySelector('.doc-view'), tg = card.querySelector('[data-toggle]');
+    const toggle = () => { const open = view.style.display === 'none'; view.style.display = open ? '' : 'none'; tg.textContent = open ? 'Fechar' : 'Abrir'; };
+    tg.onclick = toggle;
+    if(data.length === 1) toggle();
+    el.appendChild(card);
+  });
+}
+
+
 /* ======================= ADMIN: BANCAS TAB ======================= */
 async function renderAdminBancasTab(body){
   body.innerHTML = '<div class="loading-state">Carregando bancas…</div>';
@@ -3758,7 +4097,7 @@ const TIMER_STORE_KEY = 'pi-banca-cronometro';
 const timer = {
   booted: false, channel: null, live: false, peers: 1, groups: [], lastKey: '', raf: 0, idleT: null, closeT: null,
   id: Math.random().toString(36).slice(2, 10),
-  S: { phase: 'talk', status: 'ready', endsAt: 0, remaining: 600000, durations: { talk: 600000, banca: 300000 }, group: 'Grupo 1', groupIdx: -1, rev: 0, from: '' },
+  S: { phase: 'talk', status: 'ready', endsAt: 0, remaining: 600000, durations: { talk: 600000, banca: 300000 }, group: 'Grupo 1', groupIdx: -1, rev: 0, from: '', useBanca: true, warnAt: 60, sound: false },
 };
 const TIMER_ORDER = ['talk', 'applause1', 'banca', 'applause2'];
 const TIMER_PH = {
@@ -3789,7 +4128,7 @@ function tmNextGroup(d){
 }
 
 /* ---- estado e sincronização ---- */
-function tmWire(){ const S = timer.S; return { phase: S.phase, status: S.status, remaining: Math.max(0, tmRem()), durations: S.durations, group: S.group, groupIdx: S.groupIdx, rev: S.rev, from: S.from }; }
+function tmWire(){ const S = timer.S; return { phase: S.phase, status: S.status, remaining: Math.max(0, tmRem()), durations: S.durations, group: S.group, groupIdx: S.groupIdx, rev: S.rev, from: S.from, useBanca: S.useBanca !== false, warnAt: S.warnAt, sound: !!S.sound }; }
 function tmSave(){ try { localStorage.setItem(TIMER_STORE_KEY, JSON.stringify({ ...tmWire(), savedAt: Date.now() })); } catch {} }
 function tmLoad(){
   try {
@@ -3850,7 +4189,7 @@ async function tmLoadGroups(){
   if(timer.fromDraw) timer.groups = dw.order.map(n => ({ group_name: n }));
   else {
     try {
-      const client = gestorSession ? sbAnon : sb;
+      const client = sbAnon || sb;
       const { data } = await client.from('groups').select('id,group_name,project_title,order_index').order('order_index');
       timer.groups = (data || []).filter(g => tmGroupLabel(g));
     } catch { timer.groups = []; }
@@ -3872,7 +4211,10 @@ function tmToggle(){
 function tmAdvance(){
   const v = tmView(), S = timer.S, d = S.durations;
   if(v === 'talk') tmCommit({ ...S, phase: 'applause1', status: 'ready' });
-  else if(v === 'applause1') tmCommit({ ...S, phase: 'banca', status: 'running', remaining: d.banca, endsAt: Date.now() + d.banca });
+  else if(v === 'applause1'){
+    if(S.useBanca === false){ const n = tmNextGroup(1); tmCommit({ ...S, phase: 'talk', status: 'ready', remaining: d.talk, ...(n || {}) }); }
+    else tmCommit({ ...S, phase: 'banca', status: 'running', remaining: d.banca, endsAt: Date.now() + d.banca });
+  }
   else if(v === 'banca') tmCommit({ ...S, phase: 'applause2', status: 'ready' });
   else { const n = tmNextGroup(1); tmCommit({ ...S, phase: 'talk', status: 'ready', remaining: d.talk, ...(n || {}) }); }
 }
@@ -3881,7 +4223,7 @@ function tmBack(){
   if(v === 'applause1') tmCommit({ ...S, phase: 'talk', status: 'ready', remaining: d.talk });
   else if(v === 'banca') tmCommit({ ...S, phase: 'applause1', status: 'ready' });
   else if(v === 'applause2') tmCommit({ ...S, phase: 'banca', status: 'ready', remaining: d.banca });
-  else { const p = tmNextGroup(-1); if(p) tmCommit({ ...S, phase: 'applause2', status: 'ready', ...p }); }
+  else { const p = tmNextGroup(-1); if(p) tmCommit({ ...S, phase: S.useBanca === false ? 'applause1' : 'applause2', status: 'ready', ...p }); }
 }
 function tmReset(){
   const v = tmView(), k = (v === 'banca' || v === 'applause2') ? 'banca' : 'talk';
@@ -3892,6 +4234,29 @@ function tmBump(ms){
   const v = tmView(), S = timer.S; if(v !== 'talk' && v !== 'banca') return;
   if(S.status === 'running'){ const r = Math.max(1000, tmRem() + ms); tmCommit({ ...S, remaining: r, endsAt: Date.now() + r }); }
   else tmCommit({ ...S, remaining: Math.max(1000, S.remaining + ms) });
+}
+function tmSetRemaining(input){
+  const ms = tmParse(input.value), v = tmView(), S = timer.S;
+  if(!ms || (v !== 'talk' && v !== 'banca')){ tmSyncInputs(); return; }
+  if(S.status === 'running') tmCommit({ ...S, remaining: ms, endsAt: Date.now() + ms });
+  else tmCommit({ ...S, remaining: ms });
+}
+function tmSetWarn(input){
+  const n = parseInt(input.value, 10);
+  tmCommit({ ...timer.S, warnAt: isNaN(n) ? 60 : Math.min(600, Math.max(0, n)) });
+}
+function tmBeep(times, freq){
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
+    timer.ac = timer.ac || new AC();
+    if(timer.ac.state === 'suspended') timer.ac.resume();
+    for(let i = 0; i < times; i++){
+      const t = timer.ac.currentTime + i * 0.28, o = timer.ac.createOscillator(), g = timer.ac.createGain();
+      o.frequency.value = freq || 880; o.type = 'sine'; o.connect(g); g.connect(timer.ac.destination);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.35, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+      o.start(t); o.stop(t + 0.22);
+    }
+  } catch {}
 }
 function tmSetDur(k, input){
   const ms = tmParse(input.value);
@@ -3937,6 +4302,11 @@ function tmSyncInputs(){
   if($('tmGroupBtnText')){ const gi = S.groupIdx >= 0 && S.groupIdx < timer.groups.length ? S.groupIdx : -1; $('tmGroupBtnText').textContent = gi >= 0 ? tmGroupLabel(timer.groups[gi]) : 'Digitar nome…'; if(!$('tmGroupList').hidden) tmDdBuild(); }
   $('tmStTalk').textContent = tmMins(S.durations.talk);
   $('tmStBanca').textContent = tmMins(S.durations.banca);
+  const bl = document.querySelector('#tmSteps li[data-k="banca"]'); if(bl) bl.style.display = S.useBanca === false ? 'none' : '';
+  if($('tmInRem') && a !== $('tmInRem')){ const r = Math.max(0, tmRem()); $('tmInRem').value = tmFmt(r); }
+  if($('tmInWarn') && a !== $('tmInWarn')) $('tmInWarn').value = S.warnAt == null ? 60 : S.warnAt;
+  if($('tmUseBanca')) $('tmUseBanca').checked = S.useBanca !== false;
+  if($('tmSound')) $('tmSound').checked = !!S.sound;
 }
 function tmRender(){
   if(!$('tmPanel')) return;
@@ -3944,11 +4314,17 @@ function tmRender(){
   const r = clap ? 0 : Math.max(0, tmRem());
   const total = S.durations[v === 'banca' ? 'banca' : 'talk'] || 1;
   const secs = Math.ceil(r / 1000);
-  const warn = !clap && secs <= 60 && secs > 10, alert = !clap && secs <= 10 && S.status !== 'ready';
+  const wa = S.warnAt == null ? 60 : S.warnAt, warn = !clap && wa > 10 && secs <= wa && secs > 10, alert = !clap && secs <= 10 && S.status !== 'ready';
+  if(S.sound && S.status === 'running'){
+    const bk = v + '|' + S.rev;
+    if(clap && timer.endBeep !== bk){ timer.endBeep = bk; tmBeep(3, 660); }
+    else if(!clap && wa > 10 && secs === wa && timer.warnBeep !== bk){ timer.warnBeep = bk; tmBeep(1, 880); }
+  }
   $('tmBar').style.width = (clap ? 100 : Math.min(100, Math.max(0, (1 - r / total) * 100))) + '%';
   const key = [v, S.status, secs, S.group, warn, alert, S.rev].join('|');
   if(key === timer.lastKey) return;
   timer.lastKey = key;
+  tmSyncInputs();
   $('tmGroup').textContent = S.group;
   $('tmPanel').classList.toggle('clap', clap);
   $('tmPanel').classList.toggle('pulse', alert && S.status === 'running');
@@ -3959,17 +4335,17 @@ function tmRender(){
     $('tmTrack').className = 'tm-track' + (alert ? ' alert' : warn ? ' warn' : '');
     const chip = $('tmChip');
     chip.className = 'tm-chip' + (S.status === 'running' ? (warn || alert ? ' warn' : ' running') : '');
-    chip.textContent = S.status === 'running' ? (alert ? 'Encerrando' : warn ? 'Último minuto' : p.chip) : S.status === 'paused' ? 'Pausado' : 'Pronto';
+    chip.textContent = S.status === 'running' ? (alert ? 'Encerrando' : warn ? 'Tempo acabando' : p.chip) : S.status === 'paused' ? 'Pausado' : 'Pronto';
     $('tmHint').textContent = S.status === 'ready' ? 'Aguardando início · ' + tmMins(total) : S.status === 'paused' ? 'Tempo pausado' : p.hint;
   } else {
     const first = v === 'applause1', nxt = tmNextGroup(1);
     $('tmApEyebrow').textContent = first ? 'Fim da apresentação' : 'Fim das considerações';
     $('tmApText').textContent = (first ? 'Obrigado, ' : 'Parabéns, ') + S.group;
-    $('tmApNext').textContent = first ? 'A seguir: considerações da banca · ' + tmMins(S.durations.banca) : (nxt ? 'A seguir: ' + nxt.group : 'Fim das apresentações');
+    $('tmApNext').textContent = first && S.useBanca !== false ? 'A seguir: considerações da banca · ' + tmMins(S.durations.banca) : (nxt ? 'A seguir: ' + nxt.group : 'Fim das apresentações');
   }
   const idx = TIMER_ORDER.indexOf(v);
   document.querySelectorAll('#tmSteps li').forEach(li => { const i = TIMER_ORDER.indexOf(li.dataset.k); li.className = i < idx ? 'done' : i === idx ? 'now' : ''; });
-  $('tmToggle').textContent = clap ? (v === 'applause1' ? 'Iniciar banca' : 'Próximo grupo') : S.status === 'running' ? 'Pausar' : S.status === 'paused' ? 'Continuar' : 'Iniciar';
+  $('tmToggle').textContent = clap ? (v === 'applause1' && S.useBanca !== false ? 'Iniciar banca' : 'Próximo grupo') : S.status === 'running' ? 'Pausar' : S.status === 'paused' ? 'Continuar' : 'Iniciar';
 }
 function tmLoop(){
   if(getRoute() !== 'cronometro'){ timer.raf = 0; return; }
@@ -4031,10 +4407,18 @@ function renderTimerPage(){
           <div class="tm-field"><label for="tmInTalk">Apresentação</label><input id="tmInTalk" type="text" inputmode="numeric"></div>
           <div class="tm-field"><label for="tmInBanca">Banca</label><input id="tmInBanca" type="text" inputmode="numeric"></div>
         </div>
+        <div class="tm-field"><label for="tmInRem">Tempo restante · etapa atual</label><input id="tmInRem" type="text" inputmode="numeric" placeholder="mm:ss"></div>
+        <label class="tm-check"><input type="checkbox" id="tmUseBanca"><span>Incluir etapa de considerações da banca</span></label>
+        <div class="tm-row">
+          <div class="tm-field"><label for="tmInWarn">Alerta aos (seg.)</label><input id="tmInWarn" type="text" inputmode="numeric"></div>
+          <label class="tm-check"><input type="checkbox" id="tmSound"><span>Sinal sonoro</span></label>
+        </div>
         <div class="tm-stack">
           <button class="primary" id="tmToggle">Iniciar</button>
           <div class="tm-row"><button id="tmPrev">← Voltar etapa</button><button class="accent" id="tmNext">Avançar etapa →</button></div>
+          <div class="tm-row"><button id="tmMinus30">− 30 s</button><button id="tmPlus30">+ 30 s</button></div>
           <div class="tm-row"><button id="tmMinus">− 1 min</button><button id="tmPlus">+ 1 min</button></div>
+          <div class="tm-row"><button id="tmMinus5">− 5 min</button><button id="tmPlus5">+ 5 min</button></div>
           <div class="tm-row"><button id="tmReset">Reiniciar etapa</button><button id="tmNextGroup">Próximo grupo</button></div>
           <a class="tm-linkbtn" href="?sorteio=1" target="_blank" rel="noopener">Sortear ordem dos grupos</a>
           <button id="tmFull">Tela cheia</button>
@@ -4063,6 +4447,14 @@ function renderTimerPage(){
   $('tmNextGroup').onclick = tmGoNextGroup;
   $('tmMinus').onclick = () => tmBump(-60000);
   $('tmPlus').onclick = () => tmBump(60000);
+  $('tmMinus30').onclick = () => tmBump(-30000);
+  $('tmPlus30').onclick = () => tmBump(30000);
+  $('tmMinus5').onclick = () => tmBump(-300000);
+  $('tmPlus5').onclick = () => tmBump(300000);
+  $('tmInRem').addEventListener('change', e => tmSetRemaining(e.target));
+  $('tmInWarn').addEventListener('change', e => tmSetWarn(e.target));
+  $('tmUseBanca').addEventListener('change', e => tmCommit({ ...timer.S, useBanca: e.target.checked }));
+  $('tmSound').addEventListener('change', e => { if(e.target.checked) tmBeep(1, 880); tmCommit({ ...timer.S, sound: e.target.checked }); });
   $('tmFull').onclick = tmFull;
   $('tmExit').onclick = () => { if(document.fullscreenElement) document.exitFullscreen().catch(() => {}); goHome(); };
   $('tmInGroup').addEventListener('change', e => tmCommit({ ...timer.S, group: e.target.value.trim() || 'Grupo', groupIdx: -1 }));
@@ -4183,36 +4575,10 @@ function dwCommit(next, animate){
   draw.anim = animate ? { start: Date.now() } : null;
   draw.lastKey = '';
   dwSave(); dwSyncInputs(); dwRender();
-  if(draw.channel) draw.channel.send({ type: 'broadcast', event: 'state', payload: dwWire(animate) }).catch(() => {});
-}
-function dwSetSync(){
-  const el = $('dwSync'); if(!el) return;
-  el.classList.toggle('on', draw.live);
-  el.querySelector('span').textContent = draw.live
-    ? 'Sincronizado · ' + draw.peers + (draw.peers === 1 ? ' tela aberta' : ' telas abertas')
-    : (isMockMode ? 'Modo de teste · só nesta tela' : 'Conectando…');
-}
-function dwConnect(){
-  if(isMockMode || !sbAnon || !sbAnon.channel || draw.channel) return;
-  const ch = sbAnon.channel(DRAW_CHANNEL, { config: { broadcast: { self: false }, presence: { key: draw.id } } });
-  ch.on('broadcast', { event: 'state' }, ({ payload }) => dwApply(payload));
-  ch.on('broadcast', { event: 'hello' }, () => {
-    if(draw.S.rev > 0) ch.send({ type: 'broadcast', event: 'state', payload: dwWire(false) }).catch(() => {});
-  });
-  ch.on('presence', { event: 'sync' }, () => { draw.peers = Math.max(1, Object.keys(ch.presenceState() || {}).length); dwSetSync(); });
-  ch.subscribe(status => {
-    draw.live = status === 'SUBSCRIBED';
-    if(draw.live){
-      ch.track({ screen: true }).catch(() => {});
-      ch.send({ type: 'broadcast', event: 'hello', payload: {} }).catch(() => {});
-    }
-    dwSetSync();
-  });
-  draw.channel = ch;
 }
 async function dwFetchGroupNames(){
   try {
-    const client = gestorSession ? sbAnon : sb;
+    const client = sbAnon || sb;
     const { data } = await client.from('groups').select('group_name,project_title,order_index').order('order_index');
     return (data || []).map(g => tmGroupLabel(g)).filter(Boolean);
   } catch { return []; }
@@ -4413,10 +4779,9 @@ async function renderDrawPage(){
         <button class="tm-close" id="dwClose" aria-label="Fechar controles">×</button>
         <div>
           <h3>Controles</h3>
-          <div class="tm-sync" id="dwSync"><i></i><span>Conectando…</span></div>
         </div>
         <div class="tm-field"><label for="dwNames">Grupos no sorteio · <span id="dwCount"></span></label><textarea id="dwNames" spellcheck="false" placeholder="Um grupo por linha"></textarea></div>
-        <p class="tm-note">Um grupo por linha. Serve para bancas ou atividades de aula; mudar a lista apaga o resultado atual.</p>
+        <p class="tm-note">Os grupos vêm do cadastro da plataforma e são atualizados toda vez que a tela abre. Você pode editar a lista (um grupo por linha); mudar a lista apaga o resultado atual.</p>
         <div class="tm-stack">
           <button class="primary" id="dwDraw">Sortear ordem</button>
           <div class="tm-row"><button id="dwClear">Limpar resultado</button><button id="dwReload">Recarregar grupos</button></div>
@@ -4471,18 +4836,18 @@ async function renderDrawPage(){
     });
   }
 
-  dwSyncInputs(); dwRender(); dwSetSync();
-  dwConnect();
+  dwSyncInputs(); dwRender();
   if(!draw.raf) draw.raf = requestAnimationFrame(dwLoop);
-  if(!draw.S.names.length){
-    // carga inicial só local (rev 0): se outra tela já tem um sorteio, o dela prevalece
-    const names = await dwFetchGroupNames();
-    if(names.length && !draw.S.names.length){ draw.S = { ...draw.S, names }; draw.lastKey = ''; dwSyncInputs(); dwRender(); }
+  // sempre puxa os nomes atuais dos grupos cadastrados; o resultado só é mantido se o conjunto de grupos não mudou
+  const names = await dwFetchGroupNames();
+  if(names.length){
+    const S = draw.S, key = a => [...a].sort().join('\n');
+    const keep = S.order.length && key(S.order) === key(names);
+    draw.S = { ...S, names, order: keep ? S.order : [], drawnAt: keep ? S.drawnAt : 0 };
+    draw.lastKey = ''; dwSave(); dwSyncInputs(); dwRender();
   }
 }
-function teardownDrawPage(){
-  if(draw.channel){ try { sbAnon.removeChannel(draw.channel); } catch {} draw.channel = null; draw.live = false; }
-}
+function teardownDrawPage(){}
 
 
 
