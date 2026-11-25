@@ -3394,6 +3394,31 @@ function sanitizeDocHtml(html){
   // remove parágrafos vazios consecutivos nas pontas
   return out.innerHTML.replace(/^(<p><br><\/p>|<p><\/p>)+|(<p><br><\/p>|<p><\/p>)+$/g, '');
 }
+// Descritivo automático: resumo extrativo (primeiras frases do texto), sem IA externa
+function autoDescribeDoc(html, title){
+  const box = document.createElement('div');
+  box.innerHTML = sanitizeDocHtml(html);
+  const clean = (t) => String(t || '').replace(/\s+/g, ' ').trim();
+  let parts = [...box.querySelectorAll('p, li, blockquote')].map(e => clean(e.textContent)).filter(Boolean);
+  if(!parts.length) parts = [...box.querySelectorAll('h2, h3')].map(e => clean(e.textContent)).filter(Boolean);
+  const titleNorm = clean(title).toLowerCase();
+  parts = parts.filter(t => t.toLowerCase() !== titleNorm);
+  if(!parts.length) return '';
+  const MAX = 220;
+  const sentences = parts.join(' ').split(/(?<=[.!?])\s+/);
+  let out = '';
+  for(const sn of sentences){
+    if(!out){ out = sn; continue; }
+    if((out + ' ' + sn).length > MAX) break;
+    out += ' ' + sn;
+    if(out.length >= 120) break;
+  }
+  if(out.length > MAX){
+    out = out.slice(0, MAX - 1);
+    out = out.replace(/\s+\S*$/, '').replace(/[,;:\-–—]+$/, '') + '…';
+  }
+  return out;
+}
 function docContentHtml(content){
   if(content && !Array.isArray(content) && typeof content === 'object') return sanitizeDocHtml(content.html || '');
   return null;
@@ -3441,6 +3466,10 @@ async function renderDocEditor(body, id){
     ${ro ? `<div class="doc-view"><h2 style="margin-top:0;">${esc(st.title)}</h2>${st.description ? `<p style="color:var(--ink-mid);">${esc(st.description)}</p>` : ''}${st.html || '<p class="doc-empty">Documento vazio.</p>'}</div>` : `
     <input class="doc-title-input" id="docTitle" placeholder="Título do documento" value="${esc(st.title)}">
     <textarea class="doc-desc-input" id="docDesc" rows="2" maxlength="300" placeholder="Descritivo: uma ou duas frases que aparecem no card da lista de links">${esc(st.description)}</textarea>
+    <div style="display:flex; gap:10px; align-items:center; margin:-4px 0 14px;">
+      <button class="btn-sm" id="docDescAuto">${phIcon('magic-wand')} Gerar descritivo automaticamente</button>
+      <span style="font-size:12px; color:var(--ink-soft);">Usa as primeiras frases do texto. Se ficar vazio ao publicar, é gerado sozinho.</span>
+    </div>
     <div class="doc-toolbar" id="docToolbar">
       <button data-cmd="bold" title="Negrito"><b>B</b></button>
       <button data-cmd="italic" title="Itálico"><i>I</i></button>
@@ -3466,9 +3495,17 @@ async function renderDocEditor(body, id){
   ed.innerHTML = st.html;
   const sync = () => { st.html = sanitizeDocHtml(ed.innerHTML); queueSave(); };
   ed.addEventListener('input', sync);
-  $('docPub').onchange = (e) => { st.published = e.target.checked; e.target.closest('label').classList.toggle('on', st.published); queueSave(); };
+  $('docPub').onchange = (e) => { st.published = e.target.checked; e.target.closest('label').classList.toggle('on', st.published); if(st.published) fillDesc(false); queueSave(); };
   $('docTitle').oninput = (e) => { st.title = e.target.value; queueSave(); };
   $('docDesc').oninput = (e) => { st.description = e.target.value; queueSave(); };
+  const fillDesc = (force) => {
+    if(!force && st.description.trim()) return false;
+    const d = autoDescribeDoc(st.html, st.title);
+    if(!d){ if(force) showToast('Escreva algum texto no documento primeiro.'); return false; }
+    st.description = d; $('docDesc').value = d; queueSave();
+    return true;
+  };
+  $('docDescAuto').onclick = () => { if(fillDesc(true)) showToast('Descritivo gerado.'); };
 
   async function uploadAndInsert(file){
     try {
