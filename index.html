@@ -201,9 +201,14 @@
   /* ---- LINK CARD ---- */
   .link-card{
     background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
-    overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--shadow); transition:.2s;
+    overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--shadow); transition:transform .2s, box-shadow .2s;
   }
-  .link-card:hover{transform:translateY(-2px); box-shadow:0 4px 8px rgba(0,0,0,.07), 0 12px 28px rgba(0,0,0,.09);}
+  /* Elevação no hover só com mouse de verdade e nunca durante a rolagem
+     (rolar move os cards sob o cursor e fazia os blocos subirem e descerem) */
+  @media (hover:hover){
+    .link-card:hover, .group-card:hover, .tool-card:hover{transform:translateY(-2px); box-shadow:0 4px 8px rgba(0,0,0,.07), 0 12px 28px rgba(0,0,0,.09);}
+  }
+  body.is-scrolling .link-card, body.is-scrolling .group-card, body.is-scrolling .tool-card{pointer-events:none;}
   .card-top-bar{height:4px; background:var(--cat-color, #E4E3DC); width:100%; flex-shrink:0;}
   .card-body{padding:18px 20px 16px; display:flex; flex-direction:column; flex:1; gap:10px;}
   .card-header{display:flex; align-items:center; justify-content:space-between; gap:8px;}
@@ -421,7 +426,6 @@
     box-shadow:var(--shadow); cursor:pointer; transition:.15s; display:flex; flex-direction:column; gap:6px;
     position:relative;
   }
-  .group-card:hover{transform:translateY(-2px); box-shadow:0 4px 8px rgba(0,0,0,.07), 0 12px 28px rgba(0,0,0,.09);}
   .group-card.is-done{border-color:var(--good);}
   .card-done-badge{position:absolute;top:14px;right:16px;color:var(--good);font-size:20px;line-height:1;}
   .group-card .code{font-size:11px; font-weight:800; letter-spacing:.05em; color:var(--warn); text-transform:uppercase;}
@@ -622,7 +626,6 @@
     background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
     padding:22px 22px 18px; display:flex; flex-direction:column; gap:8px; text-decoration:none; color:var(--ink); transition:.2s;
   }
-  .tool-card:hover{transform:translateY(-2px); box-shadow:0 4px 8px rgba(0,0,0,.07), 0 12px 28px rgba(0,0,0,.09);}
   .tool-card:focus-visible{outline:2px solid var(--ink); outline-offset:3px;}
   .tool-icon{
     width:46px; height:46px; border-radius:14px; display:grid; place-items:center; font-size:22px; color:#fff; margin-bottom:6px;
@@ -1474,6 +1477,15 @@ function navigateTo(routeObj, search){
   try { history.pushState(null, '', search); } catch { /* ignore */ }
   renderRoute();
 }
+// Marca a rolagem em andamento: desliga o hover dos cards para eles não pularem sob o cursor
+(function(){
+  let t = null;
+  window.addEventListener('scroll', () => {
+    document.body.classList.add('is-scrolling');
+    clearTimeout(t);
+    t = setTimeout(() => document.body.classList.remove('is-scrolling'), 160);
+  }, { passive: true });
+})();
 window.addEventListener('popstate', () => { currentRoute = parseRouteFromLocation(); renderRoute(); });
 
 function renderHeaderNav(){
