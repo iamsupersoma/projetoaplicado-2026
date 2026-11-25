@@ -200,7 +200,7 @@
   }
   /* Elevação no hover só com mouse de verdade e nunca durante a rolagem
      (rolar move os cards sob o cursor e fazia os blocos subirem e descerem) */
-  @media (hover:hover) and (pointer:fine){
+  @media (hover:hover){
     .link-card:hover, .group-card:hover, .tool-card:hover{transform:translateY(-2px); box-shadow:0 4px 8px rgba(0,0,0,.07), 0 12px 28px rgba(0,0,0,.09);}
   }
   body.is-scrolling .link-card, body.is-scrolling .group-card, body.is-scrolling .tool-card{pointer-events:none;}
