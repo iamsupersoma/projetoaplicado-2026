@@ -203,7 +203,13 @@
   .card-body{padding:18px 20px 16px; display:flex; flex-direction:column; flex:1; gap:10px;}
   .card-header{display:flex; align-items:center; justify-content:space-between; gap:8px;}
   .card-title-row{display:flex; align-items:center; gap:9px; min-width:0;}
-  .favicon{width:20px; height:20px; border-radius:5px; flex-shrink:0; object-fit:contain;}
+  .favicon{width:20px; height:20px; border-radius:5px; flex-shrink:0; object-fit:contain; background:rgba(0,0,0,.05);}
+  /* ícones reservam o espaço antes da fonte de ícones carregar (evita saltos) */
+  i.ph, i[class*="ph-"]{display:inline-block; width:1em; height:1em; font-style:normal;}
+  .card-footer{min-height:48px;}
+  .card-actions{flex-shrink:0;}
+  /* página de leitura do documento: coluna centralizada */
+  .doc-page-wrap{max-width:760px; margin:0 auto; width:100%;}
   .card-title{
     font-size:16px; font-weight:700; color:var(--ink); text-decoration:none;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-0.01em;
@@ -1571,13 +1577,15 @@ async function renderDocPage(id){
   }
   root().innerHTML = `
     <div class="main">
+     <div class="doc-page-wrap">
       <button class="btn-sm" id="docPageBack" style="margin:18px 0 10px;">${phIcon('arrow-left')} Voltar aos links</button>
-      <div class="doc-view">
+      <div class="doc-view" style="max-width:none;">
         <h1 style="font-size:34px; font-weight:800; letter-spacing:-0.02em; margin:10px 0 4px; line-height:1.2;">${esc(doc.title)}</h1>
         ${doc.description ? `<p style="font-size:16.5px; color:var(--ink-mid); margin:0 0 10px;">${esc(doc.description)}</p>` : ''}
         <div class="doc-date" style="font-size:12.5px; color:var(--ink-soft); margin-bottom:18px;">Atualizado em ${esc(fmtDateTime(doc.updated_at))}</div>
         ${renderDocBlocks(doc.content)}
       </div>
+     </div>
     </div>`;
   $('docPageBack').onclick = goHome;
 }
@@ -1656,7 +1664,7 @@ function renderGrid(){
     if(favList.length){
       const img = document.createElement('img'); img.className = 'favicon'; img.referrerPolicy = 'no-referrer';
       let attempt = 0; img.src = favList[0];
-      img.onerror = () => { attempt++; attempt < favList.length ? (img.src = favList[attempt]) : (img.style.display='none'); };
+      img.onerror = () => { attempt++; attempt < favList.length ? (img.src = favList[attempt]) : (img.onerror = null, img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'); };
       titleRow.appendChild(img);
     }
     const titleLink = document.createElement('a'); titleLink.className = 'card-title';
@@ -2539,7 +2547,7 @@ function buildLinkDisplayRow(link, body){
   if(favList.length){
     const img = document.createElement('img'); img.className = 'favicon'; img.referrerPolicy = 'no-referrer';
     let attempt = 0; img.src = favList[0];
-    img.onerror = () => { attempt++; attempt < favList.length ? (img.src = favList[attempt]) : (img.style.display = 'none'); };
+    img.onerror = () => { attempt++; attempt < favList.length ? (img.src = favList[attempt]) : (img.onerror = null, img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'); };
     meta.appendChild(img);
   }
   const textWrap = document.createElement('div'); textWrap.style.minWidth = '0';
@@ -4949,8 +4957,9 @@ async function renderRoute(){
   } else if(route === 'doc'){
     renderDocPage(currentRoute.slug);
   } else {
-    await loadLinksData();
-    await loadPublicDocs();
+    await Promise.all([loadLinksData(), loadPublicDocs()]);
+    // espera as fontes (com limite) para o texto não reflowar depois de desenhar os cards
+    try { await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]); } catch { /* ignore */ }
     renderHomePage();
   }
 }
