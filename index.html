@@ -817,6 +817,15 @@
   #timerApp .tm-drawer textarea:focus-visible{outline:3px solid #fff; outline-offset:2px;}
   #timerApp .tm-check{display:flex; align-items:center; gap:10px; font:400 16px/1.25 var(--tm-body); color:#fff; cursor:pointer;}
   #timerApp .tm-drawer .tm-check input{width:22px; height:22px; flex:none; padding:0; accent-color:#fff; cursor:pointer;}
+  #timerApp .dw-glist{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; max-height:min(300px,38vh); overflow-y:auto;}
+  #timerApp .dw-glist li{display:flex; align-items:center; gap:8px; background:#fff; color:var(--tm-navy); border-radius:12px; padding:6px 6px 6px 14px; font:700 15px/1.2 var(--tm-display);}
+  #timerApp .dw-glist li span{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  #timerApp .dw-glist li.empty{color:var(--tm-ink-soft); font-weight:500; padding:12px 14px;}
+  #timerApp .tm-drawer .dw-glist button{flex:none; width:32px; height:32px; padding:0; border:0; border-radius:9px; background:var(--tm-mist); color:var(--tm-navy); font:700 20px/1 var(--tm-display); cursor:pointer;}
+  #timerApp .tm-drawer .dw-glist button:hover{background:var(--tm-alert); color:#fff;}
+  #timerApp .dw-add{display:flex; gap:8px; margin-top:8px;}
+  #timerApp .tm-drawer .dw-add input{flex:1; min-width:0; font-size:15px;}
+  #timerApp .tm-drawer .dw-add button{flex:none; width:46px; padding:0; border:0; border-radius:12px; background:var(--tm-mist); color:var(--tm-navy); font:800 22px/1 var(--tm-display); cursor:pointer;}
   #timerApp .tm-note{font:400 15px/1.35 var(--tm-body); color:var(--tm-mist); margin:-8px 0 0;}
   #timerApp a.tm-linkbtn{font:700 14px/1.1 var(--tm-display); border-radius:999px; padding:13px 16px; text-align:center; text-decoration:none; background:rgba(255,255,255,.12); color:#fff;}
   #timerApp a.tm-linkbtn:hover{background:rgba(255,255,255,.2);}
@@ -4716,7 +4725,7 @@ const DRAW_MAX_AGE = 12 * 3600 * 1000;
 const draw = {
   booted: false, channel: null, live: false, peers: 1, raf: 0, idleT: null, closeT: null,
   id: Math.random().toString(36).slice(2, 10),
-  S: { names: [], order: [], rev: 0, from: '', drawnAt: 0 },
+  S: { names: [], order: [], removed: [], rev: 0, from: '', drawnAt: 0 },
   anim: null, lastKey: '', spinName: '', lastSwap: 0, landedAt: -1,
 };
 function dwStored(){
@@ -4733,10 +4742,6 @@ function dwShuffle(list){
     const j = Math.floor(r * (i + 1)); [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
-}
-function dwParseNames(text){
-  const seen = new Set();
-  return String(text).split('\n').map(s => s.trim()).filter(s => s && !seen.has(s.toLowerCase()) && seen.add(s.toLowerCase()));
 }
 /* Quantas posições já foram reveladas e em que ponto está a atual. */
 function dwProgress(){
@@ -4785,27 +4790,43 @@ async function dwFetchGroupNames(){
 function dwDraw(){
   if(draw.anim) return;
   const names = draw.S.names;
-  if(names.length < 2){ dwOpenDrawer(); $('dwNames')?.focus(); return; }
+  if(names.length < 2){ dwOpenDrawer(); $('dwAddName')?.focus(); return; }
   dwCommit({ ...draw.S, order: dwShuffle(names), drawnAt: Date.now(), manual: false }, true);
 }
+function dwRemove(name){
+  if(draw.anim) return;
+  const S = draw.S;
+  const order = S.order.filter(n => n !== name);
+  dwCommit({ ...S, names: S.names.filter(n => n !== name), removed: [...new Set([...(S.removed || []), name])],
+    order, drawnAt: order.length ? S.drawnAt : 0, manual: order.length ? S.manual : false }, false);
+}
+function dwAdd(name){
+  name = String(name || '').trim();
+  if(!name) return false;
+  const S = draw.S;
+  if(S.names.some(n => n.toLowerCase() === name.toLowerCase())){ showToast('Esse grupo já está na lista'); return false; }
+  dwCommit({ ...S, names: [...S.names, name], removed: (S.removed || []).filter(n => n.toLowerCase() !== name.toLowerCase()), order: [], drawnAt: 0, manual: false }, false);
+  return true;
+}
+async function dwReset(){
+  if(draw.anim) return;
+  if(!await showConfirm('O resultado será apagado e todos os grupos removidos voltam para a lista.', 'Resetar o sorteio?')) return;
+  const fetched = await dwFetchGroupNames();
+  const S = draw.S;
+  const names = fetched.length ? fetched : [...new Set([...S.names, ...(S.removed || [])])];
+  dwCommit({ ...S, names, removed: [], order: [], drawnAt: 0, manual: false }, false);
+  showToast('Sorteio resetado');
+}
 function dwClear(){ if(draw.S.order.length) dwCommit({ ...draw.S, order: [], drawnAt: 0, manual: false }, false); }
-function dwSetNames(names){
-  const same = names.length === draw.S.names.length && names.every((n, i) => n === draw.S.names[i]);
-  if(same) return;
-  dwCommit({ ...draw.S, names, order: [], drawnAt: 0, manual: false }, false);
-}
-async function dwReloadGroups(){
-  const names = await dwFetchGroupNames();
-  if(names.length) dwSetNames(names);
-  else showToast('Nenhum grupo cadastrado encontrado');
-}
 function dwOpenDrawer(){ clearTimeout(draw.closeT); $('dwDrawer')?.classList.add('open'); }
 
 /* ---- render ---- */
 function dwSyncInputs(){
-  const ta = $('dwNames'); if(!ta) return;
-  if(document.activeElement !== ta) ta.value = draw.S.names.join('\n');
-  $('dwCount').textContent = draw.S.names.length + (draw.S.names.length === 1 ? ' grupo' : ' grupos');
+  const ul = $('dwGroupList'); if(!ul) return;
+  const names = draw.S.names, drawn = new Set(draw.S.order);
+  ul.innerHTML = names.length ? names.map(n => `<li><span>${esc(n)}</span><button type="button" data-n="${esc(n)}" aria-label="Remover ${esc(n)} da lista" title="Remover da lista">×</button></li>`).join('')
+    : '<li class="empty">Nenhum grupo na lista</li>';
+  $('dwCount').textContent = names.length + (names.length === 1 ? ' grupo' : ' grupos');
 }
 function dwRender(){
   if(!$('dwStage')) return;
@@ -4977,11 +4998,14 @@ async function renderDrawPage(){
         <div>
           <h3>Controles</h3>
         </div>
-        <div class="tm-field"><label for="dwNames">Grupos no sorteio · <span id="dwCount"></span></label><textarea id="dwNames" spellcheck="false" placeholder="Um grupo por linha"></textarea></div>
-        <p class="tm-note">Os grupos vêm do cadastro da plataforma e são atualizados toda vez que a tela abre. Você pode editar a lista (um grupo por linha); mudar a lista apaga o resultado atual.</p>
+        <div class="tm-field"><label>Grupos no sorteio · <span id="dwCount"></span></label>
+          <ul class="dw-glist" id="dwGroupList"></ul>
+          <div class="dw-add"><input id="dwAddName" type="text" placeholder="Adicionar grupo" autocomplete="off"><button type="button" id="dwAddBtn">+</button></div>
+        </div>
+        <p class="tm-note">Os grupos vêm do cadastro. Remover um grupo o tira da lista e do resultado atual, sem sortear de novo. Adicionar um grupo apaga o resultado.</p>
         <div class="tm-stack">
           <button class="primary" id="dwDraw">Sortear ordem</button>
-          <div class="tm-row"><button id="dwClear">Limpar resultado</button><button id="dwReload">Recarregar grupos</button></div>
+          <button id="dwReset">Resetar sorteio</button>
           <a class="tm-linkbtn" href="?cronometro=1" target="_blank" rel="noopener">Abrir o cronômetro</a>
           <button id="dwFull">Tela cheia</button>
         </div>
@@ -5003,11 +5027,13 @@ async function renderDrawPage(){
   $('dwClose').onclick = close;
   $('dwCta').onclick = () => { dwDraw(); };
   $('dwDraw').onclick = () => { close(); dwDraw(); };
-  $('dwClear').onclick = dwClear;
-  $('dwReload').onclick = dwReloadGroups;
+  $('dwReset').onclick = dwReset;
+  $('dwGroupList').addEventListener('click', e => { const b = e.target.closest('button[data-n]'); if(b) dwRemove(b.dataset.n); });
+  const addGroup = () => { const i = $('dwAddName'); if(dwAdd(i.value)){ i.value = ''; } i.focus(); };
+  $('dwAddBtn').onclick = addGroup;
+  $('dwAddName').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); addGroup(); } });
   $('dwFull').onclick = tmFull;
   $('dwExit').onclick = () => { if(document.fullscreenElement) document.exitFullscreen().catch(() => {}); goHome(); };
-  $('dwNames').addEventListener('change', e => dwSetNames(dwParseNames(e.target.value)));
   $('dwList').addEventListener('pointerdown', dwDragStart);
   $('dwList').addEventListener('keydown', dwListKey);
   if(!draw.dragWired){
@@ -5036,7 +5062,9 @@ async function renderDrawPage(){
   dwSyncInputs(); dwRender();
   if(!draw.raf) draw.raf = requestAnimationFrame(dwLoop);
   // sempre puxa os nomes atuais dos grupos cadastrados; o resultado só é mantido se o conjunto de grupos não mudou
-  const names = await dwFetchGroupNames();
+  const fetched = await dwFetchGroupNames();
+  const gone = new Set(draw.S.removed || []);
+  const names = fetched.filter(n => !gone.has(n));
   if(names.length){
     const S = draw.S, key = a => [...a].sort().join('\n');
     const keep = S.order.length && key(S.order) === key(names);
