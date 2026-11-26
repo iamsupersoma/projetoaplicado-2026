@@ -942,6 +942,9 @@
   #timerApp{overflow:clip; overscroll-behavior:none; -webkit-text-size-adjust:100%; text-size-adjust:100%;}
   #timerApp .tm-digits, #timerApp .tm-group{font-synthesis:none; -webkit-text-size-adjust:100%;}
   #timerApp .tm-digits{font-weight:900;}
+  /* o tempo e o título ficam em camada própria, com suavização fixa: o navegador (macOS) não reavalia o antialiasing do texto ao focar campos do drawer */
+  #timerApp .tm-digits, #timerApp .tm-group, #timerApp .tm-hint{-webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:geometricPrecision; will-change:transform; transform:translateZ(0); backface-visibility:hidden;}
+  #timerApp .tm-ascii{will-change:contents; contain:strict;}
 
   /* alerta de tempo: fundo laranja e elementos em branco */
   #timerApp{transition:background .4s;}
