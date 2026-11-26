@@ -833,6 +833,85 @@
   @media(prefers-reduced-motion:reduce){ #timerApp .dw-stage.landed .dw-name{animation:none;} }
   #timerApp .tm-exit{color:var(--tm-mist) !important; background:transparent !important; text-decoration:underline; padding:4px !important; align-self:flex-start;}
 
+
+  /* ======================= VISUAL LIMPO (cronômetro e sorteio) =======================
+     Sem cartão: tudo direto sobre o bege dos slides (#EEEFE9), texto navy #07038E e índigo
+     #2F2BD2 nos destaques. O painel de controles (drawer) continua em azul escuro. */
+  #timerApp{background:var(--tm-cream); color:var(--tm-navy); --tm-line:rgba(7,3,142,.16); --tm-soft:rgba(7,3,142,.6);}
+  #timerApp .tm-panel{background:transparent; border-radius:0; padding:clamp(8px,2.4vh,28px) clamp(4px,1.2vw,24px) 0;}
+  #timerApp .tm-chip{background:var(--tm-mist); color:var(--tm-navy);}
+  #timerApp .tm-chip.running{background:var(--tm-indigo); color:#fff;}
+  #timerApp .tm-chip.warn{background:var(--tm-warn); color:#fff;}
+  #timerApp .tm-hint{color:var(--tm-soft);}
+  #timerApp .tm-track{height:clamp(5px,.7vh,9px); background:var(--tm-mist);}
+  #timerApp .tm-steps{margin-top:clamp(12px,2.4vh,26px); gap:clamp(10px,2vw,32px);}
+  #timerApp .tm-steps li{padding:.45em 0; border:0; border-radius:0; background:none; color:rgba(7,3,142,.45); box-shadow:inset 0 -2px 0 transparent;}
+  #timerApp .tm-steps li.done{background:none; color:rgba(7,3,142,.45);}
+  #timerApp .tm-steps li.now{background:none; color:var(--tm-navy); box-shadow:none;}
+  #timerApp .tm-steps li{box-shadow:none; gap:.55em;}
+  #timerApp .tm-steps li::before{content:""; flex:none; width:.55em; height:.55em; border-radius:50%; background:rgba(7,3,142,.22);}
+  #timerApp .tm-steps li.now::before{background:var(--tm-indigo);}
+  #timerApp .tm-foot{position:relative; z-index:21; color:var(--tm-navy);}
+  #timerApp .tm-foot small{opacity:.7;}
+  #timerApp .tm-logo{filter:url(#tmNavyTint);}
+  #timerApp:has(.tm-panel.clap) .tm-foot{color:#fff;}
+  #timerApp:has(.tm-panel.clap) .tm-logo{filter:none;}
+  #timerApp .tm-panel.pulse{animation:none;}
+  #timerApp .tm-panel.pulse .tm-digits{animation:tmBlink 1s ease-in-out infinite;}
+  @keyframes tmBlink{50%{opacity:.55;}}
+  @media(prefers-reduced-motion:reduce){#timerApp .tm-panel.pulse .tm-digits{animation:none;}}
+  #timerApp .tm-applause{position:fixed; inset:0; z-index:20; border-radius:0; padding-bottom:clamp(60px,9vh,110px);}
+
+  /* textura ASCII discreta ao fundo (mesma ideia do convite) */
+  #timerApp .tm-ascii{position:absolute; inset:0; width:100%; height:100%; z-index:0; pointer-events:none;}
+  #timerApp .tm-stage{position:relative; z-index:1;}
+
+  /* sorteio */
+  #timerApp .dw-pos{color:var(--tm-mist);}
+  #timerApp .dw-list{gap:0;}
+  #timerApp .dw-list li{border:0; border-radius:14px; padding:.62em .6em; color:rgba(7,3,142,.5);}
+  #timerApp .dw-list li b{background:transparent; color:inherit; border:1.5px solid currentColor;}
+  #timerApp .dw-list li.filled{background:none; color:var(--tm-navy);}
+  #timerApp .dw-list li.filled b{background:var(--tm-navy); color:#fff; border-color:var(--tm-navy);}
+  #timerApp .dw-list li.now{background:var(--tm-indigo); color:#fff;}
+  #timerApp .dw-list li.now b{background:#fff; color:var(--tm-indigo); border-color:#fff;}
+  #timerApp .dw-list.movable li:hover{background:rgba(7,3,142,.05);}
+  #timerApp .dw-list.movable li.dragging{background:var(--tm-indigo); color:#fff; border-radius:14px; box-shadow:0 10px 24px rgba(7,3,142,.3);}
+  #timerApp .dw-list.movable li.dragging b{background:#fff; color:var(--tm-indigo); border-color:#fff;}
+  #timerApp .dw-grip{color:var(--tm-soft);}
+  #timerApp .dw-list li.dragging .dw-grip{color:#fff;}
+
+  /* painel de controles: campos translúcidos em vez de caixas brancas */
+  #timerApp .tm-drawer input, #timerApp .tm-drawer select, #timerApp .tm-drawer textarea{background:rgba(255,255,255,.09); color:#fff; border:1px solid rgba(255,255,255,.18);}
+  #timerApp .tm-drawer input::placeholder{color:rgba(255,255,255,.45);}
+  #timerApp .tm-drawer select option{color:#07038E; background:#fff;}
+  #timerApp .tm-drawer input:focus-visible, #timerApp .tm-drawer select:focus-visible{outline:0; border-color:#fff;}
+  #timerApp .tm-dd-btn{background:rgba(255,255,255,.09) !important; color:#fff !important; border:1px solid rgba(255,255,255,.18) !important;}
+  #timerApp .tm-dd-list{background:#1511a6; border:1px solid rgba(255,255,255,.18); box-shadow:0 18px 40px rgba(0,0,0,.4);}
+  #timerApp .tm-dd-list li{color:#fff;}
+  #timerApp .tm-dd-list li b{background:rgba(255,255,255,.16); color:#fff;}
+  #timerApp .tm-dd-list li.free{color:rgba(255,255,255,.6); border-bottom-color:rgba(255,255,255,.18);}
+  #timerApp .tm-dd-list li:hover, #timerApp .tm-dd-list li:focus{background:rgba(255,255,255,.12);}
+  #timerApp .tm-dd-list li[aria-selected="true"]{background:#fff; color:#07038E;}
+  #timerApp .tm-dd-list li[aria-selected="true"] b{background:var(--tm-indigo); color:#fff;}
+  #timerApp .tm-dd-list li[aria-selected="true"] i{color:#07038E;}
+  #timerApp .tm-drawer button.primary{background:#fff; color:#07038E;}
+  #timerApp .tm-drawer button.accent{background:rgba(255,255,255,.16);}
+  #timerApp .tm-drawer button.accent:hover{background:rgba(255,255,255,.26);}
+  #timerApp .tm-drawer .tm-chips button, #timerApp .tm-drawer .dw-add button{background:rgba(255,255,255,.12); color:#fff;}
+  #timerApp .tm-drawer .tm-chips button:hover, #timerApp .tm-drawer .dw-add button:hover{background:rgba(255,255,255,.22);}
+  #timerApp .dw-glist li{background:rgba(255,255,255,.09); color:#fff;}
+  #timerApp .dw-glist li.empty{color:rgba(255,255,255,.55);}
+  #timerApp .tm-drawer .dw-glist button{background:rgba(255,255,255,.14); color:#fff;}
+  #timerApp .tm-drawer .dw-glist button:hover{background:var(--tm-alert); color:#07038E;}
+  #timerApp .tm-cust{border-color:rgba(255,255,255,.18);}
+  #timerApp .tm-field label, #timerApp .tm-cust summary{color:rgba(255,255,255,.7);}
+  #timerApp .tm-row > *, #timerApp .tm-field{min-width:0;}
+  #timerApp .tm-drawer{overflow-x:hidden; box-sizing:border-box;}
+  #timerApp .tm-drawer > *, #timerApp .tm-cust-body > *{min-width:0; max-width:100%; box-sizing:border-box;}
+  #timerApp .tm-drawer input, #timerApp .tm-drawer select, #timerApp .tm-drawer textarea{min-width:0; max-width:100%; box-sizing:border-box;}
+  #timerApp .tm-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+
   /* ---- Documentos ---- */
   .doc-view{max-width:760px; line-height:1.7; font-size:15.5px; color:var(--ink);}
   .doc-view h2{font-size:26px; font-weight:800; letter-spacing:-0.02em; margin:28px 0 8px; line-height:1.25;}
@@ -4526,6 +4605,8 @@ function renderTimerPage(){
   timer.lastKey = '';
   root().innerHTML = `
     <div id="timerApp">
+      <canvas class="tm-ascii" id="tmAscii" aria-hidden="true"></canvas>
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="tmNavyTint" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 0.027  0 0 0 0 0.012  0 0 0 0 0.557  0 0 0 1 0"/></filter></svg>
       <div class="tm-stage">
         <section class="tm-panel" id="tmPanel">
           <div class="tm-head">
@@ -4970,6 +5051,8 @@ async function renderDrawPage(){
   draw.anim = null; draw.lastKey = '';
   root().innerHTML = `
     <div id="timerApp">
+      <canvas class="tm-ascii" id="tmAscii" aria-hidden="true"></canvas>
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="tmNavyTint" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 0.027  0 0 0 0 0.012  0 0 0 0 0.557  0 0 0 1 0"/></filter></svg>
       <div class="tm-stage">
         <section class="tm-panel">
           <div class="tm-head">
@@ -5118,6 +5201,48 @@ async function renderRoute(){
 (async () => {
   $('logoArea').onclick = goHome;
   await renderRoute();
+})();
+
+/* ---------- textura ASCII do cronômetro e do sorteio (discreta, bordas, baixa taxa de quadros) ---------- */
+(function(){
+  var RAMP='.:+x*01#', last=0, cw=0, ch=0, still=false;
+  try{ still = window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+  function h2(x,y,s){var n=Math.sin(x*127.1+y*311.7+s*74.7)*43758.5453; return n-Math.floor(n);}
+  function vn(x,y,s){var xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);
+    var a=h2(xi,yi,s),b=h2(xi+1,yi,s),c=h2(xi,yi+1,s),d=h2(xi+1,yi+1,s); return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;}
+  function draw(cv,t){
+    var dpr=Math.min(2,window.devicePixelRatio||1), W=cv.clientWidth, H=cv.clientHeight;
+    if(!W||!H) return;
+    if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);}
+    var ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+    var cell=Math.max(22,Math.round(Math.min(W,H)/26)), gp=Math.max(1.5,cell*.09), cols=Math.ceil(W/cell), rows=Math.ceil(H/cell), n=RAMP.length;
+    ctx.font='700 '+Math.round(cell*.62)+'px "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    for(var j=0;j<rows;j++){
+      for(var i=0;i<cols;i++){
+        var x=(i+.5)/cols, y=(j+.5)/rows;
+        var dx=(x-.46)/.62, dy=(y-.5)/.66, d=Math.sqrt(dx*dx+dy*dy);      /* centro limpo, textura nas bordas */
+        var mask=Math.max(0,Math.min(1,(d-.62)/.5));
+        if(mask<=0) continue;
+        var f=vn(x*4.2+t*.018,y*4.2-t*.012,7)*.75+vn(x*9+t*.03,y*9,3)*.25;
+        var v=(f-.36)*mask*2.4; if(v<=.06) continue; if(v>1) v=1;
+        var hsh=h2(i,j,5.5), ch=RAMP.charAt(Math.min(n-1,Math.floor(v*(n-1)+hsh*.9))), px=(i+.5)*cell, py=(j+.5)*cell;
+        if(v>.58){                                   /* bloco cheio, com caractere vazado em metade deles */
+          ctx.fillStyle='rgb('+Math.round(232-14*v)+','+Math.round(233-14*v)+','+Math.round(224-16*v)+')';
+          ctx.fillRect(px-cell/2+gp/2,py-cell/2+gp/2,cell-gp,cell-gp);
+          if(hsh>.5){ctx.fillStyle='#EEEFE9'; ctx.fillText(ch,px,py+1);}
+        }else{
+          ctx.fillStyle='rgba(184,185,168,'+(.4+.4*v).toFixed(2)+')'; ctx.fillText(ch,px,py+1);
+        }
+      }
+    }
+  }
+  function loop(now){
+    var cv=document.getElementById('tmAscii');
+    if(cv && now-last>(still?1500:110)){ last=now; draw(cv,now/1000); }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
 })();
 </script>
 </body>
