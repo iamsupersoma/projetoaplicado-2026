@@ -666,7 +666,7 @@
   #timerApp .tm-chip.running{background:var(--tm-indigo); color:#fff;}
   #timerApp .tm-chip.warn{background:var(--tm-warn); color:#fff;}
   #timerApp .tm-clock{flex:1; min-height:0; display:flex; flex-direction:column; justify-content:center;}
-  #timerApp .tm-digits{font:900 clamp(96px,25vw,380px)/.86 var(--tm-display); letter-spacing:-.02em; font-variant-numeric:tabular-nums;
+  #timerApp .tm-digits{font:900 calc(clamp(96px,25vw,380px) * var(--tm-scale,1))/.86 var(--tm-display); letter-spacing:-.02em; font-variant-numeric:tabular-nums;
     margin:0; color:var(--tm-navy); transition:color .4s; white-space:nowrap;}
   #timerApp .tm-digits .tm-colon{display:inline-block; transform:translateY(-.06em); margin:0 -.02em;}
   #timerApp .tm-digits.warn{color:var(--tm-warn);}
@@ -741,6 +741,28 @@
   #timerApp .tm-dd-list li[aria-selected="true"]{background:var(--tm-indigo); color:#fff;}
   #timerApp .tm-dd-list li[aria-selected="true"] b{background:#fff; color:var(--tm-indigo);}
   #timerApp .tm-dd-list li[aria-selected="true"] i{color:#fff;}
+  /* personalização do cronômetro */
+  #timerApp[data-theme="verde"]{--tm-indigo:#0F7B4F; --tm-navy:#06402A; --tm-mist:#CFEBDD; --tm-cream:#E8F3EC; --tm-ink-soft:rgba(6,64,42,.55);}
+  #timerApp[data-theme="vinho"]{--tm-indigo:#9F1239; --tm-navy:#4C0519; --tm-mist:#FAD4DE; --tm-cream:#F8E8EC; --tm-ink-soft:rgba(76,5,25,.55);}
+  #timerApp[data-theme="grafite"]{--tm-indigo:#3F3F46; --tm-navy:#18181B; --tm-mist:#E4E4E7; --tm-cream:#F1F1F3; --tm-ink-soft:rgba(24,24,27,.55);}
+  #timerApp[data-size="p"]{--tm-scale:.62;}
+  #timerApp[data-size="m"]{--tm-scale:.8;}
+  #timerApp[data-bar="off"] .tm-track{display:none;}
+  #timerApp[data-steps="off"] .tm-steps{display:none;}
+  #timerApp .tm-cust{border:1px solid rgba(217,216,246,.3); border-radius:14px; padding:0;}
+  #timerApp .tm-cust summary{cursor:pointer; list-style:none; padding:12px 14px; font:700 12px/1 var(--tm-display); letter-spacing:.24em; text-transform:uppercase; color:var(--tm-mist); display:flex; justify-content:space-between; align-items:center;}
+  #timerApp .tm-cust summary::-webkit-details-marker{display:none;}
+  #timerApp .tm-cust summary::after{content:'+'; font-size:18px; letter-spacing:0;}
+  #timerApp .tm-cust[open] summary::after{content:'−';}
+  #timerApp .tm-cust-body{display:flex; flex-direction:column; gap:14px; padding:2px 14px 16px;}
+  #timerApp .tm-chips{display:flex; flex-wrap:wrap; gap:6px;}
+  #timerApp .tm-drawer .tm-chips button{flex:none; font:700 14px/1 var(--tm-display); color:var(--tm-navy); background:#fff; border:0; border-radius:999px; padding:10px 12px; cursor:pointer;}
+  #timerApp .tm-drawer .tm-chips button:hover{background:var(--tm-mist);}
+  #timerApp .tm-digits.over{font-size:calc(clamp(96px,25vw,380px) * var(--tm-scale,1) * .82);}
+  #timerApp .tm-themes{display:flex; gap:10px;}
+  #timerApp .tm-drawer .tm-themes button{width:34px; height:34px; min-width:34px; padding:0; border-radius:50%; background:var(--sw); border:3px solid rgba(255,255,255,.4); cursor:pointer;}
+  #timerApp .tm-drawer .tm-themes button[aria-pressed="true"]{border-color:#fff; box-shadow:0 0 0 3px var(--sw), 0 0 0 5px #fff;}
+  #timerApp .tm-field label{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   #timerApp .tm-row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
   #timerApp .tm-stack{display:flex; flex-direction:column; gap:10px;}
   #timerApp .tm-drawer button{font:700 14px/1.1 var(--tm-display); border:0; border-radius:999px; padding:13px 16px; cursor:pointer;
@@ -4192,9 +4214,13 @@ const TIMER_STORE_KEY = 'pi-banca-cronometro';
 const timer = {
   booted: false, channel: null, live: false, peers: 1, groups: [], lastKey: '', raf: 0, idleT: null, closeT: null,
   id: Math.random().toString(36).slice(2, 10),
-  S: { phase: 'talk', status: 'ready', endsAt: 0, remaining: 600000, durations: { talk: 600000, banca: 300000 }, group: 'Grupo 1', groupIdx: -1, rev: 0, from: '', useBanca: true, warnAt: 60, sound: false },
+  S: { phase: 'talk', status: 'ready', endsAt: 0, remaining: 600000, durations: { talk: 600000, banca: 300000 }, group: 'Grupo 1', groupIdx: -1, rev: 0, from: '', useBanca: true, warnAt: 60, sound: false, cfg: null },
 };
 const TIMER_ORDER = ['talk', 'applause1', 'banca', 'applause2'];
+const TIMER_CFG_DEFAULT = { final: 10, onZero: 'applause', mode: 'down', theme: 'indigo', size: 'g', showBar: true, showSteps: true, labels: { talk: 'Apresentação', banca: 'Considerações da banca' } };
+const TIMER_PRESETS = [[5, 3], [7, 3], [10, 5], [15, 5], [20, 10]];
+function tmCfg(){ const c = timer.S.cfg || {}; return { ...TIMER_CFG_DEFAULT, ...c, labels: { ...TIMER_CFG_DEFAULT.labels, ...(c.labels || {}) } }; }
+function tmSetCfg(patch){ const c = tmCfg(); tmCommit({ ...timer.S, cfg: { ...c, ...patch, labels: { ...c.labels, ...(patch.labels || {}) } } }); }
 const TIMER_PH = {
   talk: { hint: 'Tempo para apresentar a proposta', chip: 'Apresentação' },
   banca: { hint: 'Feedback e perguntas dos avaliadores', chip: 'Banca' },
@@ -4205,6 +4231,7 @@ function tmMins(ms){ const s = Math.round(ms / 1000); return s % 60 ? tmFmt(ms) 
 function tmRem(){ const S = timer.S; return S.status === 'running' ? S.endsAt - Date.now() : S.remaining; }
 function tmView(){
   const S = timer.S;
+  if(tmCfg().onZero === 'overtime') return S.phase;
   if(S.phase === 'talk' && S.status === 'running' && tmRem() <= 0) return 'applause1';
   if(S.phase === 'banca' && S.status === 'running' && tmRem() <= 0) return 'applause2';
   return S.phase;
@@ -4223,7 +4250,7 @@ function tmNextGroup(d){
 }
 
 /* ---- estado e sincronização ---- */
-function tmWire(){ const S = timer.S; return { phase: S.phase, status: S.status, remaining: Math.max(0, tmRem()), durations: S.durations, group: S.group, groupIdx: S.groupIdx, rev: S.rev, from: S.from, useBanca: S.useBanca !== false, warnAt: S.warnAt, sound: !!S.sound }; }
+function tmWire(){ const S = timer.S; return { phase: S.phase, status: S.status, remaining: tmCfg().onZero === 'overtime' ? tmRem() : Math.max(0, tmRem()), durations: S.durations, group: S.group, groupIdx: S.groupIdx, rev: S.rev, from: S.from, useBanca: S.useBanca !== false, warnAt: S.warnAt, sound: !!S.sound, cfg: tmCfg() }; }
 function tmSave(){ try { localStorage.setItem(TIMER_STORE_KEY, JSON.stringify({ ...tmWire(), savedAt: Date.now() })); } catch {} }
 function tmLoad(){
   try {
@@ -4231,6 +4258,7 @@ function tmLoad(){
     if(d && d.durations){
       const elapsed = d.status === 'running' ? Date.now() - (d.savedAt || Date.now()) : 0;
       timer.S = { ...timer.S, ...d, remaining: d.remaining - elapsed, endsAt: Date.now() + d.remaining - elapsed };
+      timer.S.cfg = tmCfg();
     }
   } catch {}
 }
@@ -4239,6 +4267,7 @@ function tmApply(d){
   const S = timer.S;
   if((d.rev || 0) < S.rev || ((d.rev || 0) === S.rev && String(d.from) <= String(S.from))) return;
   timer.S = { ...S, ...d, durations: { ...S.durations, ...d.durations }, endsAt: Date.now() + (+d.remaining || 0) };
+  timer.S.cfg = tmCfg();
   tmSave(); tmSyncInputs(); tmRender();
 }
 function tmCommit(next){
@@ -4300,8 +4329,8 @@ async function tmLoadGroups(){
 function tmToggle(){
   const v = tmView(), S = timer.S;
   if(v === 'applause1' || v === 'applause2') return tmAdvance();
-  if(S.status === 'running') tmCommit({ ...S, status: 'paused', remaining: Math.max(0, tmRem()) });
-  else { const r = Math.max(1000, S.remaining); tmCommit({ ...S, status: 'running', remaining: r, endsAt: Date.now() + r }); }
+  if(S.status === 'running') tmCommit({ ...S, status: 'paused', remaining: tmCfg().onZero === 'overtime' ? tmRem() : Math.max(0, tmRem()) });
+  else { const r = tmCfg().onZero === 'overtime' && S.remaining < 0 ? S.remaining : Math.max(1000, S.remaining); tmCommit({ ...S, status: 'running', remaining: r, endsAt: Date.now() + r }); }
 }
 function tmAdvance(){
   const v = tmView(), S = timer.S, d = S.durations;
@@ -4339,6 +4368,21 @@ function tmSetRemaining(input){
 function tmSetWarn(input){
   const n = parseInt(input.value, 10);
   tmCommit({ ...timer.S, warnAt: isNaN(n) ? 60 : Math.min(600, Math.max(0, n)) });
+}
+function tmSetFinal(input){
+  const n = parseInt(input.value, 10);
+  tmSetCfg({ final: isNaN(n) ? 10 : Math.min(120, Math.max(0, n)) });
+}
+function tmPreset(talkMin, bancaMin){
+  const S = timer.S, d = { talk: talkMin * 60000, banca: bancaMin * 60000 };
+  const c = { ...S, durations: d };
+  if(S.status === 'ready'){ const k = (S.phase === 'banca' || S.phase === 'applause2') ? 'banca' : 'talk'; c.remaining = d[k]; }
+  tmCommit(c);
+}
+function tmSetLabel(k, input){
+  const v = input.value.trim().slice(0, 40) || TIMER_CFG_DEFAULT.labels[k];
+  input.value = v;
+  tmSetCfg({ labels: { [k]: v } });
 }
 function tmBeep(times, freq){
   try {
@@ -4402,21 +4446,39 @@ function tmSyncInputs(){
   if($('tmInWarn') && a !== $('tmInWarn')) $('tmInWarn').value = S.warnAt == null ? 60 : S.warnAt;
   if($('tmUseBanca')) $('tmUseBanca').checked = S.useBanca !== false;
   if($('tmSound')) $('tmSound').checked = !!S.sound;
+  const c = tmCfg(), app = $('timerApp');
+  if(app){ app.dataset.theme = c.theme; app.dataset.size = c.size; app.dataset.bar = c.showBar ? 'on' : 'off'; app.dataset.steps = c.showSteps ? 'on' : 'off'; }
+  if($('tmInFinal') && a !== $('tmInFinal')) $('tmInFinal').value = c.final;
+  if($('tmOnZero')) $('tmOnZero').value = c.onZero;
+  if($('tmMode')) $('tmMode').value = c.mode;
+  if($('tmSize')) $('tmSize').value = c.size;
+  if($('tmShowBar')) $('tmShowBar').checked = !!c.showBar;
+  if($('tmShowSteps')) $('tmShowSteps').checked = !!c.showSteps;
+  ['talk', 'banca'].forEach(k => {
+    const el = $(k === 'talk' ? 'tmLblTalk' : 'tmLblBanca'); if(el && a !== el) el.value = c.labels[k];
+    const sp = document.querySelector('#tmSteps li[data-k="' + k + '"] span'); if(sp) sp.textContent = c.labels[k];
+    const lb = document.querySelector('label[for="' + (k === 'talk' ? 'tmInTalk' : 'tmInBanca') + '"]'); if(lb) lb.textContent = c.labels[k];
+  });
+  document.querySelectorAll('#tmThemes button').forEach(b => b.setAttribute('aria-pressed', b.dataset.theme === c.theme ? 'true' : 'false'));
 }
 function tmRender(){
   if(!$('tmPanel')) return;
-  const S = timer.S, v = tmView(), clap = v === 'applause1' || v === 'applause2';
-  const r = clap ? 0 : Math.max(0, tmRem());
+  const S = timer.S, v = tmView(), clap = v === 'applause1' || v === 'applause2', cfg = tmCfg();
+  const raw = tmRem(), fin = cfg.final;
+  const over = !clap && cfg.onZero === 'overtime' && raw < 0;
+  const r = clap ? 0 : Math.max(0, raw);
   const total = S.durations[v === 'banca' ? 'banca' : 'talk'] || 1;
-  const secs = Math.ceil(r / 1000);
-  const wa = S.warnAt == null ? 60 : S.warnAt, warn = !clap && wa > 10 && secs <= wa && secs > 10, alert = !clap && secs <= 10 && S.status !== 'ready';
+  const remSecs = Math.ceil(r / 1000);
+  // o que aparece no relógio: restante (regressiva), decorrido (progressiva) ou excedido (+)
+  const secs = clap ? 0 : over ? Math.ceil(-raw / 1000) : cfg.mode === 'up' ? Math.min(Math.ceil(total / 1000), Math.max(0, Math.floor((total - raw) / 1000))) : remSecs;
+  const wa = S.warnAt == null ? 60 : S.warnAt, warn = !clap && !over && wa > fin && remSecs <= wa && remSecs > fin, alert = !clap && (over || (remSecs <= fin && S.status !== 'ready'));
   if(S.sound && S.status === 'running'){
     const bk = v + '|' + S.rev;
     if(clap && timer.endBeep !== bk){ timer.endBeep = bk; tmBeep(3, 660); }
-    else if(!clap && wa > 10 && secs === wa && timer.warnBeep !== bk){ timer.warnBeep = bk; tmBeep(1, 880); }
+    else if(!clap && !over && wa > fin && remSecs === wa && timer.warnBeep !== bk){ timer.warnBeep = bk; tmBeep(1, 880); }
   }
-  $('tmBar').style.width = (clap ? 100 : Math.min(100, Math.max(0, (1 - r / total) * 100))) + '%';
-  const key = [v, S.status, secs, S.group, warn, alert, S.rev].join('|');
+  $('tmBar').style.width = (clap || over ? 100 : Math.min(100, Math.max(0, (1 - r / total) * 100))) + '%';
+  const key = [v, S.status, secs, S.group, warn, alert, over, S.rev].join('|');
   if(key === timer.lastKey) return;
   timer.lastKey = key;
   tmSyncInputs();
@@ -4425,18 +4487,18 @@ function tmRender(){
   $('tmPanel').classList.toggle('pulse', alert && S.status === 'running');
   if(!clap){
     const p = TIMER_PH[v];
-    $('tmDigits').innerHTML = String(Math.floor(secs / 60)).padStart(2, '0') + '<span class="tm-colon">:</span>' + String(secs % 60).padStart(2, '0');
-    $('tmDigits').className = 'tm-digits' + (alert ? ' alert' : warn ? ' warn' : '');
+    $('tmDigits').innerHTML = (over ? '+' : '') + String(Math.floor(secs / 60)).padStart(2, '0') + '<span class="tm-colon">:</span>' + String(secs % 60).padStart(2, '0');
+    $('tmDigits').className = 'tm-digits' + (alert ? ' alert' : warn ? ' warn' : '') + (over ? ' over' : '');
     $('tmTrack').className = 'tm-track' + (alert ? ' alert' : warn ? ' warn' : '');
     const chip = $('tmChip');
     chip.className = 'tm-chip' + (S.status === 'running' ? (warn || alert ? ' warn' : ' running') : '');
-    chip.textContent = S.status === 'running' ? (alert ? 'Encerrando' : warn ? 'Tempo acabando' : p.chip) : S.status === 'paused' ? 'Pausado' : 'Pronto';
-    $('tmHint').textContent = S.status === 'ready' ? 'Aguardando início · ' + tmMins(total) : S.status === 'paused' ? 'Tempo pausado' : p.hint;
+    chip.textContent = over ? 'Tempo excedido' : S.status === 'running' ? (alert ? 'Encerrando' : warn ? 'Tempo acabando' : cfg.labels[v === 'banca' ? 'banca' : 'talk']) : S.status === 'paused' ? 'Pausado' : 'Pronto';
+    $('tmHint').textContent = over ? 'Passou de ' + tmMins(total) : S.status === 'ready' ? 'Aguardando início · ' + tmMins(total) : S.status === 'paused' ? 'Tempo pausado' : (cfg.mode === 'up' ? 'Tempo decorrido · de ' + tmMins(total) : p.hint);
   } else {
     const first = v === 'applause1', nxt = tmNextGroup(1);
-    $('tmApEyebrow').textContent = first ? 'Fim da apresentação' : 'Fim das considerações';
+    $('tmApEyebrow').textContent = first ? (cfg.labels.talk === TIMER_CFG_DEFAULT.labels.talk ? 'Fim da apresentação' : 'Fim · ' + cfg.labels.talk) : (cfg.labels.banca === TIMER_CFG_DEFAULT.labels.banca ? 'Fim das considerações' : 'Fim · ' + cfg.labels.banca);
     $('tmApText').textContent = (first ? 'Obrigado, ' : 'Parabéns, ') + S.group;
-    $('tmApNext').textContent = first && S.useBanca !== false ? 'A seguir: considerações da banca · ' + tmMins(S.durations.banca) : (nxt ? 'A seguir: ' + nxt.group : 'Fim das apresentações');
+    $('tmApNext').textContent = first && S.useBanca !== false ? 'A seguir: ' + cfg.labels.banca + ' · ' + tmMins(S.durations.banca) : (nxt ? 'A seguir: ' + nxt.group : 'Fim das apresentações');
   }
   const idx = TIMER_ORDER.indexOf(v);
   document.querySelectorAll('#tmSteps li').forEach(li => { const i = TIMER_ORDER.indexOf(li.dataset.k); li.className = i < idx ? 'done' : i === idx ? 'now' : ''; });
@@ -4508,6 +4570,36 @@ function renderTimerPage(){
           <div class="tm-field"><label for="tmInWarn">Alerta aos (seg.)</label><input id="tmInWarn" type="text" inputmode="numeric"></div>
           <label class="tm-check"><input type="checkbox" id="tmSound"><span>Sinal sonoro</span></label>
         </div>
+        <details class="tm-cust" id="tmCust">
+          <summary>Personalizar</summary>
+          <div class="tm-cust-body">
+            <div class="tm-field"><label>Modelos de tempo</label>
+              <div class="tm-chips" id="tmPresets">${TIMER_PRESETS.map(([a, b]) => `<button type="button" data-t="${a}" data-b="${b}">${a} + ${b} min</button>`).join('')}</div>
+            </div>
+            <div class="tm-row">
+              <div class="tm-field"><label for="tmInFinal">Alerta final (seg.)</label><input id="tmInFinal" type="text" inputmode="numeric"></div>
+              <div class="tm-field"><label for="tmOnZero">Ao zerar</label><select id="tmOnZero"><option value="applause">Aplausos</option><option value="overtime">Continuar</option></select></div>
+            </div>
+            <div class="tm-row">
+              <div class="tm-field"><label for="tmMode">Contagem</label><select id="tmMode"><option value="down">Regressiva</option><option value="up">Progressiva</option></select></div>
+              <div class="tm-field"><label for="tmSize">Dígitos</label><select id="tmSize"><option value="p">Pequeno</option><option value="m">Médio</option><option value="g">Grande</option></select></div>
+            </div>
+            <div class="tm-field"><label>Cor do tema</label>
+              <div class="tm-themes" id="tmThemes">
+                <button type="button" data-theme="indigo" aria-label="Índigo" style="--sw:#2F2BD2"></button>
+                <button type="button" data-theme="verde" aria-label="Verde" style="--sw:#0F7B4F"></button>
+                <button type="button" data-theme="vinho" aria-label="Vinho" style="--sw:#9F1239"></button>
+                <button type="button" data-theme="grafite" aria-label="Grafite" style="--sw:#27272A"></button>
+              </div>
+            </div>
+            <label class="tm-check"><input type="checkbox" id="tmShowBar"><span>Mostrar barra de progresso</span></label>
+            <label class="tm-check"><input type="checkbox" id="tmShowSteps"><span>Mostrar etapas</span></label>
+            <div class="tm-row">
+              <div class="tm-field"><label for="tmLblTalk">Nome da etapa 1</label><input id="tmLblTalk" type="text" maxlength="40"></div>
+              <div class="tm-field"><label for="tmLblBanca">Nome da etapa 2</label><input id="tmLblBanca" type="text" maxlength="40"></div>
+            </div>
+          </div>
+        </details>
         <div class="tm-stack">
           <button class="primary" id="tmToggle">Iniciar</button>
           <div class="tm-row"><button id="tmPrev">← Voltar etapa</button><button class="accent" id="tmNext">Avançar etapa →</button></div>
@@ -4550,6 +4642,16 @@ function renderTimerPage(){
   $('tmInWarn').addEventListener('change', e => tmSetWarn(e.target));
   $('tmUseBanca').addEventListener('change', e => tmCommit({ ...timer.S, useBanca: e.target.checked }));
   $('tmSound').addEventListener('change', e => { if(e.target.checked) tmBeep(1, 880); tmCommit({ ...timer.S, sound: e.target.checked }); });
+  $('tmInFinal').addEventListener('change', e => tmSetFinal(e.target));
+  $('tmOnZero').addEventListener('change', e => tmSetCfg({ onZero: e.target.value }));
+  $('tmMode').addEventListener('change', e => tmSetCfg({ mode: e.target.value }));
+  $('tmSize').addEventListener('change', e => tmSetCfg({ size: e.target.value }));
+  $('tmShowBar').addEventListener('change', e => tmSetCfg({ showBar: e.target.checked }));
+  $('tmShowSteps').addEventListener('change', e => tmSetCfg({ showSteps: e.target.checked }));
+  $('tmLblTalk').addEventListener('change', e => tmSetLabel('talk', e.target));
+  $('tmLblBanca').addEventListener('change', e => tmSetLabel('banca', e.target));
+  $('tmPresets').addEventListener('click', e => { const b = e.target.closest('button'); if(b) tmPreset(+b.dataset.t, +b.dataset.b); });
+  $('tmThemes').addEventListener('click', e => { const b = e.target.closest('button'); if(b) tmSetCfg({ theme: b.dataset.theme }); });
   $('tmFull').onclick = tmFull;
   $('tmExit').onclick = () => { if(document.fullscreenElement) document.exitFullscreen().catch(() => {}); goHome(); };
   $('tmInGroup').addEventListener('change', e => tmCommit({ ...timer.S, group: e.target.value.trim() || 'Grupo', groupIdx: -1 }));
