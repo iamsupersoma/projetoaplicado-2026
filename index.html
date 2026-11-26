@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Inter e Pragati Narrow (fontes dos slides) carregadas de verdade, com todos os pesos: o cronômetro não depende de fonte instalada no computador nem de negrito sintético -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Pragati+Narrow:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -942,6 +944,7 @@
   #timerApp{overflow:clip; overscroll-behavior:none; -webkit-text-size-adjust:100%; text-size-adjust:100%;}
   #timerApp .tm-digits, #timerApp .tm-group{font-synthesis:none; -webkit-text-size-adjust:100%;}
   #timerApp .tm-digits{font-weight:900;}
+  #timerApp, #timerApp *{font-synthesis:none;}
   /* o tempo e o título ficam em camada própria, com suavização fixa: o navegador (macOS) não reavalia o antialiasing do texto ao focar campos do drawer */
   #timerApp .tm-digits, #timerApp .tm-group, #timerApp .tm-hint{-webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:geometricPrecision; will-change:transform; transform:translateZ(0); backface-visibility:hidden;}
   #timerApp .tm-ascii{will-change:contents; contain:strict;}
@@ -4572,6 +4575,17 @@ function tmDdPick(i){
 }
 
 /* ---- render ---- */
+/* Gerenciadores de senha e corretores (NordPass, 1Password, Bitwarden, LastPass, Dashlane, Grammarly) injetam ícones e estilos nos campos de texto; no cronômetro isso não é desejado. */
+function tmNoAutofill(root){
+  if(!root) return;
+  root.querySelectorAll('input[type="text"], input:not([type]), textarea').forEach(el => {
+    el.setAttribute('autocomplete', 'off'); el.setAttribute('autocapitalize', 'off'); el.setAttribute('autocorrect', 'off'); el.setAttribute('spellcheck', 'false');
+    el.setAttribute('data-lpignore', 'true'); el.setAttribute('data-1p-ignore', 'true'); el.setAttribute('data-bwignore', 'true');
+    el.setAttribute('data-form-type', 'other'); el.setAttribute('data-np-ignore', 'true'); el.setAttribute('data-np-autofill-type', 'none');
+    el.setAttribute('data-gramm', 'false'); el.setAttribute('data-gramm_editor', 'false'); el.setAttribute('data-enable-grammarly', 'false');
+    if(!el.name) el.name = 'tm-' + (el.id || 'campo');
+  });
+}
 function tmSyncInputs(){
   const a = document.activeElement, S = timer.S;
   if(!$('tmInGroup')) return;
@@ -4757,6 +4771,7 @@ function renderTimerPage(){
       </aside>
     </div>`;
 
+  tmNoAutofill($('tmDrawer'));
   const drawer = $('tmDrawer');
   const open = () => { clearTimeout(timer.closeT); drawer.classList.add('open'); };
   const close = () => { drawer.classList.remove('open'); if(drawer.contains(document.activeElement)) document.activeElement.blur(); };
@@ -5149,6 +5164,7 @@ async function renderDrawPage(){
       </aside>
     </div>`;
 
+  tmNoAutofill($('dwDrawer'));
   const drawer = $('dwDrawer');
   const close = () => { drawer.classList.remove('open'); if(drawer.contains(document.activeElement)) document.activeElement.blur(); };
   draw.closeDrawer = close;
