@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body><style>
+<body><canvas class="ascii-bg site-ascii" data-speed="0.35" data-bg="#FCFBF8" aria-hidden="true"></canvas><style>
   :root{
     --bg:#FCFBF8;
     --card:#FFFFFF;
@@ -77,7 +77,7 @@
   .hero-blob{
     position:fixed; border-radius:9999px; filter:blur(70px); pointer-events:none; z-index:-1;
   }
-  @media(prefers-reduced-motion:reduce){.hero-blob{display:none;}}
+  .site-ascii{position:fixed; inset:0; width:100%; height:100%; z-index:-1; pointer-events:none;}
   .eyebrow-badge{
     display:inline-flex; align-items:center; gap:6px; background:#F3F1EC; color:var(--ink-soft);
     font-size:11px; font-weight:700; padding:5px 12px; border-radius:999px; margin-bottom:10px;
@@ -643,7 +643,7 @@
      Tela cheia isolada do resto do site: identidade dos slides Senac (indigo/navy),
      Inter + Pragati Narrow. Tudo escopado em #timerApp / .tm-* para não colidir. */
   body.timer-mode{overflow:hidden;}
-  body.timer-mode .site-header, body.timer-mode > footer, body.timer-mode .hero-blob{display:none !important;}
+  body.timer-mode .site-header, body.timer-mode > footer, body.timer-mode .site-ascii{display:none !important;}
   body.timer-mode #appRoot{padding-top:0;}
   #timerApp [hidden]{display:none !important;}
   body.timer-mode.tm-idle, body.timer-mode.tm-idle *{cursor:none;}
@@ -949,8 +949,6 @@
   .doc-title-input:focus{border-bottom-color:var(--ink);}
 </style>
 
-<div class="hero-blob" style="top:-90px; left:-70px; width:340px; height:340px; background:linear-gradient(135deg,var(--accent-a),var(--accent-b)); opacity:.14;"></div>
-<div class="hero-blob" style="top:10px; right:-110px; width:380px; height:380px; background:linear-gradient(135deg,var(--accent-b),#FFC85F); opacity:.11;"></div>
 
 <header class="site-header">
   <div class="logo-area" id="logoArea">
@@ -4605,7 +4603,7 @@ function renderTimerPage(){
   timer.lastKey = '';
   root().innerHTML = `
     <div id="timerApp">
-      <canvas class="tm-ascii" id="tmAscii" aria-hidden="true"></canvas>
+      <canvas class="tm-ascii ascii-bg" data-speed="1" data-bg="#EEEFE9" aria-hidden="true"></canvas>
       <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="tmNavyTint" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 0.027  0 0 0 0 0.012  0 0 0 0 0.557  0 0 0 1 0"/></filter></svg>
       <div class="tm-stage">
         <section class="tm-panel" id="tmPanel">
@@ -5051,7 +5049,7 @@ async function renderDrawPage(){
   draw.anim = null; draw.lastKey = '';
   root().innerHTML = `
     <div id="timerApp">
-      <canvas class="tm-ascii" id="tmAscii" aria-hidden="true"></canvas>
+      <canvas class="tm-ascii ascii-bg" data-speed="1" data-bg="#EEEFE9" aria-hidden="true"></canvas>
       <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="tmNavyTint" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 0.027  0 0 0 0 0.012  0 0 0 0 0.557  0 0 0 1 0"/></filter></svg>
       <div class="tm-stage">
         <section class="tm-panel">
@@ -5211,6 +5209,7 @@ async function renderRoute(){
   function vn(x,y,s){var xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);
     var a=h2(xi,yi,s),b=h2(xi+1,yi,s),c=h2(xi,yi+1,s),d=h2(xi+1,yi+1,s); return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;}
   function draw(cv,t){
+    var BG=cv.getAttribute('data-bg')||'#EEEFE9'; t*=parseFloat(cv.getAttribute('data-speed')||'1');
     var dpr=Math.min(2,window.devicePixelRatio||1), W=cv.clientWidth, H=cv.clientHeight;
     if(!W||!H) return;
     if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);}
@@ -5230,7 +5229,7 @@ async function renderRoute(){
         if(v>.42){                                   /* bloco cheio, com caractere vazado em metade deles */
           ctx.fillStyle='rgb('+Math.round(232-14*v)+','+Math.round(233-14*v)+','+Math.round(224-16*v)+')';
           ctx.fillRect(px-cell/2+gp/2,py-cell/2+gp/2,cell-gp,cell-gp);
-          if(hsh>.5){ctx.fillStyle='#EEEFE9'; ctx.fillText(ch,px,py+1);}
+          if(hsh>.5){ctx.fillStyle=BG; ctx.fillText(ch,px,py+1);}
         }else{
           ctx.fillStyle='rgba(184,185,168,'+(.4+.4*v).toFixed(2)+')'; ctx.fillText(ch,px,py+1);
         }
@@ -5238,8 +5237,7 @@ async function renderRoute(){
     }
   }
   function loop(now){
-    var cv=document.getElementById('tmAscii');
-    if(cv && now-last>(still?1500:55)){ last=now; draw(cv,now/1000); }
+    if(now-last>(still?1500:55)){ last=now; var cvs=document.querySelectorAll('canvas.ascii-bg'); for(var q=0;q<cvs.length;q++) draw(cvs[q],now/1000); }
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
