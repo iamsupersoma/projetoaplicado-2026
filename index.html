@@ -833,6 +833,87 @@
   @media(prefers-reduced-motion:reduce){ #timerApp .dw-stage.landed .dw-name{animation:none;} }
   #timerApp .tm-exit{color:var(--tm-mist) !important; background:transparent !important; text-decoration:underline; padding:4px !important; align-self:flex-start;}
 
+
+  /* ======================= VISUAL LIMPO (cronômetro e sorteio) =======================
+     Sem cartão branco: tudo direto sobre o índigo dos slides (#2F2BD2), texto branco,
+     navy #07038E nos controles e amarelo #FFB900 para o aviso. */
+  #timerApp{--tm-warn:#FFB900; --tm-alert:#FF6F8E; --tm-line:rgba(255,255,255,.2); --tm-soft:rgba(255,255,255,.68);}
+  #timerApp .tm-panel{background:transparent; border-radius:0; padding:clamp(8px,2.4vh,28px) clamp(4px,1.2vw,24px) 0;}
+  #timerApp .tm-group{color:#fff;}
+  #timerApp .tm-chip{background:rgba(255,255,255,.14); color:#fff;}
+  #timerApp .tm-chip.running{background:#fff; color:var(--tm-indigo);}
+  #timerApp .tm-chip.warn{background:var(--tm-warn); color:#07038E;}
+  #timerApp .tm-digits{color:#fff;}
+  #timerApp .tm-digits.warn{color:var(--tm-warn);}
+  #timerApp .tm-digits.alert{color:var(--tm-alert);}
+  #timerApp .tm-hint{color:var(--tm-soft);}
+  #timerApp .tm-track{height:clamp(5px,.7vh,9px); background:var(--tm-line);}
+  #timerApp .tm-track i{background:#fff;}
+  #timerApp .tm-track.warn i{background:var(--tm-warn);}
+  #timerApp .tm-track.alert i{background:var(--tm-alert);}
+  #timerApp .tm-steps{margin-top:clamp(12px,2.4vh,26px); gap:clamp(10px,2vw,32px);}
+  #timerApp .tm-steps li{padding:.45em 0; border:0; border-radius:0; background:none; color:rgba(255,255,255,.5); box-shadow:inset 0 -2px 0 transparent;}
+  #timerApp .tm-steps li.done{background:none; color:rgba(255,255,255,.5);}
+  #timerApp .tm-steps li.now{background:none; color:#fff; box-shadow:inset 0 -3px 0 #fff;}
+  #timerApp .tm-foot{position:relative; z-index:21; opacity:.85;}
+  #timerApp .tm-panel.pulse{animation:none;}
+  #timerApp .tm-panel.pulse .tm-digits{animation:tmBlink 1s ease-in-out infinite;}
+  @keyframes tmBlink{50%{opacity:.55;}}
+  @media(prefers-reduced-motion:reduce){#timerApp .tm-panel.pulse .tm-digits{animation:none;}}
+  #timerApp .tm-applause{position:fixed; inset:0; z-index:20; border-radius:0; padding-bottom:clamp(60px,9vh,110px);}
+
+  /* sorteio */
+  #timerApp .dw-eyebrow{color:var(--tm-soft);}
+  #timerApp .dw-pos{color:rgba(255,255,255,.2);}
+  #timerApp .dw-stage.landed .dw-pos{color:#fff;}
+  #timerApp .dw-name{color:#fff;}
+  #timerApp .dw-stage.spinning .dw-name{color:rgba(255,255,255,.6);}
+  #timerApp .dw-sub{color:var(--tm-soft);}
+  #timerApp .dw-cta{background:#fff; color:var(--tm-indigo);}
+  #timerApp .dw-cta:hover{background:var(--tm-cream); color:var(--tm-indigo);}
+  #timerApp .dw-cta:focus-visible{outline-color:#fff;}
+  #timerApp .dw-list{gap:0;}
+  #timerApp .dw-list li{border:0; border-bottom:1px solid var(--tm-line); border-radius:0; padding:.62em .4em; color:rgba(255,255,255,.45);}
+  #timerApp .dw-list li b{background:transparent; color:inherit; border:1.5px solid currentColor;}
+  #timerApp .dw-list li.filled{background:none; border-bottom-color:var(--tm-line); color:#fff;}
+  #timerApp .dw-list li.filled b{background:#fff; color:var(--tm-indigo); border-color:#fff;}
+  #timerApp .dw-list li.now{background:rgba(255,255,255,.14); border-radius:14px; border-bottom-color:transparent; color:#fff;}
+  #timerApp .dw-list li.now b{background:#fff; color:var(--tm-indigo);}
+  #timerApp .dw-list.movable li:hover{background:rgba(255,255,255,.08); border-color:transparent; border-bottom-color:var(--tm-line);}
+  #timerApp .dw-list.movable li:focus-visible{outline-color:#fff;}
+  #timerApp .dw-grip{color:#fff;}
+  #timerApp .dw-list.movable li.dragging{background:#fff; color:var(--tm-indigo); border-radius:14px; box-shadow:0 10px 24px rgba(0,0,0,.25);}
+  #timerApp .dw-list.movable li.dragging b{background:var(--tm-indigo); color:#fff; border-color:var(--tm-indigo);}
+  #timerApp .dw-list li.dragging .dw-grip{color:var(--tm-indigo);}
+
+  /* painel de controles: campos translúcidos em vez de caixas brancas */
+  #timerApp .tm-drawer input, #timerApp .tm-drawer select, #timerApp .tm-drawer textarea{background:rgba(255,255,255,.09); color:#fff; border:1px solid rgba(255,255,255,.18);}
+  #timerApp .tm-drawer input::placeholder{color:rgba(255,255,255,.45);}
+  #timerApp .tm-drawer select option{color:#07038E; background:#fff;}
+  #timerApp .tm-drawer input:focus-visible, #timerApp .tm-drawer select:focus-visible{outline:0; border-color:#fff;}
+  #timerApp .tm-dd-btn{background:rgba(255,255,255,.09) !important; color:#fff !important; border:1px solid rgba(255,255,255,.18) !important;}
+  #timerApp .tm-dd-list{background:#1511a6; border:1px solid rgba(255,255,255,.18); box-shadow:0 18px 40px rgba(0,0,0,.4);}
+  #timerApp .tm-dd-list li{color:#fff;}
+  #timerApp .tm-dd-list li b{background:rgba(255,255,255,.16); color:#fff;}
+  #timerApp .tm-dd-list li.free{color:rgba(255,255,255,.6); border-bottom-color:rgba(255,255,255,.18);}
+  #timerApp .tm-dd-list li:hover, #timerApp .tm-dd-list li:focus{background:rgba(255,255,255,.12);}
+  #timerApp .tm-dd-list li[aria-selected="true"]{background:#fff; color:#07038E;}
+  #timerApp .tm-dd-list li[aria-selected="true"] b{background:var(--tm-indigo); color:#fff;}
+  #timerApp .tm-dd-list li[aria-selected="true"] i{color:#07038E;}
+  #timerApp .tm-drawer button.primary{background:#fff; color:#07038E;}
+  #timerApp .tm-drawer button.accent{background:rgba(255,255,255,.16);}
+  #timerApp .tm-drawer button.accent:hover{background:rgba(255,255,255,.26);}
+  #timerApp .tm-drawer .tm-chips button, #timerApp .tm-drawer .dw-add button{background:rgba(255,255,255,.12); color:#fff;}
+  #timerApp .tm-drawer .tm-chips button:hover, #timerApp .tm-drawer .dw-add button:hover{background:rgba(255,255,255,.22);}
+  #timerApp .dw-glist li{background:rgba(255,255,255,.09); color:#fff;}
+  #timerApp .dw-glist li.empty{color:rgba(255,255,255,.55);}
+  #timerApp .tm-drawer .dw-glist button{background:rgba(255,255,255,.14); color:#fff;}
+  #timerApp .tm-drawer .dw-glist button:hover{background:var(--tm-alert); color:#07038E;}
+  #timerApp .tm-cust{border-color:rgba(255,255,255,.18);}
+  #timerApp .tm-field label, #timerApp .tm-cust summary{color:rgba(255,255,255,.7);}
+  #timerApp .tm-row > *, #timerApp .tm-field{min-width:0;}
+  #timerApp .tm-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+
   /* ---- Documentos ---- */
   .doc-view{max-width:760px; line-height:1.7; font-size:15.5px; color:var(--ink);}
   .doc-view h2{font-size:26px; font-weight:800; letter-spacing:-0.02em; margin:28px 0 8px; line-height:1.25;}
