@@ -847,7 +847,10 @@
   #timerApp .tm-steps{margin-top:clamp(12px,2.4vh,26px); gap:clamp(10px,2vw,32px);}
   #timerApp .tm-steps li{padding:.45em 0; border:0; border-radius:0; background:none; color:rgba(7,3,142,.45); box-shadow:inset 0 -2px 0 transparent;}
   #timerApp .tm-steps li.done{background:none; color:rgba(7,3,142,.45);}
-  #timerApp .tm-steps li.now{background:none; color:var(--tm-navy); box-shadow:inset 0 -3px 0 var(--tm-indigo);}
+  #timerApp .tm-steps li.now{background:none; color:var(--tm-navy); box-shadow:none;}
+  #timerApp .tm-steps li{box-shadow:none; gap:.55em;}
+  #timerApp .tm-steps li::before{content:""; flex:none; width:.55em; height:.55em; border-radius:50%; background:rgba(7,3,142,.22);}
+  #timerApp .tm-steps li.now::before{background:var(--tm-indigo);}
   #timerApp .tm-foot{position:relative; z-index:21; color:var(--tm-navy);}
   #timerApp .tm-foot small{opacity:.7;}
   #timerApp .tm-logo{filter:url(#tmNavyTint);}
@@ -859,16 +862,24 @@
   @media(prefers-reduced-motion:reduce){#timerApp .tm-panel.pulse .tm-digits{animation:none;}}
   #timerApp .tm-applause{position:fixed; inset:0; z-index:20; border-radius:0; padding-bottom:clamp(60px,9vh,110px);}
 
+  /* esferas com feather, as mesmas da plataforma (rosa, laranja, amarelo) */
+  #timerApp::before, #timerApp::after, #timerApp .tm-stage::before{content:""; position:absolute; border-radius:50%; filter:blur(70px); pointer-events:none; z-index:0;}
+  #timerApp::before{top:-14vh; left:-8vw; width:min(42vw,46vh*1.6); aspect-ratio:1; background:linear-gradient(135deg,#FF5FA0,#FF9152); opacity:.34;}
+  #timerApp::after{top:8vh; right:-12vw; width:min(46vw,52vh*1.6); aspect-ratio:1; background:linear-gradient(135deg,#FF9152,#FFC85F); opacity:.36;}
+  #timerApp .tm-stage::before{bottom:-22vh; left:34vw; width:min(36vw,40vh*1.6); aspect-ratio:1; background:linear-gradient(135deg,#FFB900,#FF9152); opacity:.22;}
+  #timerApp .tm-stage{position:relative; z-index:1;}
+  @media(prefers-reduced-motion:reduce){#timerApp::before,#timerApp::after,#timerApp .tm-stage::before{display:none;}}
+
   /* sorteio */
   #timerApp .dw-pos{color:var(--tm-mist);}
   #timerApp .dw-list{gap:0;}
-  #timerApp .dw-list li{border:0; border-bottom:1px solid var(--tm-line); border-radius:0; padding:.62em .4em; color:rgba(7,3,142,.5);}
+  #timerApp .dw-list li{border:0; border-radius:14px; padding:.62em .6em; color:rgba(7,3,142,.5);}
   #timerApp .dw-list li b{background:transparent; color:inherit; border:1.5px solid currentColor;}
-  #timerApp .dw-list li.filled{background:none; border-bottom-color:var(--tm-line); color:var(--tm-navy);}
+  #timerApp .dw-list li.filled{background:none; color:var(--tm-navy);}
   #timerApp .dw-list li.filled b{background:var(--tm-navy); color:#fff; border-color:var(--tm-navy);}
-  #timerApp .dw-list li.now{background:var(--tm-indigo); border-radius:14px; border-bottom-color:transparent; color:#fff;}
+  #timerApp .dw-list li.now{background:var(--tm-indigo); color:#fff;}
   #timerApp .dw-list li.now b{background:#fff; color:var(--tm-indigo); border-color:#fff;}
-  #timerApp .dw-list.movable li:hover{background:rgba(7,3,142,.05); border-color:transparent; border-bottom-color:var(--tm-line);}
+  #timerApp .dw-list.movable li:hover{background:rgba(7,3,142,.05);}
   #timerApp .dw-list.movable li.dragging{background:var(--tm-indigo); color:#fff; border-radius:14px; box-shadow:0 10px 24px rgba(7,3,142,.3);}
   #timerApp .dw-list.movable li.dragging b{background:#fff; color:var(--tm-indigo); border-color:#fff;}
   #timerApp .dw-grip{color:var(--tm-soft);}
