@@ -649,7 +649,7 @@
   body.timer-mode.tm-idle, body.timer-mode.tm-idle *{cursor:none;}
   #timerApp{
     --tm-indigo:#2F2BD2; --tm-navy:#07038E; --tm-cream:#EEEFE9; --tm-paper:#FFFFFF; --tm-mist:#D9D8F6;
-    --tm-warn:#F0612E; --tm-alert:#E11D48; --tm-ink-soft:rgba(7,3,142,.55);
+    --tm-warn:#EC4A27; --tm-alert:#E11D48; --tm-ink-soft:rgba(7,3,142,.55);
     --tm-display:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     --tm-body:"Pragati Narrow","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
     position:fixed; inset:0; z-index:500; background:var(--tm-indigo); color:var(--tm-navy);
@@ -709,7 +709,7 @@
   #timerApp .tm-hotspot{position:fixed; right:0; bottom:0; width:110px; height:110px; z-index:30;}
   #timerApp .tm-hotspot::after{content:""; position:absolute; right:18px; bottom:18px; width:10px; height:10px; border-radius:50%; background:#fff; opacity:0; transition:opacity .2s;}
   #timerApp .tm-hotspot:hover::after{opacity:.5;}
-  #timerApp .tm-drawer{position:fixed; top:0; right:0; bottom:0; z-index:40; width:min(360px,100vw); background:var(--tm-navy); color:#fff;
+  #timerApp .tm-drawer{position:fixed; top:0; right:0; bottom:0; z-index:40; width:min(440px,100vw); background:var(--tm-navy); color:#fff;
     padding:22px; display:flex; flex-direction:column; gap:18px; overflow-y:auto; transform:translateX(105%); transition:transform .28s ease;
     box-shadow:-20px 0 60px rgba(0,0,0,.25); font-family:var(--tm-body);}
   #timerApp .tm-drawer.open{transform:none;}
@@ -890,6 +890,9 @@
   #timerApp .tm-field label, #timerApp .tm-cust summary{font:600 11.5px/1 'Plus Jakarta Sans',sans-serif; letter-spacing:.08em; color:#8A8A85;}
   #timerApp .tm-drawer input, #timerApp .tm-drawer select, #timerApp .tm-drawer textarea, #timerApp .tm-drawer .tm-dd-btn{
     font:600 15px/1.2 'Plus Jakarta Sans',sans-serif; color:#0F0F0F; background:#FCFBF8; border:1.5px solid #E4E3DC; border-radius:12px; padding:12px 14px; outline:none; transition:.15s;}
+  /* peso da fonte fixo em todos os estados (foco, digitação, preenchimento automático) */
+  #timerApp .tm-drawer input, #timerApp .tm-drawer input:focus, #timerApp .tm-drawer input:active, #timerApp .tm-drawer input:-webkit-autofill, #timerApp .tm-drawer select, #timerApp .tm-drawer select:focus{font-weight:700 !important; font-family:'Plus Jakarta Sans',sans-serif !important; font-synthesis:none; -webkit-text-fill-color:#0F0F0F; font-variant-numeric:tabular-nums;}
+  #timerApp .tm-drawer input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px #FCFBF8 inset;}
   #timerApp .tm-drawer input::placeholder, #timerApp .tm-drawer textarea::placeholder{color:#8A8A85; font-weight:500;}
   #timerApp .tm-drawer input:focus, #timerApp .tm-drawer select:focus, #timerApp .tm-drawer textarea:focus, #timerApp .tm-drawer .tm-dd-btn:focus-visible{border-color:#FF5FA0; box-shadow:0 0 0 3px rgba(255,95,160,.14); outline:none;}
   #timerApp .tm-drawer button:focus-visible, #timerApp .tm-drawer a:focus-visible{outline:2px solid #FF5FA0; outline-offset:2px;}
