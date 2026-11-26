@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Inter e Pragati Narrow (fontes dos slides) carregadas de verdade, com todos os pesos: o cronômetro não depende de fonte instalada no computador nem de negrito sintético -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Pragati+Narrow:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -942,6 +944,7 @@
   #timerApp{overflow:clip; overscroll-behavior:none; -webkit-text-size-adjust:100%; text-size-adjust:100%;}
   #timerApp .tm-digits, #timerApp .tm-group{font-synthesis:none; -webkit-text-size-adjust:100%;}
   #timerApp .tm-digits{font-weight:900;}
+  #timerApp, #timerApp *{font-synthesis:none;}
   /* o tempo e o título ficam em camada própria, com suavização fixa: o navegador (macOS) não reavalia o antialiasing do texto ao focar campos do drawer */
   #timerApp .tm-digits, #timerApp .tm-group, #timerApp .tm-hint{-webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:geometricPrecision; will-change:transform; transform:translateZ(0); backface-visibility:hidden;}
   #timerApp .tm-ascii{will-change:contents; contain:strict;}
