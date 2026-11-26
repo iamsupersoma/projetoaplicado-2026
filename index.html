@@ -4575,6 +4575,17 @@ function tmDdPick(i){
 }
 
 /* ---- render ---- */
+/* Gerenciadores de senha e corretores (NordPass, 1Password, Bitwarden, LastPass, Dashlane, Grammarly) injetam ícones e estilos nos campos de texto; no cronômetro isso não é desejado. */
+function tmNoAutofill(root){
+  if(!root) return;
+  root.querySelectorAll('input[type="text"], input:not([type]), textarea').forEach(el => {
+    el.setAttribute('autocomplete', 'off'); el.setAttribute('autocapitalize', 'off'); el.setAttribute('autocorrect', 'off'); el.setAttribute('spellcheck', 'false');
+    el.setAttribute('data-lpignore', 'true'); el.setAttribute('data-1p-ignore', 'true'); el.setAttribute('data-bwignore', 'true');
+    el.setAttribute('data-form-type', 'other'); el.setAttribute('data-np-ignore', 'true'); el.setAttribute('data-np-autofill-type', 'none');
+    el.setAttribute('data-gramm', 'false'); el.setAttribute('data-gramm_editor', 'false'); el.setAttribute('data-enable-grammarly', 'false');
+    if(!el.name) el.name = 'tm-' + (el.id || 'campo');
+  });
+}
 function tmSyncInputs(){
   const a = document.activeElement, S = timer.S;
   if(!$('tmInGroup')) return;
@@ -4760,6 +4771,7 @@ function renderTimerPage(){
       </aside>
     </div>`;
 
+  tmNoAutofill($('tmDrawer'));
   const drawer = $('tmDrawer');
   const open = () => { clearTimeout(timer.closeT); drawer.classList.add('open'); };
   const close = () => { drawer.classList.remove('open'); if(drawer.contains(document.activeElement)) document.activeElement.blur(); };
@@ -5152,6 +5164,7 @@ async function renderDrawPage(){
       </aside>
     </div>`;
 
+  tmNoAutofill($('dwDrawer'));
   const drawer = $('dwDrawer');
   const close = () => { drawer.classList.remove('open'); if(drawer.contains(document.activeElement)) document.activeElement.blur(); };
   draw.closeDrawer = close;
