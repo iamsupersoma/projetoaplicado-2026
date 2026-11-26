@@ -1814,7 +1814,7 @@ function renderGrid(){
   const q = ($('searchInput')?.value || '').trim().toLowerCase();
   const fd = (!activeFilter || activeFilter === DOCS_FILTER) ? publicDocs.filter(d => !q || (d.title || '').toLowerCase().includes(q) || (d.description || '').toLowerCase().includes(q)) : [];
   $('sectionCount').textContent = `(${fl.length + fd.length})`;
-  fd.forEach(d => {
+  const renderDocCard = (d) => {
     const card = document.createElement('div'); card.className = 'link-card';
     const bar = document.createElement('div'); bar.className = 'card-top-bar'; bar.style.background = '#0F0F0F'; card.appendChild(bar);
     const body = document.createElement('div'); body.className = 'card-body';
@@ -1829,12 +1829,12 @@ function renderGrid(){
     body.querySelector('.btn-copy').onclick = () => { navigator.clipboard.writeText(docPublicUrl(d.id)).catch(()=>{}); showToast('Link copiado!'); };
     body.querySelectorAll('a').forEach(a => a.onclick = (e) => { e.preventDefault(); goDoc(d.id); });
     card.appendChild(body); grid.appendChild(card);
-  });
+  };
   if(!fl.length && !fd.length){
     grid.innerHTML = '<div class="empty"><strong>Nenhum link encontrado</strong>Tente outro filtro ou termo de busca.</div>';
     return;
   }
-  fl.forEach(link => {
+  const renderLinkCard = (link) => {
     const linkCats = (link.categoryIds || []).map(id => categories.find(c => c.id === id)).filter(Boolean);
     const card = document.createElement('div'); card.className = 'link-card';
     const bar = document.createElement('div'); bar.className = 'card-top-bar';
@@ -1880,7 +1880,13 @@ function renderGrid(){
     accessBtn.innerHTML = 'Acessar' + phIcon('arrow-square-out');
     actions.append(copyBtn, accessBtn); footer.appendChild(actions);
     body.appendChild(footer); card.appendChild(body); grid.appendChild(card);
-  });
+  };
+  /* documentos e links numa unica lista, do mais recente para o mais antigo */
+  const items = [
+    ...fd.map(d => ({ t: new Date(d.updated_at).getTime() || 0, run: () => renderDocCard(d) })),
+    ...fl.map(l => ({ t: new Date(l.createdAt).getTime() || 0, run: () => renderLinkCard(l) })),
+  ].sort((x, y) => y.t - x.t);
+  items.forEach(it => it.run());
 }
 
 /* ======================= ALUNO (registro público) ======================= */
