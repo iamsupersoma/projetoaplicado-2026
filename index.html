@@ -889,12 +889,12 @@
   #timerApp .tm-sync.on i{background:#16A34A;}
   #timerApp .tm-field label, #timerApp .tm-cust summary{font:600 11.5px/1 'Plus Jakarta Sans',sans-serif; letter-spacing:.08em; color:#8A8A85;}
   #timerApp .tm-drawer input, #timerApp .tm-drawer select, #timerApp .tm-drawer textarea, #timerApp .tm-drawer .tm-dd-btn{
-    font:600 15px/1.2 'Plus Jakarta Sans',sans-serif; color:#0F0F0F; background:#FCFBF8; border:1.5px solid #E4E3DC; border-radius:12px; padding:12px 14px; outline:none; transition:.15s;}
+    font:600 16px/1.2 'Plus Jakarta Sans',sans-serif; color:#0F0F0F; background:#FCFBF8; border:1.5px solid #E4E3DC; border-radius:12px; padding:12px 14px; outline:none; transition:.15s;}
   /* peso da fonte fixo em todos os estados (foco, digitação, preenchimento automático) */
-  #timerApp .tm-drawer input, #timerApp .tm-drawer input:focus, #timerApp .tm-drawer input:active, #timerApp .tm-drawer input:-webkit-autofill, #timerApp .tm-drawer select, #timerApp .tm-drawer select:focus{font-weight:700 !important; font-family:'Plus Jakarta Sans',sans-serif !important; font-synthesis:none; -webkit-text-fill-color:#0F0F0F; font-variant-numeric:tabular-nums;}
+  #timerApp .tm-drawer input, #timerApp .tm-drawer input:focus, #timerApp .tm-drawer input:active, #timerApp .tm-drawer input:-webkit-autofill, #timerApp .tm-drawer select, #timerApp .tm-drawer select:focus{font-weight:700 !important; font-size:16px !important; font-family:'Plus Jakarta Sans',sans-serif !important; font-synthesis:none; -webkit-text-fill-color:#0F0F0F; font-variant-numeric:tabular-nums;}
   #timerApp .tm-drawer input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px #FCFBF8 inset;}
   /* dropdown personalizado e selects nativos com a mesma aparência dos campos */
-  #timerApp .tm-drawer .tm-dd-btn{font:700 15px/1.2 'Plus Jakarta Sans',sans-serif !important; color:#0F0F0F !important; background:#FCFBF8 !important; border:1.5px solid #E4E3DC !important; border-radius:12px !important; padding:12px 14px !important;}
+  #timerApp .tm-drawer .tm-dd-btn{font:700 16px/1.2 'Plus Jakarta Sans',sans-serif !important; color:#0F0F0F !important; background:#FCFBF8 !important; border:1.5px solid #E4E3DC !important; border-radius:12px !important; padding:12px 14px !important;}
   #timerApp .tm-drawer .tm-dd-btn:hover{border-color:#A8A8A0 !important; background:#FCFBF8 !important; color:#0F0F0F !important;}
   #timerApp .tm-drawer .tm-dd-btn i{color:#8A8A85; font-size:13px;}
   #timerApp .tm-drawer select{-webkit-appearance:none; appearance:none; padding-right:36px; cursor:pointer;
@@ -937,6 +937,11 @@
   #timerApp .dw-glist li.empty{color:#8A8A85; font-weight:500; border-style:dashed;}
   #timerApp .tm-drawer .dw-glist button{background:#F0EFE8; color:#0F0F0F; border:0; border-radius:9px;}
   #timerApp .tm-drawer .dw-glist button:hover{background:#DC2626; color:#fff;}
+
+  /* estabilidade ao focar campos: o container nunca rola nem reajusta o texto */
+  #timerApp{overflow:clip; overscroll-behavior:none; -webkit-text-size-adjust:100%; text-size-adjust:100%;}
+  #timerApp .tm-digits, #timerApp .tm-group{font-synthesis:none; -webkit-text-size-adjust:100%;}
+  #timerApp .tm-digits{font-weight:900;}
 
   /* alerta de tempo: fundo laranja e elementos em branco */
   #timerApp{transition:background .4s;}
@@ -5284,6 +5289,11 @@ async function renderRoute(){
       }
     }
   }
+  document.addEventListener('focusin',function(e){
+    var app=e.target&&e.target.closest&&e.target.closest('#timerApp'); if(!app) return;
+    var fix=function(){ app.scrollTop=0; app.scrollLeft=0; window.scrollTo(0,0); };
+    fix(); requestAnimationFrame(fix); setTimeout(fix,320);
+  });
   function loop(now){
     if(now-last>(still?1500:55)){ last=now; var cvs=document.querySelectorAll('canvas.ascii-bg'); for(var q=0;q<cvs.length;q++) draw(cvs[q],now/1000); }
     requestAnimationFrame(loop);
