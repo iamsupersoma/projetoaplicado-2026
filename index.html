@@ -893,12 +893,19 @@
   /* peso da fonte fixo em todos os estados (foco, digitação, preenchimento automático) */
   #timerApp .tm-drawer input, #timerApp .tm-drawer input:focus, #timerApp .tm-drawer input:active, #timerApp .tm-drawer input:-webkit-autofill, #timerApp .tm-drawer select, #timerApp .tm-drawer select:focus{font-weight:700 !important; font-family:'Plus Jakarta Sans',sans-serif !important; font-synthesis:none; -webkit-text-fill-color:#0F0F0F; font-variant-numeric:tabular-nums;}
   #timerApp .tm-drawer input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px #FCFBF8 inset;}
+  /* dropdown personalizado e selects nativos com a mesma aparência dos campos */
+  #timerApp .tm-drawer .tm-dd-btn{font:700 15px/1.2 'Plus Jakarta Sans',sans-serif !important; color:#0F0F0F !important; background:#FCFBF8 !important; border:1.5px solid #E4E3DC !important; border-radius:12px !important; padding:12px 14px !important;}
+  #timerApp .tm-drawer .tm-dd-btn:hover{border-color:#A8A8A0 !important; background:#FCFBF8 !important; color:#0F0F0F !important;}
+  #timerApp .tm-drawer .tm-dd-btn i{color:#8A8A85; font-size:13px;}
+  #timerApp .tm-drawer select{-webkit-appearance:none; appearance:none; padding-right:36px; cursor:pointer;
+    background:#FCFBF8 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238A8A85' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center;}
+  #timerApp .tm-drawer select:hover{border-color:#A8A8A0;}
   #timerApp .tm-drawer input::placeholder, #timerApp .tm-drawer textarea::placeholder{color:#8A8A85; font-weight:500;}
   #timerApp .tm-drawer input:focus, #timerApp .tm-drawer select:focus, #timerApp .tm-drawer textarea:focus, #timerApp .tm-drawer .tm-dd-btn:focus-visible{border-color:#FF5FA0; box-shadow:0 0 0 3px rgba(255,95,160,.14); outline:none;}
   #timerApp .tm-drawer button:focus-visible, #timerApp .tm-drawer a:focus-visible{outline:2px solid #FF5FA0; outline-offset:2px;}
   #timerApp .tm-drawer select option{color:#0F0F0F; background:#fff;}
   #timerApp .tm-dd-list{background:#fff; border:1.5px solid #E4E3DC; border-radius:14px; box-shadow:0 1px 3px rgba(0,0,0,.06), 0 10px 28px rgba(0,0,0,.10);}
-  #timerApp .tm-dd-list li{color:#0F0F0F; font-weight:600;}
+  #timerApp .tm-dd-list li{color:#0F0F0F; font:600 14.5px/1.2 'Plus Jakarta Sans',sans-serif;}
   #timerApp .tm-dd-list li b{background:#F0EFE8; color:#0F0F0F;}
   #timerApp .tm-dd-list li.free{color:#8A8A85; border-bottom-color:#E4E3DC;}
   #timerApp .tm-dd-list li:hover, #timerApp .tm-dd-list li:focus{background:#F5F4EE;}
