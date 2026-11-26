@@ -862,13 +862,9 @@
   @media(prefers-reduced-motion:reduce){#timerApp .tm-panel.pulse .tm-digits{animation:none;}}
   #timerApp .tm-applause{position:fixed; inset:0; z-index:20; border-radius:0; padding-bottom:clamp(60px,9vh,110px);}
 
-  /* esferas com feather, as mesmas da plataforma (rosa, laranja, amarelo) */
-  #timerApp::before, #timerApp::after, #timerApp .tm-stage::before{content:""; position:absolute; border-radius:50%; filter:blur(70px); pointer-events:none; z-index:0;}
-  #timerApp::before{top:-14vh; left:-8vw; width:min(42vw,46vh*1.6); aspect-ratio:1; background:linear-gradient(135deg,#FF5FA0,#FF9152); opacity:.34;}
-  #timerApp::after{top:8vh; right:-12vw; width:min(46vw,52vh*1.6); aspect-ratio:1; background:linear-gradient(135deg,#FF9152,#FFC85F); opacity:.36;}
-  #timerApp .tm-stage::before{bottom:-22vh; left:34vw; width:min(36vw,40vh*1.6); aspect-ratio:1; background:linear-gradient(135deg,#FFB900,#FF9152); opacity:.22;}
+  /* textura ASCII discreta ao fundo (mesma ideia do convite) */
+  #timerApp .tm-ascii{position:absolute; inset:0; width:100%; height:100%; z-index:0; pointer-events:none;}
   #timerApp .tm-stage{position:relative; z-index:1;}
-  @media(prefers-reduced-motion:reduce){#timerApp::before,#timerApp::after,#timerApp .tm-stage::before{display:none;}}
 
   /* sorteio */
   #timerApp .dw-pos{color:var(--tm-mist);}
@@ -4609,6 +4605,7 @@ function renderTimerPage(){
   timer.lastKey = '';
   root().innerHTML = `
     <div id="timerApp">
+      <canvas class="tm-ascii" id="tmAscii" aria-hidden="true"></canvas>
       <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="tmNavyTint" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 0.027  0 0 0 0 0.012  0 0 0 0 0.557  0 0 0 1 0"/></filter></svg>
       <div class="tm-stage">
         <section class="tm-panel" id="tmPanel">
@@ -5054,6 +5051,7 @@ async function renderDrawPage(){
   draw.anim = null; draw.lastKey = '';
   root().innerHTML = `
     <div id="timerApp">
+      <canvas class="tm-ascii" id="tmAscii" aria-hidden="true"></canvas>
       <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="tmNavyTint" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 0.027  0 0 0 0 0.012  0 0 0 0 0.557  0 0 0 1 0"/></filter></svg>
       <div class="tm-stage">
         <section class="tm-panel">
@@ -5203,6 +5201,43 @@ async function renderRoute(){
 (async () => {
   $('logoArea').onclick = goHome;
   await renderRoute();
+})();
+
+/* ---------- textura ASCII do cronômetro e do sorteio (discreta, bordas, baixa taxa de quadros) ---------- */
+(function(){
+  var RAMP='.:+x*01#', last=0, cw=0, ch=0, still=false;
+  try{ still = window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+  function h2(x,y,s){var n=Math.sin(x*127.1+y*311.7+s*74.7)*43758.5453; return n-Math.floor(n);}
+  function vn(x,y,s){var xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);
+    var a=h2(xi,yi,s),b=h2(xi+1,yi,s),c=h2(xi,yi+1,s),d=h2(xi+1,yi+1,s); return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;}
+  function draw(cv,t){
+    var dpr=Math.min(2,window.devicePixelRatio||1), W=cv.clientWidth, H=cv.clientHeight;
+    if(!W||!H) return;
+    if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);}
+    var ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+    var cell=Math.max(22,Math.round(Math.min(W,H)/26)), cols=Math.ceil(W/cell), rows=Math.ceil(H/cell), n=RAMP.length;
+    ctx.font='700 '+Math.round(cell*.62)+'px "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    for(var j=0;j<rows;j++){
+      for(var i=0;i<cols;i++){
+        var x=(i+.5)/cols, y=(j+.5)/rows;
+        var dx=(x-.46)/.62, dy=(y-.5)/.66, d=Math.sqrt(dx*dx+dy*dy);      /* centro limpo, textura nas bordas */
+        var mask=Math.max(0,Math.min(1,(d-.62)/.5));
+        if(mask<=0) continue;
+        var f=vn(x*4.2+t*.018,y*4.2-t*.012,7)*.75+vn(x*9+t*.03,y*9,3)*.25;
+        var v=(f-.36)*mask*2.4; if(v<=.06) continue; if(v>1) v=1;
+        var hsh=h2(i,j,5.5), a=.09+.2*v;
+        ctx.fillStyle=(hsh>.9?'rgba(47,43,210,':'rgba(7,3,142,')+a.toFixed(3)+')';
+        ctx.fillText(RAMP.charAt(Math.min(n-1,Math.floor(v*(n-1)+hsh*.9))),(i+.5)*cell,(j+.5)*cell+1);
+      }
+    }
+  }
+  function loop(now){
+    var cv=document.getElementById('tmAscii');
+    if(cv && now-last>(still?1500:110)){ last=now; draw(cv,now/1000); }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
 })();
 </script>
 </body>
