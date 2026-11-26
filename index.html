@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body><canvas class="ascii-bg site-ascii" data-speed="0.35" data-amount="0.62" data-bg="#FCFBF8" aria-hidden="true"></canvas><style>
+<body><canvas class="ascii-bg site-ascii" data-speed="0.35" data-amount="1" data-cell="11" data-bg="#FCFBF8" aria-hidden="true"></canvas><style>
   :root{
     --bg:#FCFBF8;
     --card:#FFFFFF;
@@ -5214,7 +5214,7 @@ async function renderRoute(){
     if(!W||!H) return;
     if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);}
     var ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
-    var cell=Math.max(14,Math.round(Math.min(W,H)/40)), gp=Math.max(1.5,cell*.09), cols=Math.ceil(W/cell), rows=Math.ceil(H/cell), n=RAMP.length;
+    var cell=parseFloat(cv.getAttribute('data-cell'))||Math.max(14,Math.round(Math.min(W,H)/40)), gp=Math.max(1.5,cell*.09), cols=Math.ceil(W/cell), rows=Math.ceil(H/cell), n=RAMP.length;
     ctx.font='700 '+Math.round(cell*.62)+'px "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace';
     ctx.textAlign='center'; ctx.textBaseline='middle';
     for(var j=0;j<rows;j++){
